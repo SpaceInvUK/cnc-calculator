@@ -25,6 +25,17 @@
     .top-tabs{display:inline-grid;grid-auto-flow:column;gap:2px;padding:2px;border:1.5px solid var(--border);border-radius:8px;background:#fff}
     .top-tab{padding:7px 10px;border-radius:6px;background:#fff;color:#111;font-size:11px;line-height:1;font-weight:900}
     .top-tab.active{background:#111;color:#fff}
+    .app-command-bar{position:sticky;top:0;z-index:45;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 18px;border-bottom:1.5px solid #dbe2eb;background:rgba(255,255,255,.96);backdrop-filter:blur(10px)}
+    .command-primary{height:30px;padding:0 12px;border-radius:7px;background:#0f172a;color:#fff;font-size:11px;font-weight:900}
+    .command-menu{position:relative}
+    .command-menu summary{list-style:none;height:30px;display:inline-flex;align-items:center;padding:0 10px;border:1.5px solid transparent;border-radius:7px;background:#fff;color:#111;font-size:11px;font-weight:900;cursor:pointer}
+    .command-menu summary::-webkit-details-marker{display:none}
+    .command-menu[open] summary{border-color:#cbd5e1;background:#f8fafc}
+    .command-menu-panel{position:absolute;top:34px;left:0;min-width:190px;display:grid;gap:4px;padding:7px;border:1.5px solid #cbd5e1;border-radius:8px;background:#fff;box-shadow:0 18px 38px rgba(15,23,42,.18)}
+    .command-menu-panel button{height:30px;text-align:left;padding:0 9px;border-radius:6px;background:#fff;color:#111;font-size:11px;font-weight:800}
+    .command-menu-panel button:hover{background:#eff6ff}
+    .command-menu-panel button.active{background:#111;color:#fff}
+    .command-qr-status{margin-left:auto;min-width:160px;max-width:280px;padding:6px 8px;border:1px dashed #cbd5e1;border-radius:7px;background:#f8fafc;color:#475569;font-size:10px;font-weight:800;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .card-body{padding:18px}
     .material-block{border:1.5px solid var(--border);border-radius:8px;background:#fff;margin-bottom:12px;padding:14px}
     .material-block.auto{background:#fafafa}
@@ -53,7 +64,7 @@
     .smart-import-status{font-size:11px;color:var(--muted);line-height:1.35}
     .smart-import-status.success{color:#166534;font-weight:800}
     .smart-import-status.error{color:#991b1b;font-weight:800}
-    .history-status{min-height:16px;margin-top:8px;font-size:11px;font-weight:800;color:#4b5563;text-align:left}
+    .history-status{display:none;min-height:16px;margin-top:8px;font-size:11px;font-weight:800;color:#4b5563;text-align:left}
     .history-status.active{color:#111}
     .field{position:relative}
     .field label{display:block;margin-bottom:6px;font-size:12px;font-weight:800;color:#111}
@@ -413,7 +424,7 @@
     }
     .dimension-item input,.dimension-item select{width:100%;min-width:0;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600}
     .dimension-item input:disabled,.dimension-item select:disabled{background:#f3f4f6;color:#6b7280;cursor:not-allowed}
-    .dimension-item.selected-row{outline:2px solid #0b63ff;background:#eff6ff}
+    .dimension-item.selected-row{outline:2px solid #0b63ff;outline-offset:1px;border-radius:8px;background:#eff6ff}
     .part-label{font-size:12px;font-weight:800;padding-bottom:10px}
     .delete-part-btn{width:32px;height:32px;padding:0;border-radius:8px;background:#111;color:#fff;font-size:16px;line-height:1}
     .warning-box,.info-box,.success-box{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:12px;font-weight:700;line-height:1.4}
@@ -432,21 +443,21 @@
     .sheet-part-hit.dragging{filter:drop-shadow(0 2px 5px rgba(15,23,42,.35));opacity:.55}
     .sheet-drag-ghost{position:fixed;z-index:9999;pointer-events:none;overflow:visible;filter:drop-shadow(0 8px 18px rgba(15,23,42,.32));opacity:.9;background:rgba(255,255,255,.65);border:1px solid rgba(15,23,42,.22);border-radius:6px}
     body.sheet-dragging .sheet-visual{cursor:grabbing}
-    .sheet-part-editor{margin:8px 0 10px;padding:10px;border:1.5px solid var(--border);border-radius:8px;background:#f8fafc}
-    .sheet-part-editor-title{font-size:12px;font-weight:900;margin-bottom:8px}
-    .sheet-part-editor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end}
+    .sheet-part-editor{margin:8px 0 10px;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:#f8fafc}
+    .sheet-part-editor-title{font-size:11px;font-weight:900;margin-bottom:6px}
+    .sheet-part-editor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;align-items:end}
     .sheet-part-editor .field label{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:#374151;margin-bottom:4px}
-    .sheet-part-editor input,.sheet-part-editor select{height:34px;padding:7px 9px;border-radius:8px;border:1px solid var(--border);font-weight:800}
-    .sheet-part-editor .segmented{height:34px}
-    .sheet-part-editor-note{font-size:11px;color:#4b5563;margin-top:8px}
-    .selected-editor-section{grid-column:1/-1;border:1px solid #dbe5f0;border-radius:8px;background:#fff;padding:8px}
-    .selected-editor-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;font-size:11px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#1f2937}
-    .selected-editor-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-    .selected-editor-subgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:end}
+    .sheet-part-editor input,.sheet-part-editor select{height:30px;padding:5px 8px;border-radius:7px;border:1px solid var(--border);font-size:12px;font-weight:800}
+    .sheet-part-editor .segmented{height:30px}
+    .sheet-part-editor-note{font-size:10px;color:#4b5563;margin-top:6px}
+    .selected-editor-section{grid-column:auto;border:1px solid #dbe5f0;border-radius:7px;background:#fff;padding:6px}
+    .selected-editor-section-title{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-bottom:5px;font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#1f2937}
+    .selected-editor-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+    .selected-editor-subgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-items:end}
     .selected-editor-subgrid.tight{grid-template-columns:repeat(2,minmax(0,1fr))}
     .selected-hinge-options,.selected-pocket-options,.selected-panel-options{display:none}
     .selected-hinge-options.show,.selected-pocket-options.show,.selected-panel-options.show{display:grid}
-    .selected-pocket-lines{margin-top:8px}
+    .selected-pocket-lines{margin-top:6px}
     .selected-pocket-lines .pocket-line-item{background:#f8fafc}
     .sheet-caption{font-size:10px;font-weight:700;margin-top:5px;color:#111}
     .sheet-caption-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
@@ -463,6 +474,14 @@
     .sheet-price-label{font-size:12px;font-weight:800;color:#111}
     .sheet-price-meta{font-size:10px;color:#4b5563;margin-top:2px}
     .sheet-price-override,.sheet-cnc-override,.sheet-charge-override{height:34px;padding:7px 8px;border:1.5px solid var(--border);border-radius:8px;font-weight:800;text-align:right;background:#fff;width:100%;min-width:0}
+    body.values-hidden .price-only,
+    body.values-hidden .material-services,
+    body.values-hidden .sheet-price-editor,
+    body.values-hidden .pricing-card,
+    body.values-hidden .spray-total-line,
+    body.values-hidden .quote-card,
+    body.values-hidden .print-note{display:none!important}
+    body.values-hidden .command-hide-values{background:#111!important;color:#fff!important}
     .sheet-charge-override{text-align:left}
     .sheet-zoom-panel{margin:10px 0;padding:10px;border:1.5px solid #93c5fd;border-radius:10px;background:#eff6ff;max-width:620px}
     .sheet-zoom-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;font-size:12px;font-weight:900;color:#0f172a}
@@ -504,7 +523,7 @@
     .ui-test .selected-editor-section{padding:7px;border-radius:8px}
     .ui-test .selected-editor-section-title{font-size:10.5px;margin-bottom:6px}
     .ui-test .sheet-part-editor-note{font-size:10.5px;margin-top:6px}
-    .ui-test .btn-row{grid-template-columns:repeat(4,minmax(0,1fr));position:sticky;bottom:0;z-index:20;padding:8px;margin:0 -16px -16px;background:rgba(246,247,248,.92);backdrop-filter:blur(8px);border-top:1px solid #e2e8f0}
+    .ui-test .btn-row{display:none}
     .ui-test .btn-row button{min-height:38px;padding:9px 10px;font-size:12px}
     .ui-test .btn-primary{background:#0f172a}
     .ui-test .btn-secondary{background:#e8eef5}
@@ -565,7 +584,7 @@
     .quote-total-hero .vat-small{margin-top:8px;font-size:13px;font-weight:850;color:#dbeafe;text-align:right}
     .vat-breakdown{border:1.5px solid #d9dee7;border-radius:10px;background:#fff;padding:8px 12px}
     .ui-test #vatRows{display:none}
-    .ui-test #labelsBox{padding:10px 12px}
+    .ui-test #labelsBox{display:none;padding:10px 12px}
     .ui-test #labelsBox .muted-box-title{margin-bottom:8px}
     .labels-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
     .label-title-toggle{height:30px;padding:0 12px;border:1.5px solid var(--border-strong);border-radius:8px;background:#111;color:#fff;font-size:12px;font-weight:900;line-height:1}
@@ -577,12 +596,13 @@
     .ui-test #labelsBox .field label{font-size:10px;margin-bottom:4px}
     .ui-test #labelsBox .field input,.ui-test #labelsBox .field select{height:34px;padding:7px 9px}
     .ui-test #labelsBox button{padding:9px 10px;font-size:12px}
+    .ui-test .checklist-job-panel{display:none}
     .sheet-part-editor{position:relative}
     .sheet-part-editor-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
     .sheet-part-editor .field{min-width:0}
     @media (min-width:1180px){
       .ui-test .grid{grid-template-columns:minmax(760px,1.2fr) minmax(390px,.68fr)}
-      .ui-test #quoteArea{position:sticky;top:16px}
+      .ui-test #quoteArea{position:sticky;top:50px}
     }
     @media (max-width:980px){
       .material-editor{grid-template-columns:1fr}
@@ -604,6 +624,9 @@
       }
     }
     @media (max-width:620px){
+      .app-command-bar{position:static;padding:8px;gap:6px}
+      .command-qr-status{order:9;width:100%;max-width:none;margin-left:0}
+      .command-menu-panel{position:fixed;left:8px;right:8px;top:auto}
       .editor-section-grid,.editor-section-grid.three{grid-template-columns:1fr}
       .ui-test .dimension-head,.ui-test .dimension-item{min-width:760px}
       .ui-test .btn-row{grid-template-columns:1fr}
@@ -613,7 +636,7 @@
     @media print{
       @page{margin:10mm}
       body{background:#fff}.wrap{padding:0}
-      .hero,.left-panel,.btn-row,.msg,.remove-btn,#addMaterialBtn,.print-note,.card:first-child{display:none !important}
+      .hero,.left-panel,.app-command-bar,.btn-row,.msg,.remove-btn,#addMaterialBtn,.print-note,.card:first-child{display:none !important}
       .grid{display:block}.card{box-shadow:none;border:none}.card-body{padding:0}.quote-print-header{display:block}
       .mini-card,.meta-box,.highlight,.sheet-visual{break-inside:avoid}
     }
@@ -637,6 +660,50 @@
             <button class="top-tab" id="toolpathsTabBtn" type="button">Toolpaths</button>
             <button class="top-tab" id="manualTabBtn" type="button">Manual</button>
           </div>
+        </div>
+        <div class="app-command-bar" aria-label="Main command bar">
+          <button class="command-primary" id="toolbarCalculateBtn" type="button">Calculate</button>
+          <details class="command-menu">
+            <summary>File</summary>
+            <div class="command-menu-panel">
+              <button type="button" data-command-click="saveQuoteBtn">Save Quote</button>
+              <button type="button" data-command-click="loadQuoteBtn">Load Quote</button>
+              <button type="button" data-command-click="downloadDxfBtn">Save DXF by Thickness</button>
+              <button type="button" data-command-click="resetBtn">Reset</button>
+            </div>
+          </details>
+          <details class="command-menu">
+            <summary>Edit</summary>
+            <div class="command-menu-panel">
+              <button type="button" id="toolbarUndoBtn">Undo Ctrl+Z</button>
+              <button type="button" id="toolbarRedoBtn">Redo Ctrl+Y</button>
+            </div>
+          </details>
+          <details class="command-menu">
+            <summary>View</summary>
+            <div class="command-menu-panel">
+              <button class="command-hide-values" id="hideValuesBtn" type="button" aria-pressed="false">Hide Values</button>
+              <button type="button" id="showLabelsSettingsBtn">Label Settings</button>
+            </div>
+          </details>
+          <details class="command-menu">
+            <summary>Print</summary>
+            <div class="command-menu-panel">
+              <button type="button" data-command-click="printBtn">Print / Save PDF</button>
+              <button type="button" data-command-click="printLabelsBtn">Print CNC Labels</button>
+              <button type="button" data-command-click="printSprayLabelsBtn">Print Spray Labels</button>
+              <button type="button" data-command-click="printLabelTestBtn">Print Label Test</button>
+            </div>
+          </details>
+          <details class="command-menu">
+            <summary>Checklist</summary>
+            <div class="command-menu-panel">
+              <button type="button" data-command-click="saveChecklistJobBtn">Checklist QR</button>
+              <button type="button" data-command-click="createChecklistTxtBtn">Create Checklist</button>
+            </div>
+          </details>
+          <button class="pocket-title-toggle off" id="toolbarRoundBtn" type="button" aria-pressed="false">Round?</button>
+          <div class="command-qr-status" id="toolbarJobStatus">Checklist QR: calculate first</div>
         </div>
         <div class="card-body">
           <div class="muted-box template-panel" id="templatesPanel">
@@ -904,7 +971,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card quote-card">
         <div class="card-body" id="quoteArea">
           <div class="quote-print-header">
             <img class="quote-print-logo" src="https://fastcnc.co.uk/wp-content/uploads/2024/11/logo-header.png" alt="FAST CNC logo">
@@ -1024,11 +1091,11 @@
             <div class="field"><label>Material</label><select class="material"></select></div>
             <div class="field"><label>Thickness</label><select class="thickness"></select></div>
             <div class="field"><label>Size</label><select class="size"><option value="8x4">8x4 -> 2440mm x 1220mm</option><option value="10x4">10x4 -> 3050mm x 1220mm</option><option value="10x5">10x5 -> 3050mm x 1525mm</option><option value="jumbo">Jumbo -> 2800mm x 2070mm</option></select><div class="hint">The chosen X size is now respected in the calculation.</div></div>
-            <div class="field"><label>Material Cost (&pound;)</label><input class="materialCost" type="text" value="15"><div class="hint materialCostHint">Editable. You can overwrite the automatic price.</div></div>
-            <div class="field"><label>CNC Service (&pound;)</label><input class="cncServiceCost" type="number" min="0" step="1" value="85"><div class="hint">Editable cutting/service charge for this material block.</div></div>
-            <div class="field"><label>CNC With Pocket (&pound;)</label><input class="effectiveCncServiceCost" type="text" value="85" readonly><div class="hint">Shows CNC after extra processes, drilling, and pocketing.</div></div>
-            <div class="field inline-control"><label>Time (&pound;250/hr)</label><input class="timeMinutes" type="number" min="0" step="1" value="0"></div>
-            <div class="sheet-price-editor"></div>
+            <div class="field price-only"><label>Material Cost (&pound;)</label><input class="materialCost" type="text" value="15"><div class="hint materialCostHint">Editable. You can overwrite the automatic price.</div></div>
+            <div class="field price-only"><label>CNC Service (&pound;)</label><input class="cncServiceCost" type="number" min="0" step="1" value="85"><div class="hint">Editable cutting/service charge for this material block.</div></div>
+            <div class="field price-only"><label>CNC With Pocket (&pound;)</label><input class="effectiveCncServiceCost" type="text" value="85" readonly><div class="hint">Shows CNC after extra processes, drilling, and pocketing.</div></div>
+            <div class="field inline-control price-only"><label>Time (&pound;250/hr)</label><input class="timeMinutes" type="number" min="0" step="1" value="0"></div>
+            <div class="sheet-price-editor price-only"></div>
           </div>
         </div>
 
@@ -1036,7 +1103,7 @@
           <div class="editor-section-head"><div class="editor-section-title setup-section-title">Door Setup</div></div>
           <div class="editor-section-grid single">
             <div class="control-row primary panel-wrap-row">
-              <div class="panel-wrap-title panel-only">Panel Wrap</div>
+              <div class="panel-wrap-title panel-only">Paneling Setup</div>
               <div class="field inline-control door-only"><label>Door Type</label><select class="globalShakerType door-type-select" title="Door machining style"><option value="no">Flat</option><option value="traditional">Traditional</option><option value="flushback">Flushback</option><option value="reeded">Reeded</option></select></div>
               <div class="field inline-control"><label>Frame (mm) <span class="frameWarnMark"></span></label><input class="frameSize digits-2" type="number" min="1" step="1" value="50" title="Visible frame rail/stile width in millimetres"></div>
               <div class="field inline-control panel-only"><label>Door Side (mm)</label><input class="panelDoorAllowance" type="number" min="0" step="1" value="175"></div>
@@ -1046,7 +1113,7 @@
             </div>
             <div class="panel-setup-grid panel-only">
               <div class="panel-setup-title">Panel Setup</div>
-              <div class="field"><label>Rows</label><input class="panelRows" type="number" min="1" step="1" placeholder="Auto"></div>
+              <div class="field"><label>Shakers</label><input class="panelRows" type="number" min="1" step="1" placeholder="Auto"></div>
               <div class="field"><label>Columns</label><input class="panelColumns" type="number" min="1" step="1" placeholder="Auto"></div>
               <div class="field inline-control"><select class="panelSkirtingEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle panelSkirtingControl off" type="button" aria-pressed="false">Skirting</button></div>
               <div class="field inline-control"><button class="pocket-title-toggle panelSideRulesControl off" type="button" aria-pressed="false">Side Rules</button></div>
@@ -1062,7 +1129,7 @@
               </div>
             </div>
             <div class="wall-setup-grid panel-only">
-              <div class="wall-setup-title">Walls Setup</div>
+              <div class="wall-setup-title">Wall Setup</div>
               <div class="wall-actions">
                 <div class="field inline-control"><select class="wallEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle wallEnabledControl off" type="button" aria-pressed="false">Wall</button></div>
                 <button class="pocket-title-toggle addWallControl wall-options" type="button">+ Add Wall</button>
@@ -1188,6 +1255,7 @@
     let sheetDragState = null;
     let sheetDragSuppressUntil = 0;
     let activeCalculatorMode = 'doors';
+    let hideValuesMode = false;
     const PART_DEFAULTS = {width:'',height:'',doorType:'',shaker:'No',panels:1,panelSize:'',panelDirection:'',wallPanelDirection:'',panelRows:'',panelColumns:'',panelIrregularShape:'Yes',wallPanelOverrides:[],panelSideTop:'',panelSideRight:'',panelSideBottom:'',panelSideLeft:'',wallWidth:'',wallHeight:'',wallSections:'',wallDoorEnabled:'',wallDoorWidth:'',wallDoorHeight:'',wallDoorX:'',wallWindowEnabled:'',wallWindowWidth:'',wallWindowHeight:'',wallWindowX:'',wallWindowBottom:'',shapeType:'rectangle',leftHeight:'',rightHeight:'',hinges:'No',hingeSide:'auto',hingeOffset:100,hingeSpacing:'',pocketingEnabled:'',pocketRoundCorners:'',pocketSideMode:'',backFrameSize:'',sprayFinish:'No',spraySides:[],manualSheetIndex:'',manualSheetSize:'',manualX:'',manualY:'',manualRotated:'No',manualRotationAngle:0,text:'',quantity:1};
     const FOCUSABLE_FIELD_CLASSES = new Set(['smartTakeoffText','material','thickness','size','materialCost','cncServiceCost','globalShakerType','frameSize','reededDirection','reededSpacing','bidingMode','bidingSize','bidingClearance','bidingThickness','panelRows','panelColumns','panelShakerMode','panelShakerSize','wallWidth','wallHeight','wallPartWidth','wallPartHeight','wallSections','wallDoorWidth','wallDoorHeight','wallDoorX','wallWindowWidth','wallWindowHeight','wallWindowX','wallWindowBottom','panelDoorAllowance','panelSkirtingHeight','panelSideTop','panelSideRight','panelSideBottom','panelSideLeft','backFrameSize','extraProcess','pocketingMinutes','pocketLinePocketOffset','pocketLine6Offset','pocketLine2Offset','pocketLinePocket3Offset','pocketLineChamferOffset','pocketLineProfileOffset','pocketLinePocket2Offset','pocketLinePocket3Offset','timeMinutes','partWidth','partHeight','partDoorType','partPanelDirection','partPanels','partPanelRows','partPanelColumns','partPanelSize','partText','partQuantity','selectedPartDoorType','selectedPartPanelDirection','selectedPartLeftHeight','selectedPartRightHeight','selectedPartPanelRows','selectedPartPanelColumns','selectedPartPanelIrregular','selectedPartPanelSize','selectedPartPanels','selectedPartHingeOffset','selectedPartHingeSpacing','selectedPartBackFrameSize','selectedWallWidth','selectedWallHeight','selectedWallSections','selectedWallDoorWidth','selectedWallDoorHeight','selectedWallDoorX','selectedWallWindowWidth','selectedWallWindowHeight','selectedWallWindowX','selectedWallWindowBottom']);
     const DOOR_TYPE_OPTIONS = [
@@ -3073,6 +3141,7 @@
     }
     function materialBlockTitle(block, index){
       const role = blockRoleLabel(block);
+      if(isPanelBlock(block)) return 'Room ' + (index + 1);
       return 'Material Block ' + (index + 1) + (role ? ' - ' + role : '');
     }
     function parseTakeoffLine(line){
@@ -5934,6 +6003,27 @@
         String(item.subIndex || '') === String(sectionSubIndex || '')
       ) || null;
     }
+    function panelVirtualOverrideKey(field, sectionSubIndex=''){
+      const suffix = String(sectionSubIndex || '').toUpperCase();
+      return suffix && suffix !== 'V' ? field + suffix : field;
+    }
+    function panelVirtualOverrideValue(part, sectionIndex, sectionSubIndex, field, fallback=''){
+      if(!part || !Number.isInteger(sectionIndex)) return fallback;
+      const overrides = Array.isArray(part.wallPanelOverrides) ? (part.wallPanelOverrides[sectionIndex] || {}) : {};
+      const key = panelVirtualOverrideKey(field, sectionSubIndex);
+      return Object.prototype.hasOwnProperty.call(overrides, key) ? overrides[key] : fallback;
+    }
+    function panelVirtualEditTarget(block, part, sectionIndex, sectionSubIndex=''){
+      if(!part || !Number.isInteger(sectionIndex)) return null;
+      const targetIndex = sectionIndex;
+      const targetSubIndex = String(sectionSubIndex || '');
+      return {
+        sectionIndex:targetIndex,
+        subIndex:targetSubIndex,
+        override:wallSectionOverride(part, targetIndex),
+        instanceIndex:'0-' + targetIndex + targetSubIndex
+      };
+    }
     function panelPhysicalOverrideKey(axis, subIndex=''){
       const prefix = axis === 'height' ? 'panelHeightOverride' : 'panelWidthOverride';
       const suffix = String(subIndex || '').toUpperCase();
@@ -6101,13 +6191,17 @@
       if(!(equal > 0)) equal = inner;
       return Array.from({length:count}, ()=>roundPanelMm(equal));
     }
-    function verticalPanelTwoRowSizes(panelHeight, frame, topFrame, bottomFrame, bottomTarget){
+    function verticalPanelTwoRowSizes(panelHeight, frame, topFrame, bottomFrame, bottomTarget, requestedRows=2){
+      const rows = Math.max(1, Math.round(Number(requestedRows || 2)));
       const innerH = Math.max(0, Number(panelHeight || 0) - Number(topFrame || 0) - Number(bottomFrame || 0));
-      const openH = innerH - Number(frame || 0);
+      if(rows <= 1) return innerH > 0 ? [roundPanelMm(innerH)] : [];
+      const openH = innerH - Number(frame || 0) * Math.max(0, rows - 1);
       if(!(openH > 0)) return innerH > 0 ? [roundPanelMm(innerH)] : [];
-      const lower = roundPanelMm(Math.max(1, Math.min(Number(bottomTarget || 1), openH - 1)));
-      const upper = roundPanelMm(Math.max(1, openH - lower));
-      return [upper, lower].filter(value=>value > 0);
+      const lower = roundPanelMm(Math.max(1, Math.min(Number(bottomTarget || 1), openH - Math.max(1, rows - 1))));
+      const upperOpen = Math.max(1, openH - lower);
+      const upperCount = Math.max(1, rows - 1);
+      const upper = roundPanelMm(upperOpen / upperCount);
+      return Array.from({length:upperCount}, ()=>upper).concat([lower]).filter(value=>value > 0);
     }
     function equalShakersForSpan(inner, target, frame){
       inner = Math.max(0, Number(inner || 0));
@@ -6239,7 +6333,7 @@
       });
       return {wallMode, wallWidth, wallHeight, panelHeight, panelMaxWidth, frame, thickness, doorAllowance, door, window:windowOpening, openings, sections};
     }
-    function verticalPanelWidthPlan(block, part, layout, section, sectionIndex, rightRule, irregularShape=null, sideContext={}){
+    function verticalPanelWidthPlan(block, part, layout, section, sectionIndex, rightRule, irregularShape=null, sideContext={}, sectionSubIndex=''){
       const frame = Math.max(1, Number(layout?.frame || block?.frameSize || 80));
       const limit = panelVerticalWidthLimit(block);
       const straightJointLeft = sideContext?.straightJointLeft === true;
@@ -6254,7 +6348,7 @@
       const upperLeftFrame = stepLeft ? Math.max(leftFrame, frame) : leftFrame;
       const upperRightFrame = stepRight ? Math.max(rightFrame, frame) : rightFrame;
       const override = sectionIndex == null ? null : wallSectionOverride(part, sectionIndex);
-      const rawColumns = override?.panelColumns ?? part?.panelColumns ?? block?.panelColumns;
+      const rawColumns = (override ? override[panelVirtualOverrideKey('panelColumns', sectionSubIndex)] : undefined) ?? part?.panelColumns ?? block?.panelColumns;
       const sourceRows = Array.isArray(section?.shakerColumnWidths) ? section.shakerColumnWidths.map(roundPanelMm).filter(value=>value > 0) : [];
       const plan = panelShakerPlan(block, part, frame, Math.max(1, Number(section?.width || layout?.panelMaxWidth || limit)));
       const planTarget = Number(plan.target || averagePositive(sourceRows, PANEL_SHAKER_MAX) || PANEL_SHAKER_MAX);
@@ -6383,7 +6477,10 @@
         const verticalHeight = manualVerticalHeight !== '' ? Math.max(1, Number(manualVerticalHeight || 0)) : PANEL_VERTICAL_DEFAULT_HEIGHT;
         const displayHeight = Math.max(wallDisplayHeight, verticalHeight);
         const horizontalShakerHeight = horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame);
-        const rowSizes = verticalPanelTwoRowSizes(verticalHeight, layout.frame, topFrame, bottomFrame, horizontalShakerHeight);
+        const rowOverride = wallSectionOverride(part, sectionIndex);
+        const rawVerticalRows = rowOverride?.[panelVirtualOverrideKey('panelRows', 'v')] ?? part?.panelRows ?? block?.panelRows;
+        const verticalRowCount = rawVerticalRows === '' || rawVerticalRows == null ? 2 : Math.max(1, Math.round(Number(rawVerticalRows || 2)));
+        const rowSizes = verticalPanelTwoRowSizes(verticalHeight, layout.frame, topFrame, bottomFrame, horizontalShakerHeight, verticalRowCount);
         let hasResidual = !wallForcesVertical && logicalWidth - verticalPlan.lowerWidth > minResidual;
         if(hasResidual && (verticalPlan.rightRule !== 'joint' || verticalPlan.stepRight === false)){
           verticalPlan = makeVerticalPlan('joint', false);
@@ -6440,6 +6537,109 @@
           const rightFrame = panelSideFrameValue(residualSection.panelSideRight, layout.frame, layout.thickness, layout.doorAllowance);
           const plan = {...panelShakerPlan(block, part, layout.frame, Math.max(1, residualWidth)), target:sharedTarget, equal:true, anchored:false};
           residualSection.shakerColumnWidths = distributeShakersForSpan(residualWidth, plan, layout.frame, leftFrame, rightFrame);
+          const residualDirection = String(rowOverride?.[panelVirtualOverrideKey('panelDirection', 'r')] || 'horizontal') === 'vertical' ? 'vertical' : 'horizontal';
+          if(residualDirection === 'vertical'){
+            const residualIrregularRaw = rowOverride?.[panelVirtualOverrideKey('panelIrregularShape', 'r')];
+            const residualIrregular = residualIrregularRaw === '' || residualIrregularRaw == null
+              ? true
+              : yesNoValue(residualIrregularRaw, 'Yes') === 'Yes';
+            const residualHasProbe = residualWidth - panelVerticalWidthLimit(block) > minResidual;
+            let residualVerticalPlan = verticalPanelWidthPlan(block, part, layout, residualSection, sectionIndex, residualHasProbe ? 'joint' : residualSection.panelSideRight, residualIrregular, {
+              straightJointLeft:true,
+              straightJointRight:false
+            }, 'r');
+            const manualResidualWidth = panelPhysicalOverrideValue(part, sectionIndex, 'r', 'width');
+            if(manualResidualWidth !== ''){
+              const boundedWidth = roundPanelMm(Math.min(panelVerticalWidthLimit(block), Math.max(1, Number(manualResidualWidth || 0))));
+              residualVerticalPlan = {
+                ...residualVerticalPlan,
+                width:boundedWidth,
+                lowerWidth:roundPanelMm(Math.max(1, boundedWidth - (residualIrregular ? Number(residualVerticalPlan.stepInsetLeft || 0) + Number(residualVerticalPlan.stepInsetRight || 0) : 0)))
+              };
+            }
+            let residualHasAfter = residualWidth - residualVerticalPlan.lowerWidth > minResidual;
+            if(residualHasAfter && (residualVerticalPlan.rightRule !== 'joint' || residualVerticalPlan.stepRight === false)){
+              residualVerticalPlan = verticalPanelWidthPlan(block, part, layout, residualSection, sectionIndex, 'joint', residualIrregular, {
+                straightJointLeft:true,
+                straightJointRight:false
+              }, 'r');
+              if(manualResidualWidth !== ''){
+                const boundedWidth = roundPanelMm(Math.min(panelVerticalWidthLimit(block), Math.max(1, Number(manualResidualWidth || 0))));
+                residualVerticalPlan = {
+                  ...residualVerticalPlan,
+                  width:boundedWidth,
+                  lowerWidth:roundPanelMm(Math.max(1, boundedWidth - (residualIrregular ? Number(residualVerticalPlan.stepInsetLeft || 0) + Number(residualVerticalPlan.stepInsetRight || 0) : 0)))
+                };
+              }
+              residualHasAfter = residualWidth - residualVerticalPlan.lowerWidth > minResidual;
+            }
+            const manualResidualHeight = panelPhysicalOverrideValue(part, sectionIndex, 'r', 'height');
+            const residualVerticalHeight = manualResidualHeight !== '' ? Math.max(1, Number(manualResidualHeight || 0)) : PANEL_VERTICAL_DEFAULT_HEIGHT;
+            const residualDisplayHeight = Math.max(displayHeight, residualVerticalHeight);
+            const rawResidualRows = rowOverride?.[panelVirtualOverrideKey('panelRows', 'r')] ?? part?.panelRows ?? block?.panelRows;
+            const residualRowCount = rawResidualRows === '' || rawResidualRows == null ? 2 : Math.max(1, Math.round(Number(rawResidualRows || 2)));
+            const residualRowSizes = verticalPanelTwoRowSizes(residualVerticalHeight, layout.frame, topFrame, bottomFrame, horizontalShakerHeight, residualRowCount);
+            const residualColumnWidths = residualVerticalPlan.columnWidths.length ? residualVerticalPlan.columnWidths : distributeShakersForSpan(residualVerticalPlan.width, {target:sharedTarget, equal:true}, layout.frame, residualVerticalPlan.leftFrame, residualVerticalPlan.rightFrame);
+            const residualVerticalSection = {
+              ...residualSection,
+              width:residualVerticalPlan.width,
+              panelSideLeft:'joint',
+              panelSideRight:residualHasAfter ? 'joint' : residualSection.panelSideRight,
+              shakerColumnWidths:residualColumnWidths
+            };
+            out.push(applyPanelPhysicalOverrides(part, {
+              section:residualVerticalSection,
+              sourceSection:residualSection,
+              sectionIndex,
+              subIndex:'r',
+              labelSuffix:'V',
+              columnWidths:residualColumnWidths,
+              rowHeights:residualRowSizes,
+              irregularShape:residualIrregular,
+              verticalStepFrame:residualIrregular && (residualVerticalPlan.stepLeft || residualVerticalPlan.stepRight),
+              verticalStepHeight:roundPanelMm(Number(layout.panelHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT)),
+              verticalStepLeft:residualIrregular && residualVerticalPlan.stepLeft,
+              verticalStepRight:residualIrregular && residualVerticalPlan.stepRight,
+              verticalStepInsetLeft:residualIrregular ? residualVerticalPlan.stepInsetLeft : 0,
+              verticalStepInsetRight:residualIrregular ? residualVerticalPlan.stepInsetRight : 0,
+              physical:{
+                xStart:roundPanelMm(residualXStart - (residualIrregular ? Number(residualVerticalPlan.stepInsetLeft || 0) : 0)),
+                yStart:roundPanelMm(Math.max(0, residualDisplayHeight - residualVerticalHeight)),
+                width:roundPanelMm(residualVerticalPlan.width),
+                height:roundPanelMm(residualVerticalHeight),
+                direction:'vertical'
+              }
+            }));
+            const afterXStart = roundPanelMm(residualXStart + residualVerticalPlan.lowerWidth);
+            const afterWidth = roundPanelMm(residualWidth - residualVerticalPlan.lowerWidth);
+            if(residualHasAfter){
+              const afterSection = {
+                ...residualSection,
+                xStart:afterXStart,
+                width:afterWidth,
+                panelSideLeft:'joint',
+                panelSideRight:residualSection.panelSideRight
+              };
+              const afterLeftFrame = panelSideFrameValue(afterSection.panelSideLeft, layout.frame, layout.thickness, layout.doorAllowance);
+              const afterRightFrame = panelSideFrameValue(afterSection.panelSideRight, layout.frame, layout.thickness, layout.doorAllowance);
+              afterSection.shakerColumnWidths = distributeShakersForSpan(afterWidth, {...plan, target:sharedTarget, equal:true, anchored:false}, layout.frame, afterLeftFrame, afterRightFrame);
+              out.push(applyPanelPhysicalOverrides(part, {
+                section:afterSection,
+                sourceSection:afterSection,
+                sectionIndex,
+                subIndex:'rr',
+                labelSuffix:'R',
+                physical:{
+                  xStart:afterSection.xStart,
+                  yStart:roundPanelMm(Math.max(0, residualDisplayHeight - Number(layout.panelHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT))),
+                  width:afterWidth,
+                  height:roundPanelMm(Number(layout.panelHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT)),
+                  direction:'horizontal'
+                }
+              }));
+            }
+            return;
+          }
           const residualItem = {
             section:residualSection,
             sourceSection:residualSection,
@@ -7332,6 +7532,8 @@
       if(serviceBox && serviceHome && serviceBox.closest('#materialsContainer')) serviceHome.appendChild(serviceBox);
       container.innerHTML = '';
       ensureActiveModeBlock();
+      const addButton = document.getElementById('addMaterialBtn');
+      if(addButton) addButton.textContent = activeCalculatorMode === 'panel' ? '+ Add Next Room' : '+ Add Next Material';
       const visibleBlocks = blocks.filter(block=>calcModeForBlock(block) === activeCalculatorMode);
       if(visibleBlocks.length && !allowAllBlocksCollapsed && !visibleBlocks.some(block=>block.editorOpen)) visibleBlocks[0].editorOpen = true;
       visibleBlocks.forEach((block, idx)=>{
@@ -7378,9 +7580,9 @@
         populateDoorTypeSelect(doorTypeSelect, block.globalShakerType);
         const panelMode = isPanelBlock(block);
         const setupTitle = node.querySelector('.setup-section-title');
-        if(setupTitle) setupTitle.textContent = panelMode ? 'Panneling Setup' : 'Door Setup';
+        if(setupTitle) setupTitle.textContent = panelMode ? 'Room Setup' : 'Door Setup';
         const panelsHead = node.querySelector('.panels-head');
-        if(panelsHead) panelsHead.textContent = panelMode ? 'Rows / Columns' : 'Panels';
+        if(panelsHead) panelsHead.textContent = panelMode ? 'Shakers / Columns' : 'Panels';
         const doorTypeHead = node.querySelector('.door-type-head');
         if(doorTypeHead) doorTypeHead.textContent = panelMode ? 'Orientation' : 'Door Type';
         const frameHint = node.querySelector('.frameHint');
@@ -8110,7 +8312,7 @@
             <div class="dimension-cell width-cell" data-label="Width"><input class="partWidth" type="number" min="0" step="1"></div>
             <div class="dimension-cell height-cell" data-label="Height"><input class="partHeight" type="number" min="0" step="1"></div>
             <div class="dimension-cell door-type-cell" data-label="${panelMode ? 'Orientation' : 'Door Type'}">${panelMode ? '<select class="partPanelDirection"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select>' : '<select class="partDoorType">'+doorTypeOptionsHtml(block, rowDoorType)+'</select>'}</div>
-            <div class="dimension-cell panels-cell" data-label="${panelMode ? 'Rows / Columns' : 'Panels'}">${panelMode ? '<div class="row-col-inputs"><input class="partPanelRows" type="number" min="1" max="999" step="1" placeholder="Rows"><input class="partPanelColumns" type="number" min="1" max="999" step="1" placeholder="Cols"></div>' : '<input class="partPanels" type="number" min="1" max="999" step="1">'}</div>
+            <div class="dimension-cell panels-cell" data-label="${panelMode ? 'Shakers / Columns' : 'Panels'}">${panelMode ? '<div class="row-col-inputs"><input class="partPanelRows" type="number" min="1" max="999" step="1" placeholder="Shakers"><input class="partPanelColumns" type="number" min="1" max="999" step="1" placeholder="Cols"></div>' : '<input class="partPanels" type="number" min="1" max="999" step="1">'}</div>
             <div class="dimension-cell panel-size-cell" data-label="Panel Size"><input class="partPanelSize" type="number" min="0" step="1" placeholder="Auto"></div>
             <div class="dimension-cell hinges-cell" data-label="Hinges"><select class="partHinges sr-only"><option value="No">No</option><option value="Yes">Yes</option></select><button class="pocket-title-toggle tiny-toggle partHingesControl off" type="button" aria-pressed="false">Hinges</button></div>
             <div class="dimension-cell text-cell" data-label="Text"><input class="partText" type="text"></div>
@@ -8174,12 +8376,16 @@
             row.querySelector('.partPanelDirection').addEventListener('change', e=>{
               const nextDirection = e.target.value === 'vertical' ? 'vertical' : 'horizontal';
               if(virtual){
+                const directionTarget = panelVirtualEditTarget(block, sourcePart, sectionIndex, subIndex);
+                const targetOverride = directionTarget?.override || sectionOverride;
+                const directionKey = panelVirtualOverrideKey('panelDirection', directionTarget?.subIndex || subIndex || '');
+                const irregularKey = panelVirtualOverrideKey('panelIrregularShape', directionTarget?.subIndex || subIndex || '');
                 recordHistory('changed panel direction');
-                sectionOverride.panelDirection = nextDirection;
-                if(nextDirection === 'vertical' && (sectionOverride.panelIrregularShape === '' || sectionOverride.panelIrregularShape == null)){
-                  sectionOverride.panelIrregularShape = 'Yes';
+                targetOverride[directionKey] = nextDirection;
+                if(nextDirection === 'vertical' && (targetOverride[irregularKey] === '' || targetOverride[irregularKey] == null)){
+                  targetOverride[irregularKey] = 'Yes';
                 }
-                selectedSheetPart = {blockId:String(block.id), partIndex:String(pIdx), instanceIndex:'0-' + sectionIndex + (subIndex || '')};
+                selectedSheetPart = {blockId:String(block.id), partIndex:String(pIdx), instanceIndex:directionTarget?.instanceIndex || ('0-' + sectionIndex + (subIndex || ''))};
                 lastCalculation = null;
               } else {
                 setPartValue(block, pIdx, 'panelDirection', nextDirection);
@@ -8197,14 +8403,14 @@
             row.querySelector('.partPanelRows').addEventListener('input', e=>{
               const raw = e.target.value;
               const value = raw === '' ? '' : Math.max(1, Math.round(Number(raw || 1)));
-              if(virtual){ recordHistory('changed panel rows'); sectionOverride.panelRows = value; lastCalculation = null; }
+              if(virtual){ recordHistory('changed panel rows'); sectionOverride[panelVirtualOverrideKey('panelRows', subIndex || '')] = value; lastCalculation = null; }
               else setPartValue(block, pIdx, 'panelRows', value);
               updatePreview();
             });
             row.querySelector('.partPanelColumns').addEventListener('input', e=>{
               const raw = e.target.value;
               const value = raw === '' ? '' : Math.max(1, Math.round(Number(raw || 1)));
-              if(virtual){ recordHistory('changed panel columns'); sectionOverride.panelColumns = value; lastCalculation = null; }
+              if(virtual){ recordHistory('changed panel columns'); sectionOverride[panelVirtualOverrideKey('panelColumns', subIndex || '')] = value; lastCalculation = null; }
               else setPartValue(block, pIdx, 'panelColumns', value);
               updatePreview();
             });
@@ -10437,9 +10643,16 @@
       const wallDoorOn = wallDoor.enabled;
       const wallWindowOn = wallWindow.enabled;
       const selectedPanelDirection = selectedPanelItem?.physical?.direction || panelDirectionForPart(part, found.block, selectedSectionIndex);
-      const selectedPanelRowsValue = selectedSectionOverride && selectedSectionOverride.panelRows !== '' && selectedSectionOverride.panelRows != null ? selectedSectionOverride.panelRows : panelRowsValue;
-      const selectedPanelColumnsValue = selectedSectionOverride && selectedSectionOverride.panelColumns !== '' && selectedSectionOverride.panelColumns != null ? selectedSectionOverride.panelColumns : panelColumnsValue;
-      const selectedPanelIrregularOn = panelIrregularShapeForPart(part, found.block, selectedSectionIndex);
+      const selectedPanelRowsOverride = selectedSectionOverride ? panelVirtualOverrideValue(part, selectedSectionIndex, selectedSectionSubIndex, 'panelRows', undefined) : undefined;
+      const selectedPanelColumnsOverride = selectedSectionOverride ? panelVirtualOverrideValue(part, selectedSectionIndex, selectedSectionSubIndex, 'panelColumns', undefined) : undefined;
+      const selectedPanelIrregularOverride = selectedSectionOverride ? panelVirtualOverrideValue(part, selectedSectionIndex, selectedSectionSubIndex, 'panelIrregularShape', undefined) : undefined;
+      const selectedPanelRowsValue = selectedPanelRowsOverride !== '' && selectedPanelRowsOverride != null
+        ? selectedPanelRowsOverride
+        : (selectedPanelItem?.rowHeights?.length ? selectedPanelItem.rowHeights.length : panelRowsValue);
+      const selectedPanelColumnsValue = selectedPanelColumnsOverride !== '' && selectedPanelColumnsOverride != null ? selectedPanelColumnsOverride : panelColumnsValue;
+      const selectedPanelIrregularOn = selectedPanelIrregularOverride !== undefined && selectedPanelIrregularOverride !== ''
+        ? yesNoValue(selectedPanelIrregularOverride, 'No') === 'Yes'
+        : panelIrregularShapeForPart(part, found.block, selectedSectionIndex);
       const selectedPanelSideValue = side=>{
         const key = 'panelSide' + side.charAt(0).toUpperCase() + side.slice(1);
         return selectedSectionOverride?.[key] || part[key] || found.block[key];
@@ -10454,11 +10667,11 @@
             <div class="field selected-height-field"><label>Right height</label><input class="selectedPartRightHeight" type="number" min="0" step="1" value="${escapeHtml(shape === 'sloped' ? side.right : height)}"></div>
             ${panelEditor ? `
             <div class="selected-editor-section panel-selected-setup">
-              <div class="selected-editor-section-title"><span>Rows / Columns</span></div>
+              <div class="selected-editor-section-title"><span>Shakers / Columns</span></div>
               <div class="selected-editor-subgrid tight selected-panel-options show">
                 <div class="field"><label>Orientation</label><select class="selectedPartPanelDirection"${wallForcesVertical ? ' disabled' : ''}><option value="horizontal"${selectedPanelDirection==='horizontal'?' selected':''}>Horizontal</option><option value="vertical"${selectedPanelDirection==='vertical'?' selected':''}>Vertical</option></select></div>
                 <div class="field inline-control selected-irregular-field ${selectedPanelDirection==='vertical' ? 'show' : ''}"><label>Shape</label><button class="pocket-title-toggle tiny-toggle selectedPartPanelIrregular ${selectedPanelIrregularOn ? '' : 'off'}" type="button" aria-pressed="${selectedPanelIrregularOn ? 'true' : 'false'}"${wallForcesVertical ? ' disabled' : ''}>Irregular Shape</button></div>
-                <div class="field"><label>Rows</label><input class="selectedPartPanelRows" type="number" min="1" step="1" placeholder="Auto" value="${escapeHtml(selectedPanelRowsValue)}"${wallForcesVertical ? ' disabled' : ''}></div>
+                <div class="field"><label>Shakers</label><input class="selectedPartPanelRows" type="number" min="1" step="1" placeholder="Auto" value="${escapeHtml(selectedPanelRowsValue)}"${wallForcesVertical ? ' disabled' : ''}></div>
                 <div class="field"><label>Columns</label><input class="selectedPartPanelColumns" type="number" min="1" step="1" placeholder="Auto" value="${escapeHtml(selectedPanelColumnsValue)}"></div>
               </div>
             </div>
@@ -10933,6 +11146,7 @@
       const part = block.parts[partIndex];
       const editorSectionRaw = editor.dataset.editorSectionIndex;
       const editorSectionIndex = editorSectionRaw === '' || editorSectionRaw == null ? null : Number(editorSectionRaw);
+      const editorSectionSubIndex = editor.dataset.editorSectionSubIndex || '';
       const editorSectionOverride = Number.isInteger(editorSectionIndex) ? wallSectionOverride(part, editorSectionIndex) : null;
       const clampHeight = value=>Math.max(0, Math.min(Math.max(0, Number(part.height || 0)), Number(value || 0)));
       const renderOnCommit = input=>input?.addEventListener('change', ()=>requestRender());
@@ -11037,7 +11251,7 @@
         const value = raw === '' ? '' : Math.max(1, Math.round(Number(raw || 1)));
         if(editorSectionOverride){
           recordHistory('changed panel rows');
-          editorSectionOverride.panelRows = value;
+          editorSectionOverride[panelVirtualOverrideKey('panelRows', editorSectionSubIndex)] = value;
           lastCalculation = null;
         } else {
           setPartValue(block, partIndex, 'panelRows', value);
@@ -11049,7 +11263,7 @@
         const value = raw === '' ? '' : Math.max(1, Math.round(Number(raw || 1)));
         if(editorSectionOverride){
           recordHistory('changed panel columns');
-          editorSectionOverride.panelColumns = value;
+          editorSectionOverride[panelVirtualOverrideKey('panelColumns', editorSectionSubIndex)] = value;
           lastCalculation = null;
         } else {
           setPartValue(block, partIndex, 'panelColumns', value);
@@ -11059,11 +11273,16 @@
       selectedDirectionInput?.addEventListener('change', e=>{
         const next = String(e.target.value || 'horizontal') === 'vertical' ? 'vertical' : 'horizontal';
         if(editorSectionOverride){
+          const directionTarget = panelVirtualEditTarget(block, part, editorSectionIndex, editorSectionSubIndex);
+          const targetOverride = directionTarget?.override || editorSectionOverride;
+          const directionKey = panelVirtualOverrideKey('panelDirection', directionTarget?.subIndex || editorSectionSubIndex);
+          const irregularKey = panelVirtualOverrideKey('panelIrregularShape', directionTarget?.subIndex || editorSectionSubIndex);
           recordHistory('changed panel direction');
-          editorSectionOverride.panelDirection = next;
-          if(next === 'vertical' && (editorSectionOverride.panelIrregularShape === '' || editorSectionOverride.panelIrregularShape == null)){
-            editorSectionOverride.panelIrregularShape = 'Yes';
+          targetOverride[directionKey] = next;
+          if(next === 'vertical' && (targetOverride[irregularKey] === '' || targetOverride[irregularKey] == null)){
+            targetOverride[irregularKey] = 'Yes';
           }
+          selectedSheetPart = {blockId:String(block.id), partIndex:String(partIndex), instanceIndex:directionTarget?.instanceIndex || ('0-' + editorSectionIndex + editorSectionSubIndex)};
           lastCalculation = null;
         } else {
           setPartValue(block, partIndex, 'panelDirection', next);
@@ -11079,7 +11298,7 @@
           setToggleButtonValue(irregularButton, value);
           if(editorSectionOverride){
             recordHistory('changed vertical panel shape');
-            editorSectionOverride.panelIrregularShape = value;
+            editorSectionOverride[panelVirtualOverrideKey('panelIrregularShape', editorSectionSubIndex)] = value;
             lastCalculation = null;
           } else {
             setPartValue(block, partIndex, 'panelIrregularShape', value);
@@ -12829,22 +13048,26 @@
       if(!lastCalculation){
         el.className = 'job-qr-empty';
         el.textContent = 'Calculate Price to create job QR.';
+        updateToolbarJobStatus('Checklist QR: calculate first');
         return;
       }
       const payload = buildMasterJobQrPayload();
       if(!payload){
         el.className = 'job-qr-empty';
         el.textContent = 'Add part dimensions to create job QR.';
+        updateToolbarJobStatus('Checklist QR: add parts first');
         return;
       }
       try{
         el.className = 'job-qr-code';
         el.innerHTML = createMasterJobQrSvg(payload);
         el.dataset.payload = payload;
+        updateToolbarJobStatus('Checklist QR ready: ' + buildChecklistJobPayload().pieces.length + ' parts');
       }catch(error){
         console.error(error);
         el.className = 'job-qr-error';
         el.textContent = 'This job is too large for one QR. Use Save Checklist Job.';
+        updateToolbarJobStatus('Checklist QR: use checklist file');
       }
     }
     async function saveChecklistJobFile(){
@@ -13305,6 +13528,7 @@
       applySprayPayload(null);
       quoteRoundEnabled = false;
       setToggleButtonValue(document.getElementById('roundQuoteBtn'), 'No');
+      syncToolbarState();
       document.getElementById('loadQuoteFile').value='';
       document.getElementById('quoteNumber').textContent='EDNEI160426';
       document.getElementById('quoteDate').textContent='--';
@@ -13342,14 +13566,67 @@
       }
       if(options) options.classList.toggle('show', labelsEnabled);
     }
+    function setHideValuesMode(value){
+      hideValuesMode = !!value;
+      document.body.classList.toggle('values-hidden', hideValuesMode);
+      const btn = document.getElementById('hideValuesBtn');
+      if(btn){
+        btn.classList.toggle('active', hideValuesMode);
+        btn.setAttribute('aria-pressed', hideValuesMode ? 'true' : 'false');
+        btn.textContent = hideValuesMode ? 'Show Values' : 'Hide Values';
+      }
+    }
+    function syncToolbarState(){
+      const roundBtn = document.getElementById('toolbarRoundBtn');
+      if(roundBtn) setToggleButtonValue(roundBtn, quoteRoundEnabled ? 'Yes' : 'No');
+      setHideValuesMode(hideValuesMode);
+    }
+    function updateToolbarJobStatus(text){
+      const el = document.getElementById('toolbarJobStatus');
+      if(el) el.textContent = text || 'Checklist QR: calculate first';
+    }
+    function closeCommandMenus(except=null){
+      document.querySelectorAll('.command-menu[open]').forEach(menu=>{
+        if(menu !== except) menu.removeAttribute('open');
+      });
+    }
 
     document.getElementById('addMaterialBtn').addEventListener('click', ()=>{recordHistory('added material block'); addManualBlock();});
     document.getElementById('addTemplateBtn').addEventListener('click', addDoorTemplateFromFile);
     document.getElementById('addOffcutTemplateBtn').addEventListener('click', addOffcutTemplateFromFile);
     document.getElementById('downloadTemplateExampleBtn').addEventListener('click', downloadExampleTemplate);
     document.getElementById('calculateBtn').addEventListener('click', ()=>{ calculateAll(); });
+    document.getElementById('toolbarCalculateBtn')?.addEventListener('click', ()=>{ calculateAll(); closeCommandMenus(); });
+    document.querySelectorAll('[data-command-click]').forEach(button=>{
+      button.addEventListener('click', ()=>{
+        const target = document.getElementById(button.dataset.commandClick || '');
+        if(target) target.click();
+        closeCommandMenus();
+      });
+    });
+    document.getElementById('toolbarUndoBtn')?.addEventListener('click', ()=>{ undoHistory(); closeCommandMenus(); });
+    document.getElementById('toolbarRedoBtn')?.addEventListener('click', ()=>{ redoHistory(); closeCommandMenus(); });
+    document.getElementById('hideValuesBtn')?.addEventListener('click', ()=>{ setHideValuesMode(!hideValuesMode); closeCommandMenus(); });
+    document.getElementById('showLabelsSettingsBtn')?.addEventListener('click', ()=>{
+      const box = document.getElementById('labelsBox');
+      if(box){
+        box.style.display = box.style.display === 'block' ? '' : 'block';
+        setLabelsEnabled(true);
+        box.scrollIntoView({block:'center', behavior:'smooth'});
+      }
+      closeCommandMenus();
+    });
+    document.querySelectorAll('.command-menu').forEach(menu=>{
+      menu.addEventListener('toggle', ()=>{ if(menu.open) closeCommandMenus(menu); });
+    });
     bindToggleButton(document.getElementById('roundQuoteBtn'), 'No', value=>{
       quoteRoundEnabled = value === 'Yes';
+      lastCalculation = null;
+      syncToolbarState();
+    });
+    bindToggleButton(document.getElementById('toolbarRoundBtn'), 'No', value=>{
+      quoteRoundEnabled = value === 'Yes';
+      setToggleButtonValue(document.getElementById('roundQuoteBtn'), value);
       lastCalculation = null;
     });
     document.getElementById('saveQuoteBtn').addEventListener('click', saveQuoteToFile);
