@@ -1,0 +1,19 @@
+# Generated exports and local artifacts
+*.dxf
+*.nc
+*.pdf
+*.zip
+*.fastcnc.json
+downloads/
+exports/
+
+# Dependency/build folders if the single-file app is ever split later
+node_modules/
+dist/
+build/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak

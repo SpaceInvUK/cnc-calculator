@@ -1,0 +1,307 @@
+﻿CNC CALCULATOR HANDOFF - REGRAS, ESTADO ATUAL E PENDENCIAS
+Data: 18 May 2026
+Atualizado: 19 May 2026
+Arquivo principal em uso: C:\Users\ednei\Documents\CNC App\Cnc Calculator UI Test.html
+
+IMPORTANTE
+- Este eh o arquivo de teste ativo.
+- Nao mexer no Cnc Calculator 1.0.html ate o usuario pedir explicitamente.
+- Nao fazer deploy no Netlify ate o usuario pedir explicitamente.
+- O Browser do Codex pode bloquear QA visual direto em file://. Se acontecer, validar com Node/JS e testar visualmente abrindo/atualizando o HTML manualmente no browser.
+
+ATUALIZACAO PANNELING - 19 May 2026
+- O projeto agora esta preparado como repositorio Git local.
+- README.md explica como abrir localmente e como publicar no GitHub/GitHub Pages.
+- docs/PANNELING_IMPLEMENTATION_2026-05-19.md registra o que foi feito e os testes.
+- Wall Setup ganhou Panel Orientation por wall.
+- Quando uma wall esta em Vertical, todos os panels daquela wall viram verticais.
+- Essa orientacao vertical por wall nao altera as outras walls.
+- Vertical por wall usa regular shape por default.
+- Vertical por wall usa 2 shaker rows por coluna.
+- Vertical individual ainda funciona em Part Dimensions e muda somente o panel selecionado.
+- Vertical individual pode ligar/desligar Irregular Shape.
+- Panel vertical tem altura padrao exata de 3000mm.
+- Panel vertical tem largura maxima de 1206mm.
+- O shaker inferior do panel vertical segue o tamanho do shaker horizontal quando possivel.
+- O shaker superior ocupa o restante da abertura, respeitando frame.
+- Nao deve aparecer label lower ou combined.
+- Residual horizontal vira panel normal: P3, P4 etc.
+- Merge horizontal so acontece se as pecas tocarem e a largura combinada for no maximo 1440mm.
+- Window default agora eh 1100mm de altura.
+- Se Door e Window estiverem ON e Window X vazio, Window tenta ficar afastada da Door.
+- Preview da wall, nesting/sheet e labels usam o mesmo nome Wall N - P...
+- QA feito com 3 walls, 4 walls, vertical wall, vertical individual, irregular ON/OFF, door/window, shaker Auto/Lock e Calculate Price.
+- Erro conhecido fora deste passe: QR library is not loaded.
+
+O QUE ESSE APP EH
+Eh uma calculadora/gerador para trabalhos CNC da FastCNC. Ela calcula materiais, CNC service, pocketing, drilling, spray, labels, DXF, NC/toolpaths, checklist por QR Code, doors e panneling/walls.
+O app esta ficando grande, entao a direcao atual eh organizar tudo em abas/secoes: Doors, Panneling, DXF Templates, Toolpath/NC, Checklist/Labels.
+
+REGRAS GERAIS
+- Sempre respeitar 7mm de margem externa da sheet e 7mm entre pecas.
+- Back sheet do pocket nao respeita o espacamento de 7mm entre pecas; back pode tocar peca com peca.
+- Alteracoes manuais devem ser respeitadas.
+- Quando algo calculado automaticamente for sobrescrever ajuste manual, precisa avisar ou confirmar.
+- Valores editaveis nao podem travar quando o campo fica vazio; vazio temporario deve ser aceito durante digitacao.
+- Inputs nao devem pular ou perder foco enquanto o usuario digita.
+- On/off buttons devem seguir o estilo mais recente: a propria palavra vira botao, com estado ativo colorido/preto e inativo mais claro.
+- O layout mobile e desktop precisam ser limpos; ha muita coisa, entao secoes devem ficar agrupadas e colapsadas quando possivel.
+
+PRICING
+- Extra Processes, Drilling e Pocketing sao porcentagens sobre CNC Service, nunca sobre valor da sheet.
+- VAT eh 20% padrao.
+- O resultado deve mostrar Total Ex VAT em destaque, e Total Inc VAT menor abaixo.
+- Total final pode arredondar para acabar em 0 ou 5, ajustando levemente valores sem mostrar o processo.
+- Sheets incompletas podem ser cobradas como full, 2/3 ou 1/3.
+- A cobranca de 1/3 ou 2/3 deve considerar o maior retangulo/offcut real de uma unica sheet, nao soma de sobras pequenas.
+- Interior de frame nao deve ser descontado como material perdido se ainda faz parte do uso/cobranca conforme regra definida.
+- Individual Price per Sheet deve permitir por sheet: preco, charge type full/2/3/1/3, e CNC service individual.
+- Se Material Cost principal for alterado depois dos precos individuais, os individuais resetam automaticamente.
+- Nao mostrar offcut 786 x 626 no editor de preco; mostrar so full sheet, 2/3 sheet ou 1/3 sheet.
+
+DOORS
+- Door types: Flat, Traditional, Flushback, Reeded, custom DXF templates.
+- Cada parte pode ter door type individual em Part Dimensions.
+- Text shortcuts:
+  - D + Enter = Door
+  - E + Enter = End Panel
+  - P + Enter = Plinth
+  - W + Enter = Wall
+  - G + Enter = Glass
+- Glass nunca cria inserts.
+- Glass ativa Beading automaticamente.
+- Se nao houver texto, manter Part 1, Part 2 etc.
+- Quantity nao duplica linhas; duplica visualmente/nesting e a proxima part segue a numeracao correta.
+
+FRAMES / INSERTS / BEADING
+- Glass frame deve ter so tres linhas no DXF:
+  - OUT
+  - INSIDE
+  - BEADING
+- Nomes DXF devem ser em maiusculas: INSIDE, BEADING.
+- Beading padrao para Glass: size 19.85mm.
+- Isso significa que a distancia entre INSIDE e BEADING eh 20mm.
+- A peca fisica de beading eh 0.15mm menor que o espaco.
+- Para frame de 70mm, a linha BEADING fica a 50mm do OUT.
+- Beading nao eh solid box; eh frame/linha.
+- Lado externo do beading deve ter curved edges radius 2.5mm automatico.
+- Deve existir opcao para desligar round e fazer squared.
+
+POCKETING
+- Pocketing eh uma secao propria.
+- Ao ligar Pocketing, opcoes aparecem; desligado, ficam escondidas.
+- Ao ligar Pocketing em flat, Flat Frame fica automaticamente ON, sem botao separado.
+- Ao ligar Pocketing, material deve mudar automaticamente para Hydrofugo/MR MDF, mas se o usuario trocar depois, respeitar a escolha.
+- Pocketing pricing:
+  - Baseia-se em tempo estimado.
+  - 1m2 equivale a 12 minutos.
+  - Menos de 10 min = 10%.
+  - 10 a 15 min sobe gradualmente: 11min 12%, 12min 14%, 13min 16%, 14min 18%, 15min 20%.
+  - Acima de 15 min = 20%.
+  - A porcentagem aplica sobre CNC Service.
+- Pocket Min deve ser editavel.
+- Tempo mostrado arredondado para minuto inteiro.
+- Pocket lines:
+  - Pocket
+  - 6mm
+  - 2mm
+  - Chamfer
+  - Profile Tool
+  - Pocket 2
+  - Pocket 3
+- Cada linha tem on/off, offset editavel em centesimos/milesimos se digitado, ex. 0.755.
+- Setas do number input sobem de 1 em 1, mas digitacao pode ser decimal.
+- Cada pocket line pode ter round corner individual.
+- Round Corner principal do Pocketing deve arredondar inner frame radius 2.5.
+- Pocket lines nunca podem entrar no frame; sempre respeitam o inner frame e vao para dentro da peca.
+- Em Front+Back, minutagem dobra.
+- Back Frame eh editavel separado e deve aparecer no desenho vermelho/back.
+- Pocket extra/back sheet aparece no DXF, mas nao no PDF/resultado cliente.
+
+FLUSHBACK / REEDED / SHAPES
+- Flushback tem varias linhas com distancias fixas baseadas no OUT.
+- Quando a peca vira sloped/triangle, todas as linhas internas precisam seguir o formato.
+- Round corners de 2.5 precisam funcionar em pecas com altura individual alterada, inclusive triangulares.
+- Inserts de Flushback/Reeded ainda sao area sensivel: precisam acompanhar perfeitamente shape/frame, especialmente triangulos.
+- Reeded deve permitir direcao horizontal/vertical.
+- Reeded lines no DXF devem fazer zig-zag: uma linha de cima para baixo, proxima de baixo para cima, etc.
+- Reeded lines devem ultrapassar o frame em cerca de 4-5mm.
+
+NESTING
+- Nesting precisa respeitar 7mm.
+- Pecas triangulares/sloped devem aproveitar espacos reais; uma peca retangular pode entrar no vazio triangular se couber respeitando 7mm.
+- Sheet sizes precisam ter proporcao visual correta: 8x4 menor que 10x4, 10x5 maior etc.
+- Usuario pode alterar tamanho da sheet manualmente; calculo deve respeitar.
+- Se uma peca precisa 10x4 mas sobra cabe em 8x4, sheets seguintes podem voltar automaticamente para 8x4.
+- Pecas podem ser arrastadas entre sheets do mesmo material/thickness.
+- Ao arrastar, deve alinhar automaticamente com borda/peca proxima respeitando 7mm.
+- Teclas 9 e 0 rotacionam 90 graus, nao mais 45.
+- Selecionar uma peca em quantity 2 deve isolar/editar so aquela instancia, nao todas.
+
+DXF
+- Export DXF deve incluir so layers relevantes, nao todas as layers vazias.
+- Export por thickness: em vez de um DXF por sheet, agora um DXF por material thickness.
+- Nome do arquivo deve usar 15mm, 22mm, nao .000.
+- Arquivos tem limite de nome de 31 caracteres para NC.
+- DXF by thickness deve salvar arquivos separados em pasta, nao ZIP, porque ZIP/NC vinha causando alerta Windows Security.
+- Offcut templates DXF devem preservar forma real. Circulo deve continuar circulo, nao virar quadrado.
+- Offcut placement:
+  - Pode colocar dentro de offcut normal ou dentro de frame se respeitar 7mm.
+  - Se clicar num lugar invalido/sem espaco, nao cria.
+  - Peca principal movida sobre offcut template apaga aquele offcut/template, porque o offcut deixa de existir.
+  - Template pode encolher ate 20% para caber; nao deve crescer.
+- Smart Takeoff DXF:
+  - Deve ler retangulos/closed shapes.
+  - Se DXF 300x750 sem layers, nao pode virar 295x755; deve preferir o outer shape.
+  - Se detectar frame via layers/retangulos internos, deve configurar frame e door type automaticamente quando possivel.
+  - As pecas importadas precisam continuar editaveis, nao so resize.
+
+NC / TOOLPATH
+- NC, nao MC.
+- Arquivos NC precisam seguir o padrao real fornecido pelo usuario/Fibertech/Pegasus quando usados como molde.
+- Toolpaths do Flushback Door:
+  - Pocket
+  - Pocket 10 mil
+  - Six mil
+  - Shadow in 22 mil
+  - Six mil out
+  - Finish
+- Cada grupo/toolpath deve poder ligar/desligar e editar:
+  - tool diameter
+  - cut depth
+  - passes
+  - last pass
+  - inside/on/outside cut
+  - ramp distance
+  - offset
+- Cut depth nao pode passar da thickness sem aviso vermelho.
+- Broca on/outside/inside deve compensar para a peca final manter tamanho correto.
+- Rampa nao deve ser aplicada em tudo sem sentido; precisa seguir o NC modelo linha por linha quando a intencao eh copiar padrao.
+
+LABELS / CHECKLIST
+- Labels precisam ser vetoriais/SVG/HTML de alta qualidade, nao raster blur.
+- Tamanho padrao 40x30mm.
+- Printers: Katasymbol T50M Pro e Phomemo N110.
+- Labels CNC e Labels Spray Finish sao opcoes separadas.
+- Label CNC deve conter:
+  - quote/job
+  - dimensao
+  - part number
+  - sheet x/y
+  - QR code grande
+  - FastCNC logo/site conforme modelo.
+- QR Code master deve aparecer no resultado/calculadora perto do contato, grande o suficiente para escanear.
+- Checklist app:
+  - Escaneia QR master do job.
+  - Depois escaneia labels.
+  - Pecas relacionadas frame/insert/beading devem completar conjunto.
+  - Se pecas iguais podem formar par livre, nao precisa par fixo.
+  - Beeps: parcial encontrado, completo confirmado, erro/repetido/nao pertence.
+- App checklist foi/sera separado em pasta propria, diferente da pasta do calculator.
+- Netlify so quando pedir explicitamente.
+
+SPRAY
+- Spray calculator default OFF.
+- Quando ON, mostra opcoes/rates.
+- Spray areas:
+  - Flat sem frame/pocket/shaker: conta face/back e bordas pela thickness.
+  - Frame/shaker: contar 10 lados: 4 externos + 4 internos + face + back.
+  - Inserts: face + back.
+- Esses detalhes nao precisam aparecer nos resultados do cliente, mas devem orientar a secao Spray no lado esquerdo.
+- Spray Finish por peca:
+  - Na peca selecionada, ligar Spray Finish.
+  - Clicar nos lados da peca marca visualmente os lados a pintar.
+  - Nao altera preco.
+  - Label Spray mostra setas dos lados marcados.
+  - Nao cria layer DXF extra para isso.
+
+PANNELING / WALLS
+A aba deve se chamar Panneling.
+
+Conceitos:
+- Wall = referencia/parede, nao eh cortada.
+- Panel = peca que sera cortada.
+- Shaker = abertura interna dentro do panel.
+- Wall branca.
+- Panels verdes.
+- Frames visualmente grossos, nao so linhas finas.
+
+Wall Setup:
+- Walls e Panels sao secoes diferentes.
+- Wall vem antes de Panel.
+- Deve permitir ate 10 walls.
+- Add Wall/New Wall.
+- Cada wall tem width/height proprios.
+- Alterar uma wall nao altera as outras.
+- Wall pode ter Door e Window.
+- Door aparece so na wall, nao no nesting.
+- Door tem width, height e posicao X editavel/arrastavel.
+- Window tambem deve existir abaixo de Door.
+- Panoramic wall view: varias walls lado a lado da esquerda para direita.
+- Regra automatica de corner: enquanto automatico, corner que aumenta frame fica no lado direito da parede da esquerda; wall 4 tambem tem corner por default em exemplo de 4 walls.
+
+Panel Setup:
+- Frame padrao exemplo: 80mm.
+- Door side padrao: 175mm.
+- Corner/Column: frame + material thickness. Ex: frame 80 + 22 = 102.
+- Joint: metade do frame. Ex: 80 vira 40.
+- Vertical Joint: zero.
+- Side Rules devem ficar dentro de Panel Setup e aparecer quando clicar Side Rules.
+- Skirting fica em Panel Setup, antes de walls.
+- Skirting padrao 305mm e input precisa espaco suficiente.
+- Orientation deve ficar em Part Dimensions por painel individual, porque so um painel pode ser vertical.
+- Part Dimensions de wall deve listar cada panel individualmente: Wall 1 - P1, Wall 1 - P2V, etc.
+- Nomes no nesting/DXF devem bater: Wall 1 - P1, Wall 1 - P2V, etc.
+
+Shaker Rules:
+- Shaker minimo 150mm.
+- Shaker maximo 700mm.
+- Em automatico, so shakers de extremidade perto de parede/porta/window/corner/column podem mudar se necessario.
+- Shakers principais do meio devem ficar iguais no job.
+- Existe opcao de lock shaker size.
+- Se locked, o tamanho do shaker deve ser respeitado no job.
+- Shakers proximos a porta/parede/corner podem ajustar para resolver sobra.
+- Quando um painel vira vertical, os shakers internos dele devem respeitar o mesmo tamanho/regras dos outros.
+- Se shaker dos horizontais for 300, vertical tambem deve usar 300 quando possivel.
+
+Vertical Panels:
+- Um painel vertical nao pode ter mais de 1208mm de largura, a menos que sheet 10x5 seja escolhida.
+- Vertical pode ter ate cerca de 3000mm de altura, mas depende da sheet/material.
+- Se TimberFox permitir 3000, pode usar; caso contrario precisa respeitar sheet.
+- Irregular Shape aparece no Selected Piece quando Orientation = Vertical.
+- Irregular Shape ON por default.
+- Irregular OFF deixa vertical retangular normal.
+- Mudar um painel para vertical deve mudar so aquele painel, nao todos.
+- O painel vertical precisa tocar os horizontais, sem overlap.
+- Parte inferior do vertical pode usar joint/40mm onde toca paineis horizontais.
+- Acima do fim dos horizontais, a borda expande para frame cheio/80mm.
+- P2 e P3 no exemplo precisam ter shakers corretos e consistentes.
+- O desenho da wall e o desenho do nesting/sheet precisam mostrar o mesmo shape de shakers.
+- Se duas partes horizontais adjacentes podem virar uma unica peca, devem ser combinadas em uma so.
+
+COISAS AJUSTADAS MAIS RECENTEMENTE
+- Smart Takeoff DXF agora prefere retangulo externo maior em DXFs sem layer, evitando 300x750 virar 295x755.
+- Paineis rotacionados agora usam transformacao de cavidades/shakers para sheet/DXF.
+- Pedacos horizontais adjacentes podem ser mesclados se tocam e cabem dentro do panel max width.
+- Shakers de painel vertical foram ajustados para usar uma distribuicao unica pela altura, ajudando P2/P3 a manter tamanhos corretos.
+- displayLabel agora entra no texto das pecas, tipo Wall 2 - P2V.
+- JS syntax check passou com Node.
+
+AINDA NAO ESTA 100% / PRECISA CONSERTAR
+- QA visual nao foi confirmado pelo Browser porque o Codex bloqueou reload direto em file://.
+- Panneling vertical ainda precisa teste visual forte nos exemplos do usuario.
+- Confirmar se P2/P3 realmente batem com wall preview e nesting depois do refresh.
+- Confirmar se horizontal lower combined vira uma peca so onde deve.
+- Confirmar DXF export para vertical panel usa exatamente o mesmo shape da wall.
+- Offcut circle deve ser testado com arquivo real; codigo parece preservar CIRCLE, mas usuario viu quadrado antes.
+- Layout ainda esta grande/confuso em alguns pontos; precisa continuar compactando botoes/secoes.
+- NC generator ainda precisa ficar mais fiel linha a linha aos NCs modelos.
+- Toolpath UI ainda precisa reorganizacao seria.
+
+PROXIMOS PASSOS SUGERIDOS
+1. Abrir Cnc Calculator UI Test.html e fazer refresh manual.
+2. Testar Panneling com 3-4 walls, um painel vertical isolado, e comparar wall view vs nesting.
+3. Testar P2/P3: shakers iguais/corretos, sem overlap, sem linhas finas falsas.
+4. Exportar DXF e abrir no VCarve/CAD para confirmar shapes.
+5. Testar Smart Takeoff com DXF 300x750 e offcut circle.
+6. So depois copiar alteracoes boas para Cnc Calculator 1.0.html, quando o usuario pedir.
