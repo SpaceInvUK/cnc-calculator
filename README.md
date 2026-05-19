@@ -53,9 +53,10 @@ Implemented in `Cnc Calculator UI Test.html`:
 - Vertical panels use exact height `3000mm` unless manually overridden.
 - Vertical panels start with 2 shaker rows per column.
 - The bottom shaker row matches the horizontal shaker size where possible.
+- Adjacent vertical panels share a straight half-frame joint, so two touching verticals form the full frame between them.
 - Removed visible `lower` and `combined` panel labels.
 - Horizontal lower/residual panels are named normally as `P3`, `P4`, etc.
-- Horizontal merge is limited to `1440mm`.
+- Horizontal merge is limited to `2400mm`.
 - Window default height is now `1100mm`.
 - Auto window X is placed away from an enabled door when possible.
 - Wall preview, sheet/nesting preview, and generated placement labels use the same `Wall N - P...` naming.

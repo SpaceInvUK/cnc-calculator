@@ -49,6 +49,10 @@ Individual panels can still be changed to vertical from Part Dimensions.
 - It does not turn all panels in the wall vertical.
 - Individual vertical panels can use irregular shape ON/OFF.
 - Irregular shape still creates the stepped side-frame outline where needed.
+- When two vertical panels touch each other, their shared side is a straight half-frame joint.
+- With an `80mm` frame, that shared vertical-to-vertical side is `40mm` on each panel so the two panels together make the full `80mm` visual frame.
+- A vertical side that touches a lower horizontal/residual panel can still use the stepped irregular outline.
+- A vertical side that ends the wall returns to the normal full side frame.
 
 ## Vertical Panel Dimensions
 
@@ -125,6 +129,8 @@ Tested:
 - Calculate Price.
 - Label consistency in wall preview and nesting.
 - No visible `lower` or `combined` label.
+- Adjacent vertical-to-vertical geometry was checked with a controlled two-panel layout: the shared side stayed a straight half-frame joint with no step inset.
+- Vertical-to-horizontal geometry was checked with the same controlled layout: the horizontal-facing side kept the stepped `40mm` inset when frame is `80mm`.
 
 ## Known Unrelated Issue
 

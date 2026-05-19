@@ -6004,6 +6004,22 @@
       if(!nums.length) return fallback;
       return nums.reduce((sum, value)=>sum + value, 0) / nums.length;
     }
+    function panelSectionsTouch(leftSection, rightSection, tolerance=0.01){
+      if(!leftSection || !rightSection) return false;
+      const leftEnd = Number(leftSection.xStart || 0) + Number(leftSection.width || 0);
+      const rightStart = Number(rightSection.xStart || 0);
+      return Math.abs(leftEnd - rightStart) <= tolerance;
+    }
+    function verticalPanelAdjacency(block, part, layoutSections, sectionIndex){
+      const sections = Array.isArray(layoutSections) ? layoutSections : [];
+      const current = sections[sectionIndex];
+      const previous = sections[sectionIndex - 1];
+      const next = sections[sectionIndex + 1];
+      return {
+        left:!!previous && panelSectionsTouch(previous, current) && panelDirectionForPart(part, block, sectionIndex - 1) === 'vertical',
+        right:!!next && panelSectionsTouch(current, next) && panelDirectionForPart(part, block, sectionIndex + 1) === 'vertical'
+      };
+    }
     function dominantPositive(values, fallback=0){
       const nums = (Array.isArray(values) ? values : []).map(roundPanelMm).filter(value=>value > 0);
       if(!nums.length) return fallback;
@@ -6223,16 +6239,18 @@
       });
       return {wallMode, wallWidth, wallHeight, panelHeight, panelMaxWidth, frame, thickness, doorAllowance, door, window:windowOpening, openings, sections};
     }
-    function verticalPanelWidthPlan(block, part, layout, section, sectionIndex, rightRule, irregularShape=null){
+    function verticalPanelWidthPlan(block, part, layout, section, sectionIndex, rightRule, irregularShape=null, sideContext={}){
       const frame = Math.max(1, Number(layout?.frame || block?.frameSize || 80));
       const limit = panelVerticalWidthLimit(block);
-      const leftRule = normalizePanelSideRule(section?.panelSideLeft || part?.panelSideLeft || block?.panelSideLeft);
-      const resolvedRightRule = normalizePanelSideRule(rightRule || section?.panelSideRight || part?.panelSideRight || block?.panelSideRight);
+      const straightJointLeft = sideContext?.straightJointLeft === true;
+      const straightJointRight = sideContext?.straightJointRight === true;
+      const leftRule = straightJointLeft ? 'joint' : normalizePanelSideRule(section?.panelSideLeft || part?.panelSideLeft || block?.panelSideLeft);
+      const resolvedRightRule = straightJointRight ? 'joint' : normalizePanelSideRule(rightRule || section?.panelSideRight || part?.panelSideRight || block?.panelSideRight);
       const leftFrame = panelSideFrameValue(leftRule, frame, layout.thickness, layout.doorAllowance);
       const rightFrame = panelSideFrameValue(resolvedRightRule, frame, layout.thickness, layout.doorAllowance);
       const irregular = irregularShape == null ? panelIrregularShapeForPart(part, block, sectionIndex) : !!irregularShape;
-      const stepLeft = irregular && leftRule === 'joint';
-      const stepRight = irregular && resolvedRightRule === 'joint';
+      const stepLeft = irregular && leftRule === 'joint' && !straightJointLeft;
+      const stepRight = irregular && resolvedRightRule === 'joint' && !straightJointRight;
       const upperLeftFrame = stepLeft ? Math.max(leftFrame, frame) : leftFrame;
       const upperRightFrame = stepRight ? Math.max(rightFrame, frame) : rightFrame;
       const override = sectionIndex == null ? null : wallSectionOverride(part, sectionIndex);
@@ -6292,7 +6310,11 @@
         };
       }
       const irregularShape = panelIrregularShapeForPart(part, block, sectionIndex);
-      const verticalPlan = verticalPanelWidthPlan(block, part, layout, section, sectionIndex, null, irregularShape);
+      const adjacency = verticalPanelAdjacency(block, part, layout?.sections || [], sectionIndex);
+      const verticalPlan = verticalPanelWidthPlan(block, part, layout, section, sectionIndex, adjacency.right ? 'joint' : null, irregularShape, {
+        straightJointLeft:adjacency.left,
+        straightJointRight:adjacency.right
+      });
       const verticalWidth = verticalPlan.width;
       const manualVerticalHeight = panelPhysicalOverrideValue(part, sectionIndex, 'v', 'height');
       const verticalHeight = manualVerticalHeight !== '' ? Math.max(1, Number(manualVerticalHeight || 0)) : PANEL_VERTICAL_DEFAULT_HEIGHT;
@@ -6318,6 +6340,7 @@
         Number(layout?.panelHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT),
         hasVerticalPanels ? PANEL_VERTICAL_DEFAULT_HEIGHT : 0
       );
+      const verticalResidualByIndex = new Map();
       layoutSections.forEach((section, sectionIndex)=>{
         const direction = panelDirectionForPart(part, block, sectionIndex);
         const basePhysical = panelSectionPhysicalRect(part, block, layout, section, sectionIndex);
@@ -6329,8 +6352,10 @@
         const logicalWidth = Math.max(1, Number(section.width || 0));
         const irregularShape = panelIrregularShapeForPart(part, block, sectionIndex);
         const wallForcesVertical = panelWallOrientation(part) === 'vertical';
+        const adjacency = verticalPanelAdjacency(block, part, layoutSections, sectionIndex);
+        const sharedLeftJoint = adjacency.left && !verticalResidualByIndex.get(sectionIndex - 1);
         const hasResidualProbe = !wallForcesVertical && logicalWidth - panelVerticalWidthLimit(block) > minResidual;
-        const rightRuleForPlan = hasResidualProbe ? 'joint' : section.panelSideRight;
+        const rightRuleForPlan = hasResidualProbe || adjacency.right ? 'joint' : section.panelSideRight;
         const manualVerticalWidth = panelPhysicalOverrideValue(part, sectionIndex, 'v', 'width');
         const applyManualVerticalWidthToPlan = plan=>{
           if(manualVerticalWidth === '') return plan;
@@ -6341,7 +6366,11 @@
             lowerWidth:roundPanelMm(Math.max(1, boundedWidth - (irregularShape ? Number(plan.stepInsetLeft || 0) + Number(plan.stepInsetRight || 0) : 0)))
           };
         };
-        let verticalPlan = applyManualVerticalWidthToPlan(verticalPanelWidthPlan(block, part, layout, section, sectionIndex, rightRuleForPlan, irregularShape));
+        const makeVerticalPlan = (rightRule, straightRight)=>applyManualVerticalWidthToPlan(verticalPanelWidthPlan(block, part, layout, section, sectionIndex, rightRule, irregularShape, {
+          straightJointLeft:sharedLeftJoint,
+          straightJointRight:straightRight
+        }));
+        let verticalPlan = makeVerticalPlan(rightRuleForPlan, adjacency.right && !hasResidualProbe);
         let verticalWidth = verticalPlan.width;
         const sourceShakerSizes = Array.isArray(section.shakerColumnWidths) ? section.shakerColumnWidths.map(roundPanelMm).filter(value=>value > 0) : [];
         const topFrame = panelSideFrameValue(effectivePanelSideRule(block, part, 'top'), frame, layout.thickness, layout.doorAllowance);
@@ -6356,13 +6385,14 @@
         const horizontalShakerHeight = horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame);
         const rowSizes = verticalPanelTwoRowSizes(verticalHeight, layout.frame, topFrame, bottomFrame, horizontalShakerHeight);
         let hasResidual = !wallForcesVertical && logicalWidth - verticalPlan.lowerWidth > minResidual;
-        if(hasResidual && verticalPlan.rightRule !== 'joint'){
-          verticalPlan = applyManualVerticalWidthToPlan(verticalPanelWidthPlan(block, part, layout, section, sectionIndex, 'joint', irregularShape));
+        if(hasResidual && (verticalPlan.rightRule !== 'joint' || verticalPlan.stepRight === false)){
+          verticalPlan = makeVerticalPlan('joint', false);
           verticalWidth = verticalPlan.width;
           hasResidual = !wallForcesVertical && logicalWidth - verticalPlan.lowerWidth > minResidual;
         }
-        const verticalLeftRule = normalizePanelSideRule(section.panelSideLeft || part?.panelSideLeft || block?.panelSideLeft);
-        const verticalRightRule = hasResidual ? 'joint' : normalizePanelSideRule(section.panelSideRight || part?.panelSideRight || block?.panelSideRight);
+        verticalResidualByIndex.set(sectionIndex, hasResidual);
+        const verticalLeftRule = sharedLeftJoint ? 'joint' : normalizePanelSideRule(section.panelSideLeft || part?.panelSideLeft || block?.panelSideLeft);
+        const verticalRightRule = hasResidual || adjacency.right ? 'joint' : normalizePanelSideRule(section.panelSideRight || part?.panelSideRight || block?.panelSideRight);
         const verticalColumnWidths = verticalPlan.columnWidths.length ? verticalPlan.columnWidths : distributeShakersForSpan(verticalWidth, {target:sharedTarget, equal:true}, layout.frame, verticalPlan.leftFrame, verticalPlan.rightFrame);
         const verticalSection = {
           ...section,

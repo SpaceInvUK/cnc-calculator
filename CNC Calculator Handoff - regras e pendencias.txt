@@ -29,6 +29,10 @@ ATUALIZACAO PANNELING - 19 May 2026
 - Exemplo: se 3 shakers nao cabem em 1206mm, tentar 2; se 2 tambem nao cabem, usar 1 shaker mantendo a largura padrao do job.
 - Panel vertical usa a largura dominante/padrao do shaker horizontal do job, nao a sobra menor da ponta.
 - O shaker inferior do vertical usa a altura do shaker horizontal para alinhar com os frames horizontais.
+- Quando dois panels verticais encostam, o lado compartilhado vira joint reto de meio frame.
+- Exemplo com frame 80mm: lado compartilhado fica 40mm em cada panel, formando 80mm no conjunto.
+- Se o lado do vertical encosta em horizontal/residual, a irregular shape pode continuar com a ranhura/step.
+- Se o lado do vertical termina a wall, volta para frame normal cheio.
 - Nao deve aparecer label lower ou combined.
 - Residual horizontal vira panel normal: P3, P4 etc.
 - Merge horizontal acontece se as pecas tocarem e a largura combinada for no maximo 2400mm.
@@ -36,6 +40,7 @@ ATUALIZACAO PANNELING - 19 May 2026
 - Se Door e Window estiverem ON e Window X vazio, Window tenta ficar afastada da Door.
 - Preview da wall, nesting/sheet e labels usam o mesmo nome Wall N - P...
 - QA feito com 3 walls, 4 walls, vertical wall, vertical individual, irregular ON/OFF, door/window, shaker Auto/Lock e Calculate Price.
+- QA tecnico confirmou que vertical com vertical usa joint reto compartilhado sem step, e vertical com horizontal continua usando step/ranhura.
 - Erro conhecido fora deste passe: QR library is not loaded.
 
 O QUE ESSE APP EH
@@ -270,16 +275,18 @@ Shaker Rules:
 - Se shaker dos horizontais for 300, vertical tambem deve usar 300 quando possivel.
 
 Vertical Panels:
-- Um painel vertical nao pode ter mais de 1208mm de largura, a menos que sheet 10x5 seja escolhida.
+- Um painel vertical nao pode ter mais de 1206mm de largura.
 - Vertical pode ter ate cerca de 3000mm de altura, mas depende da sheet/material.
 - Se TimberFox permitir 3000, pode usar; caso contrario precisa respeitar sheet.
 - Irregular Shape aparece no Selected Piece quando Orientation = Vertical.
-- Irregular Shape ON por default.
+- Irregular Shape ON por default no vertical individual; Vertical por wall usa regular shape.
 - Irregular OFF deixa vertical retangular normal.
 - Mudar um painel para vertical deve mudar so aquele painel, nao todos.
 - O painel vertical precisa tocar os horizontais, sem overlap.
 - Parte inferior do vertical pode usar joint/40mm onde toca paineis horizontais.
 - Acima do fim dos horizontais, a borda expande para frame cheio/80mm.
+- Quando dois verticais ficam lado a lado, o lado compartilhado nao usa step; usa joint reto de 40mm em cada peca no exemplo de frame 80mm.
+- O step continua valido em lados que encontram horizontal/residual, e o lado final da wall volta para frame cheio.
 - P2 e P3 no exemplo precisam ter shakers corretos e consistentes.
 - O desenho da wall e o desenho do nesting/sheet precisam mostrar o mesmo shape de shakers.
 - Se duas partes horizontais adjacentes podem virar uma unica peca, devem ser combinadas em uma so.
