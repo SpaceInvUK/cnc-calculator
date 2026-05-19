@@ -68,6 +68,8 @@ Vertical panels start with 2 shaker rows per column.
 - The frame is still respected.
 - Locked shaker mode still affects the target shaker size.
 - Auto shaker mode still balances based on the existing Panneling logic.
+- When a vertical panel cannot fit all source shaker columns inside the `1206mm` limit, the panel must shrink by using fewer columns instead of scaling the shaker widths down.
+- In practice this means a vertical panel may use 1 or 2 columns so the remaining horizontal panels can keep the same shaker width pattern.
 
 ## Horizontal Residual / Merge Rules
 

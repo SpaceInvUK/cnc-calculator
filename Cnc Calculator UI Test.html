@@ -6210,23 +6210,24 @@
       const plan = panelShakerPlan(block, part, frame, Math.max(1, Number(section?.width || layout?.panelMaxWidth || limit)));
       const target = Math.max(PANEL_SHAKER_MIN, Math.min(PANEL_SHAKER_MAX, Number(plan.target || averagePositive(sourceRows, PANEL_SHAKER_MAX) || PANEL_SHAKER_MAX)));
       const explicitColumns = !(rawColumns === '' || rawColumns == null);
-      const columns = explicitColumns ? Math.max(1, Math.round(Number(rawColumns || 2))) : Math.max(1, sourceRows.length || 2);
-      let columnWidths = [];
-      if(!explicitColumns && sourceRows.length){
-        columnWidths = sourceRows.slice(0, columns);
-      } else {
-        const sectionWidth = Math.min(limit, Math.max(1, Number(section?.width || limit)));
-        const availableForSection = sectionWidth - upperLeftFrame - upperRightFrame - frame * Math.max(0, columns - 1);
-        const each = Math.max(1, Math.min(target, availableForSection / Math.max(1, columns)));
-        columnWidths = Array.from({length:columns}, ()=>roundPanelMm(each));
+      const desiredColumns = explicitColumns ? Math.max(1, Math.round(Number(rawColumns || 2))) : Math.max(1, sourceRows.length || 2);
+      let candidateWidths = sourceRows.length && !explicitColumns
+        ? sourceRows.slice(0, desiredColumns)
+        : Array.from({length:desiredColumns}, ()=>roundPanelMm(target));
+      const widthForColumns = widths=>roundPanelMm(
+        upperLeftFrame + upperRightFrame +
+        widths.reduce((sum, value)=>sum + Number(value || 0), 0) +
+        frame * Math.max(0, widths.length - 1)
+      );
+      while(candidateWidths.length > 1 && widthForColumns(candidateWidths) > limit){
+        candidateWidths = candidateWidths.slice(0, -1);
       }
-      const available = Math.max(1, limit - upperLeftFrame - upperRightFrame - frame * Math.max(0, columnWidths.length - 1));
-      const currentTotal = columnWidths.reduce((sum, value)=>sum + value, 0);
-      if(currentTotal > available){
-        const scale = available / currentTotal;
-        columnWidths = columnWidths.map(value=>roundPanelMm(Math.max(1, value * scale)));
+      if(widthForColumns(candidateWidths) > limit){
+        const singleAvailable = Math.max(1, limit - upperLeftFrame - upperRightFrame);
+        candidateWidths = [roundPanelMm(Math.min(candidateWidths[0] || target, singleAvailable))];
       }
-      const shakerTotal = columnWidths.reduce((sum, value)=>sum + value, 0) + frame * Math.max(0, columns - 1);
+      const columnWidths = candidateWidths;
+      const shakerTotal = columnWidths.reduce((sum, value)=>sum + value, 0) + frame * Math.max(0, columnWidths.length - 1);
       const upperWidth = roundPanelMm(upperLeftFrame + upperRightFrame + shakerTotal);
       const lowerWidth = roundPanelMm(leftFrame + rightFrame + shakerTotal);
       return {

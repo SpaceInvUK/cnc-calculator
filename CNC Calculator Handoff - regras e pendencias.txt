@@ -24,6 +24,8 @@ ATUALIZACAO PANNELING - 19 May 2026
 - Panel vertical tem largura maxima de 1206mm.
 - O shaker inferior do panel vertical segue o tamanho do shaker horizontal quando possivel.
 - O shaker superior ocupa o restante da abertura, respeitando frame.
+- Se as colunas/shakers de origem nao cabem no limite de largura do vertical, o panel vertical deve encolher usando menos colunas em vez de diminuir a largura dos shakers.
+- Exemplo: se 3 shakers nao cabem em 1206mm, tentar 2; se 2 tambem nao cabem, usar 1 shaker mantendo a largura padrao do job.
 - Nao deve aparecer label lower ou combined.
 - Residual horizontal vira panel normal: P3, P4 etc.
 - Merge horizontal so acontece se as pecas tocarem e a largura combinada for no maximo 1440mm.
