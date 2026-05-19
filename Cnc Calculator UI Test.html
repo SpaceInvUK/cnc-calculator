@@ -1067,8 +1067,8 @@
                 <div class="field inline-control"><select class="wallEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle wallEnabledControl off" type="button" aria-pressed="false">Wall</button></div>
                 <button class="pocket-title-toggle addWallControl wall-options" type="button">+ Add Wall</button>
               </div>
-              <div class="field wall-options"><label>Default Width</label><input class="wallWidth" type="number" min="0" step="1" value="4800"></div>
-              <div class="field wall-options"><label>Default Height</label><input class="wallHeight" type="number" min="0" step="1" value="2400"></div>
+              <div class="field wall-options"><label>Default Width</label><input class="wallWidth" type="number" min="0" step="1" value="5200"></div>
+              <div class="field wall-options"><label>Default Height</label><input class="wallHeight" type="number" min="0" step="1" value="3200"></div>
               <input class="wallSections" type="hidden" value="">
               <div class="field inline-control wall-options"><select class="wallDoorEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle wallDoorControl off" type="button" aria-pressed="false">Door</button></div>
               <div class="field inline-control wall-door-options wall-options"><label>Door Width</label><input class="wallDoorWidth digits-2" type="number" min="0" step="1" value="900"></div>
@@ -1808,8 +1808,8 @@
         panelShakerSize:'',
         panelSideRulesOpen:'No',
         wallEnabled:'No',
-        wallWidth:4800,
-        wallHeight:2400,
+        wallWidth:5200,
+        wallHeight:3200,
         wallSections:'',
         wallDoorEnabled:'No',
         wallDoorWidth:900,
@@ -1900,8 +1900,8 @@
       block.panelShakerMode = String(block.panelShakerMode || 'auto') === 'locked' ? 'locked' : 'auto';
       block.panelShakerSize = block.panelShakerSize === '' || block.panelShakerSize == null ? '' : Math.max(1, Number(block.panelShakerSize || 1));
       block.wallEnabled = block.wallEnabled === 'Yes' ? 'Yes' : 'No';
-      block.wallWidth = block.wallWidth === '' || block.wallWidth == null ? 4800 : Math.max(0, Number(block.wallWidth || 0));
-      block.wallHeight = block.wallHeight === '' || block.wallHeight == null ? 2400 : Math.max(0, Number(block.wallHeight || 0));
+      block.wallWidth = block.wallWidth === '' || block.wallWidth == null ? 5200 : Math.max(0, Number(block.wallWidth || 0));
+      block.wallHeight = block.wallHeight === '' || block.wallHeight == null ? 3200 : Math.max(0, Number(block.wallHeight || 0));
       block.wallSections = block.wallSections || '';
       block.wallDoorEnabled = block.wallDoorEnabled === 'Yes' ? 'Yes' : 'No';
       block.wallDoorWidth = block.wallDoorWidth === '' || block.wallDoorWidth == null ? 900 : Math.max(0, Number(block.wallDoorWidth || 0));
@@ -2941,8 +2941,8 @@
         panelDirection:'horizontal',
         wallPanelDirection:'horizontal',
         panelIrregularShape:'Yes',
-        wallWidth:block.wallWidth || 4800,
-        wallHeight:block.wallHeight || 2400,
+        wallWidth:block.wallWidth || 5200,
+        wallHeight:block.wallHeight || 3200,
         wallDoorEnabled:'No',
         wallWindowEnabled:'No',
         quantity:1,
@@ -5825,14 +5825,14 @@
       if(Number.isFinite(partValue) && partValue > 0) return partValue;
       const blockValue = block?.wallWidth === '' || block?.wallWidth == null ? '' : Number(block.wallWidth);
       if(Number.isFinite(blockValue) && blockValue > 0) return blockValue;
-      return 4800;
+      return 5200;
     }
     function wallReferenceHeight(block, part){
       const partValue = part?.wallHeight === '' || part?.wallHeight == null ? '' : Number(part.wallHeight);
       if(Number.isFinite(partValue) && partValue > 0) return partValue;
       const blockValue = block?.wallHeight === '' || block?.wallHeight == null ? '' : Number(block.wallHeight);
       if(Number.isFinite(blockValue) && blockValue > 0) return blockValue;
-      return 2400;
+      return 3200;
     }
     function panelVerticalWidthLimit(block){
       return PANEL_VERTICAL_MAX_WIDTH;
@@ -5986,7 +5986,7 @@
     const PANEL_VERTICAL_DEFAULT_HEIGHT = 3000;
     const PANEL_HORIZONTAL_DEFAULT_WIDTH = 2400;
     const PANEL_HORIZONTAL_DEFAULT_HEIGHT = 1030;
-    const PANEL_HORIZONTAL_MERGE_MAX_WIDTH = 1440;
+    const PANEL_HORIZONTAL_MERGE_MAX_WIDTH = 2400;
     function roundPanelMm(value){
       return Math.round(Number(value || 0) * 100) / 100;
     }
@@ -6003,6 +6003,37 @@
       const nums = (Array.isArray(values) ? values : []).map(value=>Number(value || 0)).filter(value=>value > 0);
       if(!nums.length) return fallback;
       return nums.reduce((sum, value)=>sum + value, 0) / nums.length;
+    }
+    function dominantPositive(values, fallback=0){
+      const nums = (Array.isArray(values) ? values : []).map(roundPanelMm).filter(value=>value > 0);
+      if(!nums.length) return fallback;
+      const groups = new Map();
+      nums.forEach(value=>{
+        const key = String(roundPanelMm(value));
+        const entry = groups.get(key) || {value, count:0};
+        entry.count++;
+        groups.set(key, entry);
+      });
+      const target = Number(fallback || 0);
+      return Array.from(groups.values()).sort((a,b)=>{
+        if(b.count !== a.count) return b.count - a.count;
+        if(target > 0) return Math.abs(a.value - target) - Math.abs(b.value - target);
+        return b.value - a.value;
+      })[0].value;
+    }
+    function layoutDominantShakerWidth(layout, fallback=0){
+      const widths = (layout?.sections || []).flatMap(section=>
+        Array.isArray(section?.shakerColumnWidths) ? section.shakerColumnWidths : []
+      );
+      return dominantPositive(widths, fallback);
+    }
+    function horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame){
+      const frame = Math.max(1, Number(layout?.frame || block?.frameSize || 80));
+      const rawRows = part?.panelRows === '' || part?.panelRows == null ? block?.panelRows : part.panelRows;
+      const rows = rawRows === '' || rawRows == null ? 1 : Math.max(1, Math.round(Number(rawRows || 1)));
+      const innerH = Math.max(1, Number(layout?.panelHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT) - Number(topFrame || 0) - Number(bottomFrame || 0));
+      const openH = Math.max(1, innerH - frame * Math.max(0, rows - 1));
+      return roundPanelMm(openH / rows);
     }
     function panelShakerPlan(block, part, frame, panelMaxWidth){
       const locked = String(block?.panelShakerMode || 'auto') === 'locked';
@@ -6208,12 +6239,12 @@
       const rawColumns = override?.panelColumns ?? part?.panelColumns ?? block?.panelColumns;
       const sourceRows = Array.isArray(section?.shakerColumnWidths) ? section.shakerColumnWidths.map(roundPanelMm).filter(value=>value > 0) : [];
       const plan = panelShakerPlan(block, part, frame, Math.max(1, Number(section?.width || layout?.panelMaxWidth || limit)));
-      const target = Math.max(PANEL_SHAKER_MIN, Math.min(PANEL_SHAKER_MAX, Number(plan.target || averagePositive(sourceRows, PANEL_SHAKER_MAX) || PANEL_SHAKER_MAX)));
+      const planTarget = Number(plan.target || averagePositive(sourceRows, PANEL_SHAKER_MAX) || PANEL_SHAKER_MAX);
+      const jobTarget = plan.locked ? planTarget : layoutDominantShakerWidth(layout, planTarget);
+      const target = Math.max(PANEL_SHAKER_MIN, Math.min(PANEL_SHAKER_MAX, Number(jobTarget || planTarget || PANEL_SHAKER_MAX)));
       const explicitColumns = !(rawColumns === '' || rawColumns == null);
       const desiredColumns = explicitColumns ? Math.max(1, Math.round(Number(rawColumns || 2))) : Math.max(1, sourceRows.length || 2);
-      let candidateWidths = sourceRows.length && !explicitColumns
-        ? sourceRows.slice(0, desiredColumns)
-        : Array.from({length:desiredColumns}, ()=>roundPanelMm(target));
+      let candidateWidths = Array.from({length:desiredColumns}, ()=>roundPanelMm(target));
       const widthForColumns = widths=>roundPanelMm(
         upperLeftFrame + upperRightFrame +
         widths.reduce((sum, value)=>sum + Number(value || 0), 0) +
@@ -6322,7 +6353,8 @@
         const manualVerticalHeight = panelPhysicalOverrideValue(part, sectionIndex, 'v', 'height');
         const verticalHeight = manualVerticalHeight !== '' ? Math.max(1, Number(manualVerticalHeight || 0)) : PANEL_VERTICAL_DEFAULT_HEIGHT;
         const displayHeight = Math.max(wallDisplayHeight, verticalHeight);
-        const rowSizes = verticalPanelTwoRowSizes(verticalHeight, layout.frame, topFrame, bottomFrame, sharedTarget);
+        const horizontalShakerHeight = horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame);
+        const rowSizes = verticalPanelTwoRowSizes(verticalHeight, layout.frame, topFrame, bottomFrame, horizontalShakerHeight);
         let hasResidual = !wallForcesVertical && logicalWidth - verticalPlan.lowerWidth > minResidual;
         if(hasResidual && verticalPlan.rightRule !== 'joint'){
           verticalPlan = applyManualVerticalWidthToPlan(verticalPanelWidthPlan(block, part, layout, section, sectionIndex, 'joint', irregularShape));
@@ -7642,7 +7674,7 @@
               const index = Math.max(0, Number(row?.dataset.wallIndex || 0));
               recordHistory('removed wall');
               if(block.parts.length <= 1){
-                block.parts = [newPart({width:'2400', height:'1030', panelDirection:'horizontal', wallPanelDirection:'horizontal', panelIrregularShape:'Yes', wallWidth:block.wallWidth || 4800, wallHeight:block.wallHeight || 2400, quantity:1})];
+                block.parts = [newPart({width:'2400', height:'1030', panelDirection:'horizontal', wallPanelDirection:'horizontal', panelIrregularShape:'Yes', wallWidth:block.wallWidth || 5200, wallHeight:block.wallHeight || 3200, quantity:1})];
               } else {
                 block.parts.splice(index, 1);
               }
@@ -7662,8 +7694,8 @@
             wallEnabledSelect.value = value;
             setBlockValue(block, 'wallEnabled', value);
             if(value === 'Yes'){
-              if(!(Number(block.wallWidth) > 0)) setBlockValue(block, 'wallWidth', 4800);
-              if(!(Number(block.wallHeight) > 0)) setBlockValue(block, 'wallHeight', 2400);
+              if(!(Number(block.wallWidth) > 0)) setBlockValue(block, 'wallWidth', 5200);
+              if(!(Number(block.wallHeight) > 0)) setBlockValue(block, 'wallHeight', 3200);
             }
             syncPanelControls();
             requestRender();
@@ -9510,8 +9542,8 @@
         panelRows:String(block.panelRows ?? ''),
         panelColumns:String(block.panelColumns ?? ''),
         wallEnabled:String(block.wallEnabled ?? 'No'),
-        wallWidth:String(block.wallWidth ?? 4800),
-        wallHeight:String(block.wallHeight ?? 2400),
+        wallWidth:String(block.wallWidth ?? 5200),
+        wallHeight:String(block.wallHeight ?? 3200),
         wallSections:String(block.wallSections ?? ''),
         wallDoorEnabled:String(block.wallDoorEnabled ?? 'No'),
         wallDoorWidth:String(block.wallDoorWidth ?? 900),
@@ -11342,6 +11374,10 @@
         const viewH = Math.max(180, Math.min(520, Math.round(viewW * wallH / wallW)));
         const sx = viewW / wallW;
         const sy = viewH / wallH;
+        const topFrame = panelSideFrameValue(effectivePanelSideRule(block, part, 'top'), layout.frame, layout.thickness, layout.doorAllowance);
+        const bottomFrame = panelSideFrameValue(effectivePanelSideRule(block, part, 'bottom'), layout.frame, layout.thickness, layout.doorAllowance);
+        const mainShakerWidth = layoutDominantShakerWidth(layout, Number(panelShakerPlan(block, part, layout.frame, layout.panelMaxWidth).target || 0));
+        const mainShakerHeight = horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame);
         let svg = '<svg viewBox="0 0 '+viewW+' '+viewH+'" xmlns="http://www.w3.org/2000/svg">';
         svg += '<rect x="1" y="1" width="'+(viewW-2)+'" height="'+(viewH-2)+'" fill="#fff" stroke="#111" stroke-width="2"/>';
         physicalSections.forEach(physicalItem=>{
@@ -11355,7 +11391,7 @@
         svg += '<rect class="wall-edge-hit" data-panel-wall-part-index="'+partIndex+'" data-side="top" x="0" y="0" width="'+viewW+'" height="'+hit+'"/>';
         svg += '<rect class="wall-edge-hit" data-panel-wall-part-index="'+partIndex+'" data-side="bottom" x="0" y="'+(viewH-hit)+'" width="'+viewW+'" height="'+hit+'"/>';
         svg += '<text x="14" y="24" font-size="18" font-family="Arial" font-weight="900" fill="#064e3b">Wall '+(index+1)+' - '+Math.round(layout.wallWidth)+' x '+Math.round(layout.wallHeight)+'mm</text>';
-        svg += '<text x="14" y="'+(viewH-12)+'" font-size="12" font-family="Arial" font-weight="900" fill="#166534">Panel max '+Math.round(layout.panelMaxWidth)+' x '+Math.round(layout.panelHeight)+'mm - frame '+Math.round(layout.frame)+'mm - '+physicalSections.length+' cut panel'+(physicalSections.length === 1 ? '' : 's')+'</text>';
+        svg += '<text x="14" y="'+(viewH-12)+'" font-size="12" font-family="Arial" font-weight="900" fill="#166534">'+physicalSections.length+' cut panel'+(physicalSections.length === 1 ? '' : 's')+' - frame '+Math.round(layout.frame)+'mm - shaker '+Math.round(mainShakerWidth)+' x '+Math.round(mainShakerHeight)+'mm - nesting gap 7mm</text>';
         svg += '</svg>';
         return '<div class="panel-wall-preview"><div class="panel-wall-preview-head"><span>Wall '+(index+1)+'</span><span>'+physicalSections.length+' cut panel'+(physicalSections.length === 1 ? '' : 's')+' from wall reference</span></div>'+svg+'</div>';
       }).join('');

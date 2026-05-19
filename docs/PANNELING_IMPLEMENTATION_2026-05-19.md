@@ -32,6 +32,7 @@ No Netlify deploy was performed.
 
 A per-wall `Panel Orientation` control was added in Wall Setup.
 
+- Default wall size is now `5200mm x 3200mm`.
 - `H` keeps the wall using horizontal panels by default.
 - `V` makes all cut panels for that wall vertical.
 - Vertical wall orientation affects only that wall.
@@ -70,13 +71,15 @@ Vertical panels start with 2 shaker rows per column.
 - Auto shaker mode still balances based on the existing Panneling logic.
 - When a vertical panel cannot fit all source shaker columns inside the `1206mm` limit, the panel must shrink by using fewer columns instead of scaling the shaker widths down.
 - In practice this means a vertical panel may use 1 or 2 columns so the remaining horizontal panels can keep the same shaker width pattern.
+- Vertical panel shaker width uses the dominant horizontal/job shaker width, not the smaller leftover edge shaker.
+- The lower vertical shaker row uses the horizontal panel shaker height, so it aligns with horizontal panels.
 
 ## Horizontal Residual / Merge Rules
 
 Visible labels `lower` and `combined` were removed.
 
 - Residual horizontal pieces are named as normal physical panels: `P3`, `P4`, etc.
-- Adjacent horizontal pieces only merge when they touch and the merged physical width is at most `1440mm`.
+- Adjacent horizontal pieces merge when they touch and the merged physical width is at most `2400mm`.
 - If a horizontal span cannot be covered by one allowed piece, the app creates more panels instead of labeling a fake combined/lower piece.
 
 ## Window Rules Added
