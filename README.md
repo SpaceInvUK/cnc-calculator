@@ -32,6 +32,7 @@ http://127.0.0.1:8765/Cnc%20Calculator%20UI%20Test.html
 - `Cnc Calculator UI Test.html` - active development/test app.
 - `CNC Calculator Handoff - regras e pendencias.txt` - full original handoff with all broad app rules and pending items.
 - `docs/PANNELING_IMPLEMENTATION_2026-05-19.md` - what was changed in this pass, current Panneling rules, QA notes, and GitHub instructions.
+- `docs/PANNELING_RULES_2026-05-20.md` - current confirmed Panneling rules after the latest annotation review.
 
 ## Hard Rules
 
@@ -61,6 +62,13 @@ Implemented in `Cnc Calculator UI Test.html`:
 - Auto window X is placed away from an enabled door when possible.
 - Wall preview, sheet/nesting preview, and generated placement labels use the same `Wall N - P...` naming.
 - UI density was reduced with smaller, more professional controls.
+- Rooms can now carry up to 50 walls each.
+- Panneling shakers are now controlled per wall and per panel, with auto sizing around 350mm.
+- If a requested shaker count cannot physically fit inside the max panel width, the app raises it to the smallest count that fits.
+- Horizontal/vertical panel heights are editable without changing frame width.
+- Walls support multiple Door, Window, and Empty openings.
+- Empty spaces remove panel coverage from that wall span.
+- Vertical wall orientation fills the wall with vertical panels using the 1206mm max-width rule.
 
 ## Validation Done
 

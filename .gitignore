@@ -11,6 +11,7 @@ exports/
 node_modules/
 dist/
 build/
+.netlify/
 
 # OS/editor noise
 .DS_Store

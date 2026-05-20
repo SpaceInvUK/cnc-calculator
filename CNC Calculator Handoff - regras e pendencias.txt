@@ -3,6 +3,28 @@ Data: 18 May 2026
 Atualizado: 19 May 2026
 Arquivo principal em uso: C:\Users\ednei\Documents\CNC App\Cnc Calculator UI Test.html
 
+ATUALIZACAO PANNELING - 20 May 2026
+- Nao fazer deploy no Netlify nesta rodada.
+- Regras atuais tambem foram registradas em docs/PANNELING_RULES_2026-05-20.md.
+- Cada Room pode ter ate 50 walls.
+- Vertical panel continua com largura maxima 1206mm.
+- Vertical panel continua com altura padrao 3000mm mesmo quando a wall tem 3200mm.
+- Horizontal panel usa largura maxima 2400mm.
+- Shaker global saiu do Panel Setup.
+- Auto shaker por wall mira aproximadamente 350mm.
+- Shaker count pode ser editado por wall.
+- Shaker count tambem pode ser editado por panel em Part Dimensions.
+- Se o numero pedido de shakers fizer um cut panel passar da largura maxima, a largura maxima tem prioridade e o app aumenta para a menor quantidade de shakers que cabe.
+- Horizontal Panel Height e Vertical Panel Height sao alturas de panel, nao frame.
+- Frame continua controlando rail/stile/frame como antes.
+- Walls podem ter multiplas openings: Door, Window e Empty.
+- Empty padrao: 2000mm x 2000mm, com nome editavel.
+- Openings nao devem encostar nem sobrepor; auto-position usa pelo menos um frame de espaco.
+- Door e Empty removem cobertura de panel naquele trecho da wall.
+- Window continua como cutout no panel.
+- Skirting 305 com frame 80 mostra guia pontilhada a 225mm do chao na wall preview.
+- Guia de skirting nao aparece no nesting/sheet nem no DXF.
+
 IMPORTANTE
 - Este eh o arquivo de teste ativo.
 - Nao mexer no Cnc Calculator 1.0.html ate o usuario pedir explicitamente.
