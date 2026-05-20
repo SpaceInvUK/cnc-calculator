@@ -65,15 +65,19 @@ Implemented in `Cnc Calculator UI Test.html`:
 - Rooms can now carry up to 50 walls each.
 - Panneling shakers are now controlled per wall and per panel, with auto sizing around 350mm.
 - If a requested shaker count cannot physically fit inside the max panel width, the app raises it to the smallest count that fits.
+- Per-panel shaker overrides now update wall preview, nesting/sheet preview, and generated cavity geometry for that selected physical panel.
 - Horizontal/vertical panel heights are editable without changing frame width.
+- Per-wall panel height controls drive generated panels even when the source part still has an older saved height.
 - Walls support multiple Door, Window, and Empty openings.
 - Empty spaces remove panel coverage from that wall span.
 - Vertical wall orientation fills the wall with vertical panels using the 1206mm max-width rule.
+- Skirting default is 225mm; the dashed guide is wall-preview only, and shaker openings start at skirting plus frame.
 
 ## Validation Done
 
 - Inline script syntax check passed through Node.
-- Browser QA was run through a local static server because automated `file://` reloads can be blocked.
+- Local static server responded successfully on port `8765`.
+- Automated browser reload of the existing `file://` tab can be blocked, so visual QA should be done from the local server URL when needed.
 - Tested 3 walls and 4 walls.
 - Tested full-wall vertical orientation.
 - Tested one isolated vertical panel.

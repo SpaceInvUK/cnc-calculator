@@ -155,24 +155,24 @@
     .selected-wall-window-options.show{display:grid!important}
     .panel-skirting-options{display:none!important}
     .panel-skirting-options.show{display:flex!important}
-    .panel-skirting-options .panelSkirtingHeight{width:12ch!important;max-width:12ch!important;min-width:88px!important}
-    .wall-setup-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:10px;border:1.5px solid #bbf7d0;border-radius:10px;background:#f0fdf4}
+    .panel-skirting-options .panelSkirtingHeight{width:10ch!important;max-width:10ch!important;min-width:72px!important}
+    .wall-setup-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:9px;border:1.5px solid #bbf7d0;border-radius:10px;background:#f0fdf4}
     .wall-setup-grid .field input{width:100%}
     .wall-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .walls-list{grid-column:1/-1;display:grid;gap:8px}
-    .wall-config-row{display:grid;grid-template-columns:minmax(72px,.72fr) repeat(6,minmax(76px,1fr)) max-content;gap:7px;align-items:end;padding:8px;border:1.5px solid #d1fae5;border-radius:8px;background:#fff}
+    .wall-config-row{display:grid;grid-template-columns:minmax(58px,.52fr) minmax(76px,.78fr) minmax(76px,.78fr) minmax(118px,1fr) minmax(72px,.7fr) minmax(76px,.72fr) minmax(76px,.72fr) 32px;gap:6px;align-items:end;padding:7px;border:1.5px solid #d1fae5;border-radius:8px;background:#fff}
     .wall-config-row .field{margin:0}
     .wall-config-row .field label{font-size:10px}
-    .wall-config-row input{height:32px!important;padding:6px 9px!important;font-size:12px!important}
+    .wall-config-row input{height:30px!important;padding:5px 8px!important;font-size:12px!important}
     .wall-config-title{font-weight:900;color:#065f46;align-self:center;white-space:nowrap}
-    .wall-orientation-field{display:grid;gap:4px;min-width:122px}
-    .wall-orientation-field label{font-size:10px;font-weight:900;text-transform:uppercase;color:#374151}
-    .wall-orientation-control{height:32px;width:100%;grid-auto-columns:1fr}
+    .wall-orientation-field{display:grid;gap:4px;min-width:0}
+    .wall-orientation-field label{font-size:10px;font-weight:900;text-transform:uppercase;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .wall-orientation-control{height:30px;width:100%;grid-auto-columns:1fr}
     .wall-orientation-control button{font-size:10px}
-    .wall-row-actions{grid-column:2/4;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-    .wall-row-actions .tiny-toggle{height:28px;padding:0 9px;font-size:10px}
+    .wall-row-actions{grid-column:2/5;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .wall-row-actions .tiny-toggle{height:27px;padding:0 8px;font-size:10px}
     .wall-openings-list{grid-column:1/-1;display:grid;gap:6px}
-    .wall-opening-row{display:grid;grid-template-columns:minmax(72px,.72fr) minmax(86px,1fr) repeat(4,minmax(74px,1fr)) max-content;gap:6px;align-items:end;padding:7px;border:1px solid #dbeafe;border-radius:8px;background:#f8fbff}
+    .wall-opening-row{display:grid;grid-template-columns:minmax(72px,.72fr) minmax(96px,1fr) repeat(4,minmax(72px,1fr)) 32px;gap:6px;align-items:end;padding:7px;border:1px solid #dbeafe;border-radius:8px;background:#f8fbff}
     .wall-opening-row .field{margin:0}
     .wall-opening-row .field label{font-size:9px}
     .wall-opening-row input,.wall-opening-row select{height:30px!important;padding:5px 8px!important;font-size:11px!important}
@@ -569,6 +569,18 @@
     .ui-test .material-title{font-size:15px}
     .ui-test .block-note{font-size:11px;color:#64748b}
     .material-editor{display:grid;grid-template-columns:minmax(0,.92fr) minmax(360px,1.08fr);gap:12px;padding:12px;background:var(--block-tint,#fff)}
+    .material-block[data-calc-mode="panel"] .material-editor{grid-template-columns:1fr}
+    .material-block[data-calc-mode="panel"] .material-editor>.editor-section{grid-column:1/-1}
+    .material-block[data-calc-mode="panel"] .editor-section-grid{gap:9px}
+    .material-block[data-calc-mode="panel"] .editor-section-grid>.field:has(.size){grid-column:auto}
+    .material-block[data-calc-mode="panel"] .panel-wrap-row{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));align-items:end}
+    .material-block[data-calc-mode="panel"] .panel-wrap-title,
+    .material-block[data-calc-mode="panel"] .panel-shaker-note,
+    .material-block[data-calc-mode="panel"] .frameHint{grid-column:1/-1}
+    .material-block[data-calc-mode="panel"] .panel-setup-grid{display:grid;grid-template-columns:max-content max-content minmax(150px,max-content) 1fr;align-items:end}
+    .material-block[data-calc-mode="panel"] .wall-setup-grid{grid-template-columns:minmax(95px,.6fr) minmax(140px,.8fr) minmax(120px,.75fr) minmax(120px,.75fr) 1fr}
+    .material-block[data-calc-mode="panel"] .wall-setup-title{grid-column:1/-1}
+    .material-block[data-calc-mode="panel"] .walls-list{grid-column:1/-1}
     .editor-section{border:1.5px solid var(--block-line,#dbe3ec);border-radius:8px;background:#fff;overflow:hidden}
     .editor-section.wide{grid-column:1/-1}
     .editor-section.compact{align-self:start}
@@ -1161,7 +1173,7 @@
               <input class="panelColumns sr-only" type="number" min="1" step="1" aria-hidden="true" tabindex="-1">
               <div class="field inline-control"><select class="panelSkirtingEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle panelSkirtingControl off" type="button" aria-pressed="false">Skirting</button></div>
               <div class="field inline-control"><button class="pocket-title-toggle panelSideRulesControl off" type="button" aria-pressed="false">Side Rules</button></div>
-              <div class="field inline-control panel-skirting-options"><label>Skirting Height</label><input class="panelSkirtingHeight" type="number" min="0" step="1" value="305"></div>
+              <div class="field inline-control panel-skirting-options"><label>Skirting Height</label><input class="panelSkirtingHeight" type="number" min="0" step="1" value="225"></div>
               <div class="panel-shaker-note">Shaker count is controlled per wall or per panel. Auto starts around 350mm and keeps main shakers equal; edge shakers beside wall, door, window, empty, corner, or column may adjust.</div>
               <div class="panel-side-grid panel-only">
                 <div class="panel-side-title">Side Rules</div>
@@ -1951,7 +1963,7 @@
         wallWindowX:'',
         wallWindowBottom:900,
         panelSkirtingEnabled:'No',
-        panelSkirtingHeight:305,
+        panelSkirtingHeight:PANEL_SKIRTING_DEFAULT_HEIGHT,
         panelDoorAllowance:175,
         panelSideTop:'normal',
         panelSideRight:'normal',
@@ -2044,7 +2056,8 @@
       block.wallWindowHeight = block.wallWindowHeight === '' || block.wallWindowHeight == null ? 1100 : Math.max(0, Number(block.wallWindowHeight || 0));
       block.wallWindowX = block.wallWindowX === '' || block.wallWindowX == null ? '' : Math.max(0, Number(block.wallWindowX || 0));
       block.wallWindowBottom = block.wallWindowBottom === '' || block.wallWindowBottom == null ? 900 : Math.max(0, Number(block.wallWindowBottom || 0));
-      block.panelSkirtingHeight = Number(block.panelSkirtingHeight || 305);
+      block.panelSkirtingHeight = Number(block.panelSkirtingHeight || PANEL_SKIRTING_DEFAULT_HEIGHT);
+      if(block.panelSkirtingHeight === 305) block.panelSkirtingHeight = PANEL_SKIRTING_DEFAULT_HEIGHT;
       block.panelDoorAllowance = Number(block.panelDoorAllowance || 175);
       block.panelSideTop = normalizePanelSideRule(block.panelSideTop);
       block.panelSideRight = normalizePanelSideRule(block.panelSideRight);
@@ -6240,6 +6253,7 @@
     const PANEL_VERTICAL_DEFAULT_HEIGHT = 3000;
     const PANEL_HORIZONTAL_DEFAULT_WIDTH = 2400;
     const PANEL_HORIZONTAL_DEFAULT_HEIGHT = 1030;
+    const PANEL_SKIRTING_DEFAULT_HEIGHT = 225;
     const PANEL_HORIZONTAL_MERGE_MAX_WIDTH = 2400;
     function roundPanelMm(value){
       return Math.round(Number(value || 0) * 100) / 100;
@@ -6297,10 +6311,17 @@
       );
       return dominantPositive(widths, fallback);
     }
+    function panelBottomFrameWithSkirting(block, frame, bottomFrame){
+      const base = Math.max(0, Number(bottomFrame || 0));
+      if(String(block?.panelSkirtingEnabled || 'No') !== 'Yes') return base;
+      const skirtingBase = Math.max(0, Number(block?.panelSkirtingHeight || PANEL_SKIRTING_DEFAULT_HEIGHT));
+      return Math.max(base, skirtingBase + Math.max(0, Number(frame || 0)));
+    }
     function horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame){
       const frame = Math.max(1, Number(layout?.frame || block?.frameSize || 80));
       const rows = 1;
-      const innerH = Math.max(1, Number(layout?.panelHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT) - Number(topFrame || 0) - Number(bottomFrame || 0));
+      const resolvedBottomFrame = panelBottomFrameWithSkirting(block, frame, bottomFrame);
+      const innerH = Math.max(1, Number(layout?.panelHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT) - Number(topFrame || 0) - resolvedBottomFrame);
       const openH = Math.max(1, innerH - frame * Math.max(0, rows - 1));
       return roundPanelMm(openH / rows);
     }
@@ -6521,8 +6542,8 @@
         : (panelDirection === 'vertical' ? panelVerticalHeightForPart(block, part) : PANEL_HORIZONTAL_DEFAULT_WIDTH);
       const requestedPanelWidth = panelPositiveOr(part?.width, defaultPanelWidth);
       const panelMaxWidth = wallMode && panelDirection === 'vertical' ? panelVerticalWidthLimit(block) : Math.max(1, requestedPanelWidth);
-      const defaultPanelHeight = wallMode ? panelHorizontalHeightForPart(block, part) : (panelDirection === 'vertical' ? panelVerticalHeightForPart(block, part) : panelHorizontalHeightForPart(block, part));
-      const panelHeight = panelPositiveOr(part?.height, defaultPanelHeight);
+      const defaultPanelHeight = panelDirection === 'vertical' ? panelVerticalHeightForPart(block, part) : panelHorizontalHeightForPart(block, part);
+      const panelHeight = wallMode ? panelHorizontalHeightForPart(block, part) : panelPositiveOr(part?.height, defaultPanelHeight);
       const wallWidth = wallMode ? Math.max(1, wallReferenceWidth(block, part)) : panelMaxWidth;
       const wallHeight = wallMode ? Math.max(1, wallReferenceHeight(block, part)) : panelHeight;
       const baseLeftRule = effectivePanelSideRule(block, part, 'left');
@@ -6697,10 +6718,19 @@
           straightJointRight:straightRight
         }));
         let verticalPlan = makeVerticalPlan(rightRuleForPlan, adjacency.right && !hasResidualProbe);
+        if(wallForcesVertical && manualVerticalWidth === '' && logicalWidth <= panelVerticalWidthLimit(block) + 0.5){
+          const targetColumnCount = Math.max(1, (Array.isArray(section.shakerColumnWidths) && section.shakerColumnWidths.length) ? section.shakerColumnWidths.length : (verticalPlan.columnWidths || []).length || 1);
+          verticalPlan = {
+            ...verticalPlan,
+            width:roundPanelMm(logicalWidth),
+            lowerWidth:roundPanelMm(logicalWidth),
+            columnWidths:distributeFixedCountShakersForSpan(logicalWidth, targetColumnCount, frame, verticalPlan.upperLeftFrame ?? verticalPlan.leftFrame, verticalPlan.upperRightFrame ?? verticalPlan.rightFrame)
+          };
+        }
         let verticalWidth = verticalPlan.width;
         const sourceShakerSizes = Array.isArray(section.shakerColumnWidths) ? section.shakerColumnWidths.map(roundPanelMm).filter(value=>value > 0) : [];
         const topFrame = panelSideFrameValue(effectivePanelSideRule(block, part, 'top'), frame, layout.thickness, layout.doorAllowance);
-        const bottomFrame = panelSideFrameValue(effectivePanelSideRule(block, part, 'bottom'), frame, layout.thickness, layout.doorAllowance);
+        const bottomFrame = panelBottomFrameWithSkirting(block, frame, panelSideFrameValue(effectivePanelSideRule(block, part, 'bottom'), frame, layout.thickness, layout.doorAllowance));
         const sharedTarget = Math.max(
           PANEL_SHAKER_MIN,
           Math.min(PANEL_SHAKER_MAX, averagePositive(sourceShakerSizes, Number(panelShakerPlan(block, part, layout.frame, Math.max(1, logicalWidth)).target || PANEL_SHAKER_MAX)))
@@ -6955,6 +6985,25 @@
       const section = item?.section || {};
       const sourceSection = item?.sourceSection || section;
       const physical = item?.physical || {};
+      const sectionIndex = Number.isInteger(Number(item?.sectionIndex)) ? Number(item.sectionIndex) : null;
+      const subIndex = item?.subIndex || '';
+      const overrideRaw = sectionIndex == null ? undefined : panelVirtualOverrideValue(part, sectionIndex, subIndex, 'panelRows', undefined);
+      const overrideCount = overrideRaw === '' || overrideRaw == null ? 0 : Math.max(1, Math.round(Number(overrideRaw || 1)));
+      const primaryAxis = physical.direction === 'vertical' ? 'y' : 'x';
+      if(overrideCount > 0 && axis === primaryAxis){
+        const frame = Math.max(1, Number(layout?.frame || block?.frameSize || 80));
+        const thickness = Math.max(0, Number(layout?.thickness || parseThicknessMm(block?.thickness || '18mm')));
+        const doorAllowance = Math.max(0, Number(layout?.doorAllowance || block?.panelDoorAllowance || 175));
+        if(axis === 'x'){
+          const leftFrame = panelSideFrameValue(section.panelSideLeft || part?.panelSideLeft || block?.panelSideLeft, frame, thickness, doorAllowance);
+          const rightFrame = panelSideFrameValue(section.panelSideRight || part?.panelSideRight || block?.panelSideRight, frame, thickness, doorAllowance);
+          return distributeFixedCountShakersForSpan(physical.width, overrideCount, frame, leftFrame, rightFrame);
+        }
+        const topFrame = panelSideFrameValue(effectivePanelSideRule(block, part, 'top'), frame, thickness, doorAllowance);
+        const bottomFrame = panelBottomFrameWithSkirting(block, frame, panelSideFrameValue(effectivePanelSideRule(block, part, 'bottom'), frame, thickness, doorAllowance));
+        const bottomTarget = horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame);
+        return verticalPanelTwoRowSizes(physical.height, frame, topFrame, bottomFrame, bottomTarget, overrideCount);
+      }
       if(axis === 'x' && Array.isArray(item?.columnWidths) && item.columnWidths.length){
         return item.columnWidths.map(roundPanelMm).filter(value=>value > 0);
       }
@@ -6988,9 +7037,10 @@
       const sectionOverride = Array.isArray(part?.wallPanelOverrides) ? (part.wallPanelOverrides[sectionIndex] || {}) : {};
       const customColumns = panelAxisShakerSizes(block, part, layout, item, 'x');
       const customRows = panelAxisShakerSizes(block, part, layout, item, 'y');
-      const partRows = sectionOverride.panelRows === '' || sectionOverride.panelRows == null
+      const panelRowsOverride = panelVirtualOverrideValue(part, sectionIndex, subIndex, 'panelRows', undefined);
+      const partRows = panelRowsOverride === '' || panelRowsOverride == null
         ? (part?.panelRows === '' || part?.panelRows == null ? block?.panelRows : part.panelRows)
-        : sectionOverride.panelRows;
+        : panelRowsOverride;
       const requestedShakers = partRows === '' || partRows == null ? '' : Math.max(1, Math.round(Number(partRows || 1)));
       const isVerticalPanel = physical.direction === 'vertical';
       const generatedPrimaryShakers = isVerticalPanel ? customRows.length : customColumns.length;
@@ -7022,7 +7072,7 @@
         panelVerticalStepInsetRight:item?.verticalStepInsetRight ?? 0,
         panelIrregularShape:item?.irregularShape === false ? 'No' : 'Yes',
         panelSkirtingEnabled:block?.panelSkirtingEnabled === 'Yes' ? 'Yes' : 'No',
-        panelSkirtingHeight:Math.max(0, Number(block?.panelSkirtingHeight || 305)),
+        panelSkirtingHeight:Math.max(0, Number(block?.panelSkirtingHeight || PANEL_SKIRTING_DEFAULT_HEIGHT)),
         panelDoorAllowance:Math.max(0, Number(block?.panelDoorAllowance || 175)),
         panelSideTop:effectivePanelSideRule(block, part, 'top'),
         panelSideRight:normalizePanelSideRule(section.panelSideRight || part?.panelSideRight || block?.panelSideRight),
@@ -7993,7 +8043,7 @@
           wallWindowXInput.value = block.wallWindowX === '' || block.wallWindowX == null ? '' : Number(block.wallWindowX || 0);
           wallWindowBottomInput.value = block.wallWindowBottom === '' || block.wallWindowBottom == null ? '' : Number(block.wallWindowBottom || 0);
           panelSkirtingSelect.value = block.panelSkirtingEnabled === 'Yes' ? 'Yes' : 'No';
-          panelSkirtingHeightInput.value = Number(block.panelSkirtingHeight || 305);
+          panelSkirtingHeightInput.value = Number(block.panelSkirtingHeight || PANEL_SKIRTING_DEFAULT_HEIGHT);
           panelDoorAllowanceInput.value = Number(block.panelDoorAllowance || 175);
           Object.entries(panelSideSelects).forEach(([side, select])=>{
             select.value = normalizePanelSideRule(block['panelSide' + side.charAt(0).toUpperCase() + side.slice(1)]);
@@ -8225,7 +8275,7 @@
               const raw = e.target.value;
               const min = key === 'panelRows' || key === 'panelHorizontalHeight' || key === 'panelVerticalHeight' ? 1 : 0;
               setPartValue(block, index, key, raw === '' ? '' : Math.max(min, Number(raw || min)));
-              if(key === 'wallWidth' || key === 'wallHeight') requestRender();
+              if(['wallWidth','wallHeight','panelRows','panelHorizontalHeight','panelVerticalHeight'].includes(key)) requestRender();
               else updatePreview();
             });
           });
@@ -8687,7 +8737,8 @@
                 const physical = item.physical;
                 const customColumns = panelAxisShakerSizes(block, sourcePart, layout, item, 'x');
                 const customRows = panelAxisShakerSizes(block, sourcePart, layout, item, 'y');
-                const rawShakers = override.panelRows ?? sourcePart.panelRows ?? block.panelRows;
+                const rawOverrideShakers = panelVirtualOverrideValue(sourcePart, sectionIndex, item.subIndex || '', 'panelRows', undefined);
+                const rawShakers = rawOverrideShakers === '' || rawOverrideShakers == null ? (sourcePart.panelRows ?? block.panelRows) : rawOverrideShakers;
                 const generatedShakers = physical.direction === 'vertical' ? customRows.length : customColumns.length;
                 dimensionRows.push({
                   p:{
@@ -9249,6 +9300,11 @@
         bottom:panelSideFrameValue(p?.panelSideBottom, frame, thickness, doorAllowance),
         left:panelSideFrameValue(p?.panelSideLeft, frame, thickness, doorAllowance)
       };
+      sides.bottom = panelBottomFrameWithSkirting(
+        {panelSkirtingEnabled:p?.panelSkirtingEnabled, panelSkirtingHeight:p?.panelSkirtingHeight},
+        frame,
+        sides.bottom
+      );
       const width = Math.max(0, Number(p?.w || p?.width || p?.origW || 0));
       const height = Math.max(0, Number(p?.h || p?.height || p?.origH || 0));
       const autoVertical = String(p?.panelDirection || 'horizontal') === 'vertical';
@@ -10083,7 +10139,8 @@
       block.wallWindowX = data.wallWindowX === '' || data.wallWindowX == null ? '' : Math.max(0, Number(data.wallWindowX || 0));
       block.wallWindowBottom = data.wallWindowBottom === '' || data.wallWindowBottom == null ? 900 : Math.max(0, Number(data.wallWindowBottom || 0));
       block.panelSkirtingEnabled = String(data.panelSkirtingEnabled ?? 'No') === 'Yes' ? 'Yes' : 'No';
-      block.panelSkirtingHeight = Math.max(0, Number(data.panelSkirtingHeight ?? 305));
+      block.panelSkirtingHeight = Math.max(0, Number(data.panelSkirtingHeight ?? PANEL_SKIRTING_DEFAULT_HEIGHT));
+      if(block.panelSkirtingHeight === 305) block.panelSkirtingHeight = PANEL_SKIRTING_DEFAULT_HEIGHT;
       block.panelDoorAllowance = Math.max(0, Number(data.panelDoorAllowance ?? 175));
       block.panelSideTop = normalizePanelSideRule(data.panelSideTop);
       block.panelSideRight = normalizePanelSideRule(data.panelSideRight);
@@ -10282,7 +10339,7 @@
         panelShakerMode:String(block.panelShakerMode ?? 'auto'),
         panelShakerSize:String(block.panelShakerSize ?? ''),
         panelSkirtingEnabled:String(block.panelSkirtingEnabled ?? 'No'),
-        panelSkirtingHeight:String(block.panelSkirtingHeight ?? 305),
+        panelSkirtingHeight:String(block.panelSkirtingHeight ?? PANEL_SKIRTING_DEFAULT_HEIGHT),
         panelDoorAllowance:String(block.panelDoorAllowance ?? 175),
         panelSideTop:String(block.panelSideTop ?? 'normal'),
         panelSideRight:String(block.panelSideRight ?? 'normal'),
@@ -11820,7 +11877,13 @@
       });
       const irregularButton = editor.querySelector('.selectedPartPanelIrregular');
       if(irregularButton){
-        setToggleButtonValue(irregularButton, panelIrregularShapeForPart(part, block, editorSectionIndex) ? 'Yes' : 'No');
+        const irregularOverride = editorSectionOverride
+          ? panelVirtualOverrideValue(part, editorSectionIndex, editorSectionSubIndex, 'panelIrregularShape', undefined)
+          : undefined;
+        const irregularValue = irregularOverride === '' || irregularOverride == null
+          ? (panelIrregularShapeForPart(part, block, editorSectionIndex) ? 'Yes' : 'No')
+          : yesNoValue(irregularOverride, 'No');
+        setToggleButtonValue(irregularButton, irregularValue);
         irregularButton.addEventListener('click', event=>{
           event.preventDefault();
           const value = irregularButton.getAttribute('aria-pressed') === 'true' ? 'No' : 'Yes';
@@ -12060,7 +12123,7 @@
         });
         html += drawPocketLinesForPanel(panel, sx, sy);
         if(String(panel.panelSkirtingEnabled || 'No') === 'Yes'){
-          const skirtingGuide = Math.max(0, Number(panel.panelSkirtingHeight || 305) - Number(panel.frame || layout.frame || 80));
+          const skirtingGuide = Math.max(0, Number(panel.panelSkirtingHeight || PANEL_SKIRTING_DEFAULT_HEIGHT));
           const yLine = (panel.y + panel.h - skirtingGuide) * sy;
           html += '<line x1="'+(panel.x*sx)+'" y1="'+yLine+'" x2="'+((panel.x+panel.w)*sx)+'" y2="'+yLine+'" stroke="#64748b" stroke-width="1" stroke-dasharray="5 3"/>';
         }

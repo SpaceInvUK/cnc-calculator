@@ -1,6 +1,6 @@
 ﻿CNC CALCULATOR HANDOFF - REGRAS, ESTADO ATUAL E PENDENCIAS
 Data: 18 May 2026
-Atualizado: 19 May 2026
+Atualizado: 20 May 2026
 Arquivo principal em uso: C:\Users\ednei\Documents\CNC App\Cnc Calculator UI Test.html
 
 ATUALIZACAO PANNELING - 20 May 2026
@@ -14,16 +14,22 @@ ATUALIZACAO PANNELING - 20 May 2026
 - Auto shaker por wall mira aproximadamente 350mm.
 - Shaker count pode ser editado por wall.
 - Shaker count tambem pode ser editado por panel em Part Dimensions.
+- Override de shakers por panel fisico precisa atualizar wall preview, nesting/sheet e geometria de cavidades/DXF daquele panel selecionado.
 - Se o numero pedido de shakers fizer um cut panel passar da largura maxima, a largura maxima tem prioridade e o app aumenta para a menor quantidade de shakers que cabe.
 - Horizontal Panel Height e Vertical Panel Height sao alturas de panel, nao frame.
+- H Panel H por wall precisa mudar a altura fisica dos paineis horizontais gerados, mesmo se o part base ainda tiver height antigo salvo.
 - Frame continua controlando rail/stile/frame como antes.
 - Walls podem ter multiplas openings: Door, Window e Empty.
 - Empty padrao: 2000mm x 2000mm, com nome editavel.
 - Openings nao devem encostar nem sobrepor; auto-position usa pelo menos um frame de espaco.
 - Door e Empty removem cobertura de panel naquele trecho da wall.
 - Window continua como cutout no panel.
-- Skirting 305 com frame 80 mostra guia pontilhada a 225mm do chao na wall preview.
+- Skirting padrao agora eh 225mm.
+- Com frame 80, a guia pontilhada fica a 225mm do chao e o shaker comeca em 305mm.
 - Guia de skirting nao aparece no nesting/sheet nem no DXF.
+- Full-wall vertical orientation deve preencher a parede com panels verticais sem deixar vazios dentro das secoes geradas.
+- Irregular Shape deve ser salvo por panel fisico selecionado, incluindo residual/secondary vertical pieces.
+- Em Panneling, Material & Pricing ocupa a largura toda e Wall Setup deve ficar compacto.
 
 IMPORTANTE
 - Este eh o arquivo de teste ativo.

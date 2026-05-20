@@ -24,6 +24,7 @@ This document records the current confirmed Panneling rules for the active app:
 - Vertical cut panels keep the standard height of 3000mm unless edited.
 - Wall height can be 3200mm while vertical panels remain 3000mm.
 - Horizontal panel height and vertical panel height are editable from Panneling controls and per wall.
+- Per-wall horizontal panel height must drive the generated wall panels immediately, even if the source part still has an older saved height.
 - The frame size still controls rail/stile/frame width; panel height controls do not change frame width.
 
 ## Shaker Rules
@@ -32,6 +33,7 @@ This document records the current confirmed Panneling rules for the active app:
 - Automatic wall shakers target approximately 350mm wide.
 - Shaker count can be overridden per wall.
 - Shaker count can still be overridden per physical panel in Part Dimensions.
+- A physical panel shaker override must change the wall preview, nesting/sheet preview, and DXF/cavity geometry for that selected physical panel.
 - If the user requests fewer or more shakers, the app must distribute that count across the wall/panel.
 - If a requested shaker count would force a physical cut panel past its max width, the max-width rule takes priority and the app increases to the smallest count that can fit.
 - Main shakers should stay consistent within the wall where possible.
@@ -52,8 +54,9 @@ This document records the current confirmed Panneling rules for the active app:
 
 ## Skirting
 
-- Skirting default remains 305mm.
-- With frame 80mm and skirting 305mm, the dashed skirting guide line is 225mm from the floor.
+- Skirting default is 225mm.
+- With frame 80mm and skirting 225mm, the dashed skirting guide line is 225mm from the floor.
+- The lower shaker opening starts at skirting height plus frame height; with 225mm skirting and 80mm frame, the shaker starts at 305mm.
 - The skirting guide line is a wall preview guide only.
 - The skirting guide line must not be drawn on nesting/sheet pieces or DXF output.
 
@@ -71,3 +74,10 @@ This document records the current confirmed Panneling rules for the active app:
 - Vertical panel standard height remains 3000mm even when wall height is 3200mm.
 - Horizontal max panel width is 2400mm.
 - Frame controls remain frame controls; new height fields are panel height controls, not frame height controls.
+
+## Latest QA Fixes
+
+- Panneling Material & Pricing is full width in panel mode so Wall Setup has room to breathe.
+- Wall Setup rows are compact and put Door, Window, and Empty actions beneath the wall size/orientation controls.
+- Full-wall vertical orientation must not leave empty gaps inside generated vertical sections.
+- Irregular Shape is stored per selected physical panel instance, including residual/secondary vertical pieces.
