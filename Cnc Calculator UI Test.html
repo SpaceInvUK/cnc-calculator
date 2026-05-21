@@ -1528,9 +1528,24 @@
       showHistoryStatus('Redid: ' + item.label + '.');
     }
 
+    function safeLocalStorageGet(key, fallback=''){
+      try{
+        return window.localStorage.getItem(key) ?? fallback;
+      } catch(_err){
+        return fallback;
+      }
+    }
+    function safeLocalStorageSet(key, value){
+      try{
+        window.localStorage.setItem(key, value);
+        return true;
+      } catch(_err){
+        return false;
+      }
+    }
     function loadCustomDoorTemplates(){
       try {
-        const saved = JSON.parse(localStorage.getItem(TEMPLATE_STORAGE_KEY) || '[]');
+        const saved = JSON.parse(safeLocalStorageGet(TEMPLATE_STORAGE_KEY, '[]') || '[]');
         return Array.isArray(saved) ? saved.filter(t=>t && t.id && t.name && t.bounds && Array.isArray(t.entities)).map(t=>({
           ...t,
           construction:t.construction || 'single'
@@ -1540,18 +1555,18 @@
       }
     }
     function saveCustomDoorTemplates(){
-      localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(customDoorTemplates));
+      safeLocalStorageSet(TEMPLATE_STORAGE_KEY, JSON.stringify(customDoorTemplates));
     }
     function loadCustomOffcutTemplates(){
       try {
-        const saved = JSON.parse(localStorage.getItem(OFFCUT_TEMPLATE_STORAGE_KEY) || '[]');
+        const saved = JSON.parse(safeLocalStorageGet(OFFCUT_TEMPLATE_STORAGE_KEY, '[]') || '[]');
         return Array.isArray(saved) ? saved.filter(t=>t && t.id && t.name && t.bounds && Array.isArray(t.entities)) : [];
       } catch(_){
         return [];
       }
     }
     function saveCustomOffcutTemplates(){
-      localStorage.setItem(OFFCUT_TEMPLATE_STORAGE_KEY, JSON.stringify(customOffcutTemplates));
+      safeLocalStorageSet(OFFCUT_TEMPLATE_STORAGE_KEY, JSON.stringify(customOffcutTemplates));
     }
     function sanitizeTemplateName(value){
       return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 42);
@@ -3231,6 +3246,13 @@
       const custom = String(block?.roomName || '').trim();
       return custom || ('Room ' + (Number(index || 0) + 1));
     }
+    function roomNamePrefix(block){
+      const custom = String(block?.roomName || '').trim();
+      return custom ? custom + ' ' : '';
+    }
+    function wallDisplayName(block, wallIndex){
+      return roomNamePrefix(block) + 'Wall ' + (Number(wallIndex || 0) + 1);
+    }
     function roomWallSummary(block){
       if(!isPanelBlock(block)) return '';
       const walls = Array.isArray(block.parts) ? block.parts.length : 0;
@@ -4206,12 +4228,12 @@
     let customToolpathTemplates = loadCustomToolpathTemplates();
     function loadCustomToolpathTemplates(){
       try{
-        const parsed = JSON.parse(localStorage.getItem(TOOLPATH_TEMPLATE_STORAGE_KEY) || '[]');
+        const parsed = JSON.parse(safeLocalStorageGet(TOOLPATH_TEMPLATE_STORAGE_KEY, '[]') || '[]');
         return Array.isArray(parsed) ? parsed.filter(item=>item && item.id && item.name) : [];
       }catch(err){return [];}
     }
     function saveCustomToolpathTemplates(){
-      localStorage.setItem(TOOLPATH_TEMPLATE_STORAGE_KEY, JSON.stringify(customToolpathTemplates));
+      safeLocalStorageSet(TOOLPATH_TEMPLATE_STORAGE_KEY, JSON.stringify(customToolpathTemplates));
     }
     function customToolpathPresetKey(id){
       return 'customTemplate:' + id;
@@ -6521,6 +6543,8 @@
         panels.push({
           xStart:roundPanelMm(cursor),
           width:chosenWidth,
+          heightOverride:span.heightOverride ?? '',
+          windowLowerPanel:span.windowLowerPanel === true,
           shakerColumnWidths:group.map(roundPanelMm),
           panelSideLeft:leftRule,
           panelSideRight:rightRule,
@@ -6566,6 +6590,42 @@
         if(cursor < wallWidth) spans.push({index:spans.length, x:cursor, width:wallWidth - cursor, leftRule, rightRule:baseRightRule});
       } else {
         spans.push({index:0, x:0, width:wallWidth, leftRule:baseLeftRule, rightRule:baseRightRule});
+      }
+      const splitSpans = [];
+      const lowerWindows = allOpenings
+        .filter(opening=>opening.type === 'window' && Number(opening.width || 0) > 0 && Number(opening.bottom || 0) > 0 && Number(opening.bottom || 0) < panelHeight)
+        .sort((a,b)=>Number(a.x || 0)-Number(b.x || 0));
+      spans.forEach(span=>{
+        const spanStart = Number(span.x || 0);
+        const spanEnd = spanStart + Number(span.width || 0);
+        let cursor = spanStart;
+        let leftRule = span.leftRule;
+        lowerWindows.forEach(opening=>{
+          const winStart = Math.max(spanStart, Math.min(spanEnd, Number(opening.x || 0)));
+          const winEnd = Math.max(winStart, Math.min(spanEnd, Number(opening.x || 0) + Number(opening.width || 0)));
+          if(winEnd <= cursor || winEnd - winStart <= 0.5) return;
+          if(winStart > cursor + 0.5){
+            splitSpans.push({index:splitSpans.length, x:cursor, width:winStart - cursor, leftRule, rightRule:'joint'});
+          }
+          splitSpans.push({
+            index:splitSpans.length,
+            x:winStart,
+            width:winEnd - winStart,
+            leftRule:winStart <= spanStart + 0.5 ? span.leftRule : 'joint',
+            rightRule:winEnd >= spanEnd - 0.5 ? span.rightRule : 'joint',
+            heightOverride:roundPanelMm(Math.max(1, Math.min(panelHeight, Number(opening.bottom || 0)))),
+            windowLowerPanel:true
+          });
+          cursor = winEnd;
+          leftRule = 'joint';
+        });
+        if(cursor < spanEnd - 0.5){
+          splitSpans.push({index:splitSpans.length, x:cursor, width:spanEnd - cursor, leftRule, rightRule:span.rightRule});
+        }
+      });
+      if(splitSpans.length){
+        spans.length = 0;
+        splitSpans.forEach((span, index)=>spans.push({...span, index}));
       }
       const plan = panelShakerPlan(block, part, frame, panelMaxWidth);
       const spanPlan = plan;
@@ -6645,7 +6705,7 @@
     function panelSectionPhysicalRect(part, block, layout, section, sectionIndex){
       const direction = panelDirectionForPart(part, block, sectionIndex);
       const horizontalWidth = Math.max(1, Number(section?.width || layout?.panelMaxWidth || PANEL_HORIZONTAL_DEFAULT_WIDTH));
-      const horizontalHeight = Math.max(1, Number(layout?.panelHeight || panelHorizontalHeightForPart(block, part)));
+      const horizontalHeight = Math.max(1, Number(section?.heightOverride || layout?.panelHeight || panelHorizontalHeightForPart(block, part)));
       const wallHeight = Math.max(horizontalHeight, Number(layout?.wallHeight || horizontalHeight));
       if(direction !== 'vertical'){
         return {
@@ -6692,7 +6752,7 @@
         const direction = panelDirectionForPart(part, block, sectionIndex);
         const basePhysical = panelSectionPhysicalRect(part, block, layout, section, sectionIndex);
         if(direction !== 'vertical'){
-          const horizontalHeight = Math.max(1, Number(layout?.panelHeight || panelHorizontalHeightForPart(block, part)));
+          const horizontalHeight = Math.max(1, Number(section?.heightOverride || layout?.panelHeight || panelHorizontalHeightForPart(block, part)));
           out.push(applyPanelPhysicalOverrides(part, {section:{...section}, sourceSection:section, sectionIndex, subIndex:'', labelSuffix:'', physical:{...basePhysical, yStart:roundPanelMm(Math.max(0, wallDisplayHeight - horizontalHeight)), height:roundPanelMm(horizontalHeight)}}));
           return;
         }
@@ -7048,7 +7108,7 @@
       const partPocketOn = partPocketingValue(part, block) === 'Yes' || block?.pocketingEnabled === 'Yes';
       const displayLabel = item?.displayLabel || ('P' + (Number(item?.physicalIndex ?? sectionIndex) + 1) + (physical.direction === 'vertical' ? 'V' : ''));
       const text = String(sectionOverride.text || part?.text || '').trim() || ((layout?.wallMode || block?.wallEnabled === 'Yes')
-        ? ('Wall ' + (Number(sourcePartIndex || 0) + 1) + ' - ' + displayLabel)
+        ? (wallDisplayName(block, Number(sourcePartIndex || 0)) + ' - ' + displayLabel)
         : ('Panel ' + (Number(sourcePartIndex || 0) + 1)));
       const manualSheetIndex = panelOverrideRawValue(part, sectionIndex, subIndex, 'manualSheetIndex', part?.manualSheetIndex ?? '');
       const manualSheetSize = panelOverrideRawValue(part, sectionIndex, subIndex, 'manualSheetSize', part?.manualSheetSize ?? '');
@@ -7163,6 +7223,7 @@
           const overlapX1 = Math.min(sectionW, localX1);
           if(overlapX1 <= overlapX0) return null;
           const openingHeight = Math.min(sectionH, Number(opening.height || sectionH));
+          if(opening.type === 'window' && sectionH <= Number(opening.bottom || 0) + 0.5) return null;
           const y = opening.type === 'window'
             ? Math.max(0, sectionH - Number(opening.bottom || 0) - openingHeight)
             : Math.max(0, sectionH - openingHeight);
@@ -7513,6 +7574,7 @@
       }));
     }
     function previewGroupForBlock(block){
+      if(isPanelBlock(block)) return {block, grouped:false, count:1};
       const key = materialGroupKey(block);
       const matchingBlocks = blocks.filter(candidate=>materialGroupKey(candidate) === key);
       if(matchingBlocks.length <= 1) return {block, grouped:false, count:matchingBlocks.length};
@@ -8755,7 +8817,7 @@
                   sectionIndex,
                   subIndex:item.subIndex || '',
                   virtual:true,
-                  label:'Wall ' + (sourceIndex + 1) + ' - ' + (item.displayLabel || ('P' + (physicalIndex + 1) + (physical.direction === 'vertical' ? 'V' : '')))
+                  label:wallDisplayName(block, sourceIndex) + ' - ' + (item.displayLabel || ('P' + (physicalIndex + 1) + (physical.direction === 'vertical' ? 'V' : '')))
                 });
               });
             } else {
@@ -12127,7 +12189,7 @@
           const yLine = (panel.y + panel.h - skirtingGuide) * sy;
           html += '<line x1="'+(panel.x*sx)+'" y1="'+yLine+'" x2="'+((panel.x+panel.w)*sx)+'" y2="'+yLine+'" stroke="#64748b" stroke-width="1" stroke-dasharray="5 3"/>';
         }
-        const labelText = (partIndex == null ? '' : ('Wall ' + (Number(partIndex) + 1) + ' - ')) + (item?.displayLabel || ('P'+(Number(item?.physicalIndex ?? sectionIndex)+1)));
+        const labelText = (partIndex == null ? '' : (wallDisplayName(block, Number(partIndex)) + ' - ')) + (item?.displayLabel || ('P'+(Number(item?.physicalIndex ?? sectionIndex)+1)));
         const labelSize = Math.max(7, Math.min(12, (pw - 6) / Math.max(1, labelText.length * 0.55)));
         html += '<text x="'+(px+Math.max(24, Math.min(pw/2, 82)))+'" y="'+(py+Math.min(ph-4, 18))+'" text-anchor="middle" font-size="'+labelSize+'" font-family="Arial" font-weight="900" fill="#064e3b">'+escapeHtml(labelText)+'</text>';
         return html;
@@ -12209,7 +12271,7 @@
             wallHeight:maxH
           };
           svg += openingSvg(shiftedLayout, sx, sy, viewH);
-          svg += '<text x="'+(wallX+10)+'" y="'+Math.max(16, wallY+20)+'" font-size="13" font-family="Arial" font-weight="900" fill="#064e3b">Wall '+(wallIndex+1)+'</text>';
+          svg += '<text x="'+(wallX+10)+'" y="'+Math.max(16, wallY+20)+'" font-size="13" font-family="Arial" font-weight="900" fill="#064e3b">'+escapeHtml(wallDisplayName(block, wallIndex))+'</text>';
           cursor += layout.wallWidth;
         });
         svg += '</svg>';
@@ -12238,10 +12300,11 @@
         svg += '<rect class="wall-edge-hit" data-panel-wall-part-index="'+partIndex+'" data-side="right" x="'+(viewW-hit)+'" y="0" width="'+hit+'" height="'+viewH+'"/>';
         svg += '<rect class="wall-edge-hit" data-panel-wall-part-index="'+partIndex+'" data-side="top" x="0" y="0" width="'+viewW+'" height="'+hit+'"/>';
         svg += '<rect class="wall-edge-hit" data-panel-wall-part-index="'+partIndex+'" data-side="bottom" x="0" y="'+(viewH-hit)+'" width="'+viewW+'" height="'+hit+'"/>';
-        svg += '<text x="14" y="24" font-size="18" font-family="Arial" font-weight="900" fill="#064e3b">Wall '+(index+1)+' - '+Math.round(layout.wallWidth)+' x '+Math.round(layout.wallHeight)+'mm</text>';
+        const wallTitle = wallDisplayName(block, index);
+        svg += '<text x="14" y="24" font-size="18" font-family="Arial" font-weight="900" fill="#064e3b">'+escapeHtml(wallTitle)+' - '+Math.round(layout.wallWidth)+' x '+Math.round(layout.wallHeight)+'mm</text>';
         svg += '<text x="14" y="'+(viewH-12)+'" font-size="12" font-family="Arial" font-weight="900" fill="#166534">'+physicalSections.length+' cut panel'+(physicalSections.length === 1 ? '' : 's')+' - frame '+Math.round(layout.frame)+'mm - shaker '+Math.round(mainShakerWidth)+' x '+Math.round(mainShakerHeight)+'mm</text>';
         svg += '</svg>';
-        return '<div class="panel-wall-preview"><div class="panel-wall-preview-head"><span>Wall '+(index+1)+'</span><span>'+physicalSections.length+' cut panel'+(physicalSections.length === 1 ? '' : 's')+' from wall reference</span></div>'+svg+'</div>';
+        return '<div class="panel-wall-preview"><div class="panel-wall-preview-head"><span>'+escapeHtml(wallTitle)+'</span><span>'+physicalSections.length+' cut panel'+(physicalSections.length === 1 ? '' : 's')+' from wall reference</span></div>'+svg+'</div>';
       }).join('');
       return panorama + wallCards;
     }
@@ -12251,7 +12314,8 @@
       const previewBlock = preview.block;
       const res = nestBlock(previewBlock);
       block.sheetQuantity = res.sheets.length || 1;
-      if(!expandBlockParts(previewBlock).some(p=>Number(p.width)>0 && Number(p.height)>0)) return '<div class="info-box">Enter part dimensions to preview fit, sheet usage, and layout.</div>';
+      const expandedParts = expandBlockParts(previewBlock);
+      if(!expandedParts.some(p=>Number(p.width)>0 && Number(p.height)>0)) return '<div class="info-box">Enter part dimensions to preview fit, sheet usage, and layout.</div>';
       let html = renderPanelWallPreview(block);
       if(res.oversized.length){
         html += '<div class="warning-box">'+res.oversized.map(p=>{
@@ -12262,7 +12326,10 @@
       if(res.sheets.length){
         const sheetSummary = Object.entries(res.sheetCounts || {}).map(([key,count])=>count+' x '+SHEET_SIZES[key].label).join(', ');
         const groupedNote = preview.grouped ? ' Combined with '+preview.count+' matching material blocks.' : '';
-        html += '<div class="success-box">Requires <strong>'+res.sheets.length+'</strong> sheet'+(res.sheets.length===1?'':'s')+' ('+sheetSummary+'). Used: <strong>'+sqm(res.totalPartArea)+'</strong> ('+res.usagePercent.toFixed(1)+'%).'+groupedNote+'</div>';
+        const roomName = isPanelBlock(block) ? roomDisplayName(block, Math.max(0, blocks.indexOf(block))) : '';
+        const roomPrefix = isPanelBlock(block) ? '<strong>'+escapeHtml(roomName)+'</strong>: ' : '';
+        const panelNote = isPanelBlock(block) ? ' for <strong>'+expandedParts.length+'</strong> panel'+(expandedParts.length===1?'':'s')+' in this room' : '';
+        html += '<div class="success-box">'+roomPrefix+'Requires <strong>'+res.sheets.length+'</strong> sheet'+(res.sheets.length===1?'':'s')+' ('+sheetSummary+')'+panelNote+'. Used: <strong>'+sqm(res.totalPartArea)+'</strong> ('+res.usagePercent.toFixed(1)+'%).'+groupedNote+'</div>';
         res.sheets.forEach((sheet, i)=>{
           sheet.sheetNumber = i+1;
           const sheetSizeKey = sheet.sizeKey || res.sizeKey || block.size;
@@ -12271,6 +12338,7 @@
           html += renderSheet(sheet, sheet.sizeKey || res.sizeKey || block.size, {
             editable:true,
             faceLabel:showBackFace ? 'Front' : '',
+            roomName,
             offcutTemplateId:Array.isArray(block.offcutTemplateOverrides) ? (block.offcutTemplateOverrides[i] || '') : '',
             offcutPlacements:Array.isArray(block.offcutPlacements) ? block.offcutPlacements.filter(item=>Number(item.sheetIndex || 0) === i) : []
           });
@@ -12278,6 +12346,7 @@
             html += renderSheet(backSheet, sheetSizeKey, {
               editable:false,
               faceLabel:'Back',
+              roomName,
               variant:'back'
             });
           }
@@ -12665,7 +12734,8 @@
           : renderOffcutTemplateOnSheet(sheet, sizeKey, options.offcutTemplateId || '', scale);
       }
 
-      const captionText = 'Sheet '+(sheet.sheetNumber||'')+' • '+size.watermark+' • '+sheet.placements.length+' part'+(sheet.placements.length===1?'':'s')+(faceLabel ? ' • '+faceLabel : '');
+      const roomCaption = options.roomName ? escapeHtml(options.roomName) + ' • ' : '';
+      const captionText = roomCaption + 'Sheet '+(sheet.sheetNumber||'')+' • '+size.watermark+' • '+sheet.placements.length+' part'+(sheet.placements.length===1?'':'s')+(faceLabel ? ' • '+faceLabel : '');
       let captionHtml = '<div class="sheet-caption">'+captionText+'</div>';
       if(options.editable){
         const optionsHtml = SHEET_ORDER.map(key=>'<option value="'+key+'"'+(key===sizeKey?' selected':'')+'>'+SHEET_SIZES[key].label+'</option>').join('');

@@ -60,7 +60,9 @@ Implemented in `Cnc Calculator UI Test.html`:
 - Horizontal merge is limited to `2400mm`.
 - Window default height is now `1100mm`.
 - Auto window X is placed away from an enabled door when possible.
+- Windows that cut into the horizontal panel zone now create a dedicated lower panel across the full window width.
 - Wall preview, sheet/nesting preview, and generated placement labels use the same `Wall N - P...` naming.
+- Custom Room names prefix wall/panel labels, for example `Kitchen Wall 1 - P2`.
 - UI density was reduced with smaller, more professional controls.
 - Rooms can now carry up to 50 walls each.
 - Panneling shakers are now controlled per wall and per panel, with auto sizing around 350mm.
@@ -72,6 +74,7 @@ Implemented in `Cnc Calculator UI Test.html`:
 - Empty spaces remove panel coverage from that wall span.
 - Vertical wall orientation fills the wall with vertical panels using the 1206mm max-width rule.
 - Skirting default is 225mm; the dashed guide is wall-preview only, and shaker openings start at skirting plus frame.
+- Panneling sheet counts and sheet captions are per Room instead of grouping matching rooms together.
 
 ## Validation Done
 

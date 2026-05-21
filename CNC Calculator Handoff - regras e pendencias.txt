@@ -24,12 +24,17 @@ ATUALIZACAO PANNELING - 20 May 2026
 - Openings nao devem encostar nem sobrepor; auto-position usa pelo menos um frame de espaco.
 - Door e Empty removem cobertura de panel naquele trecho da wall.
 - Window continua como cutout no panel.
+- Window que entra na zona dos panels horizontais cria um lower panel separado cobrindo toda a largura da window.
+- Por enquanto o lower panel da window usa a altura do window bottom.
+- Panels horizontais que encostam nesse lower panel de window usam meia-junta no lado da window.
 - Skirting padrao agora eh 225mm.
 - Com frame 80, a guia pontilhada fica a 225mm do chao e o shaker comeca em 305mm.
 - Guia de skirting nao aparece no nesting/sheet nem no DXF.
 - Full-wall vertical orientation deve preencher a parede com panels verticais sem deixar vazios dentro das secoes geradas.
 - Irregular Shape deve ser salvo por panel fisico selecionado, incluindo residual/secondary vertical pieces.
 - Em Panneling, Material & Pricing ocupa a largura toda e Wall Setup deve ficar compacto.
+- Se a Room tiver nome, labels usam prefixo da Room, exemplo Kitchen Wall 1 - P1.
+- Sheets no Panneling devem ser contadas por Room e captions das sheets mostram a Room.
 
 IMPORTANTE
 - Este eh o arquivo de teste ativo.

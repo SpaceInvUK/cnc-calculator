@@ -50,6 +50,9 @@ This document records the current confirmed Panneling rules for the active app:
 - Openings must not overlap or touch each other; keep at least a frame-size gap when auto-positioning.
 - Door and Empty remove panel coverage from that wall span.
 - Window remains a cutout in the panel geometry.
+- When a window starts below the normal horizontal panel top, create a separate lower panel under the full window width.
+- The lower window panel height follows the window bottom height for now.
+- Horizontal panels touching a lower window panel use half-frame joints on the window-facing side.
 - Opening names are editable.
 
 ## Skirting
@@ -64,6 +67,8 @@ This document records the current confirmed Panneling rules for the active app:
 
 - Wall preview, nesting/sheet preview, labels, and DXF names must match.
 - Names use `Wall N - P1`, `Wall N - P2V`, etc.
+- If a Room has a custom name, labels use that prefix, for example `Kitchen Wall 1 - P1`.
+- Sheet counts and sheet captions are per Room in Panneling mode.
 - Do not show `lower combined` labels.
 - If horizontal pieces merge physically, keep normal panel names such as `P3`, `P4`.
 
