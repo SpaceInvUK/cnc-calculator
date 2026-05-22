@@ -53,7 +53,10 @@ This document records the current confirmed Panneling rules for the active app:
 - When a window starts below the normal horizontal panel top, create a separate lower panel under the full window width.
 - The lower window panel height follows the window bottom height for now.
 - Horizontal panels touching a lower window panel use half-frame joints on the window-facing side.
+- Empty itself has no panel coverage, but if Empty stops below the vertical panel line, create a horizontal cap panel above it. That cap panel aligns to the normal panel line and does not exceed the neighboring panel height.
 - Opening names are editable.
+- Doors, windows, and empty openings can be selected from the wall preview and removed with Delete/Backspace.
+- Opening labels in the wall preview show the opening width and height inside the opening with lighter text.
 
 ## Skirting
 
@@ -71,6 +74,21 @@ This document records the current confirmed Panneling rules for the active app:
 - Sheet counts and sheet captions are per Room in Panneling mode.
 - Do not show `lower combined` labels.
 - If horizontal pieces merge physically, keep normal panel names such as `P3`, `P4`.
+- Numeric labels preserve decimals where the user entered decimals; do not round 385.6mm to 386mm.
+
+## Side Rules
+
+- Side rules can be set per physical panel side from the wall preview, not only per whole wall.
+- Hover/click the left or right side of a physical panel to choose Normal, Joint, Vertical Joint, Corner, Column, or Door.
+- Panel-side overrides must flow into the wall preview, nesting/sheet preview, and generated panel geometry.
+
+## Back Side Pocketing
+
+- Back side pocketing is shown in the calculator and print/PDF output by default.
+- The View menu can hide or show Back Side Pocketing output.
+- Back side pocketing sheets stay red and labeled `Back side pocketing`.
+- Back side pocketing layouts must never overlap pieces.
+- Double-sided pocketing increases the pocketing charge compared with front-only pocketing.
 
 ## Resolved Conflicts
 
@@ -86,3 +104,6 @@ This document records the current confirmed Panneling rules for the active app:
 - Wall Setup rows are compact and put Door, Window, and Empty actions beneath the wall size/orientation controls.
 - Full-wall vertical orientation must not leave empty gaps inside generated vertical sections.
 - Irregular Shape is stored per selected physical panel instance, including residual/secondary vertical pieces.
+- Manual sheet placements are locked, then the remaining parts are tightened around them to reduce large unused gaps without overlapping.
+- Wall previews scale shorter walls narrower than wider walls so small walls are easier to read.
+- Sheet previews no longer draw the temporary opening cutout overlay on panel parts; actual cavity geometry still comes from the shared panel geometry functions.

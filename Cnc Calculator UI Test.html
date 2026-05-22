@@ -196,8 +196,12 @@
     .wall-door-outline{fill:#fef2f2;stroke:#b91c1c;stroke-width:1.2}
     .wall-window-outline{fill:#eff6ff;stroke:#1d4ed8;stroke-width:1.2}
     .wall-empty-outline{fill:#f8fafc;stroke:#64748b;stroke-width:1.2;stroke-dasharray:6 4}
+    .wall-opening-hit{cursor:pointer}
+    .wall-opening-hit.selected{stroke:#0b63ff!important;stroke-width:2.4!important;filter:drop-shadow(0 0 3px rgba(37,99,235,.45))}
     .wall-edge-hit{fill:transparent;stroke:transparent;cursor:pointer}
     .wall-edge-hit:hover{fill:rgba(14,165,233,.16);stroke:#0284c7;stroke-width:2}
+    .panel-side-hit{fill:transparent;stroke:transparent;cursor:pointer}
+    .panel-side-hit:hover{fill:rgba(14,165,233,.2);stroke:#0284c7;stroke-width:2}
     .panel-wall-hit{cursor:pointer}
     .panel-wall-hit:hover{filter:brightness(.96)}
     .panel-wall-hit.selected{stroke:#0b63ff!important;stroke-width:2!important}
@@ -721,6 +725,7 @@
                 <summary>View</summary>
                 <div class="command-menu-panel">
                   <button class="command-hide-values" id="hideValuesBtn" type="button" aria-pressed="false">Hide Values</button>
+                  <button class="active" id="showBackPocketingBtn" type="button" aria-pressed="true">Back Side Pocketing</button>
                   <button type="button" id="showLabelsSettingsBtn">Label Settings</button>
                 </div>
               </details>
@@ -1312,6 +1317,8 @@
     let sheetDragSuppressUntil = 0;
     let activeCalculatorMode = 'doors';
     let hideValuesMode = false;
+    let showBackSidePocketingMode = true;
+    let selectedWallOpening = null;
     const PART_DEFAULTS = {width:'',height:'',doorType:'',shaker:'No',panels:1,panelSize:'',panelDirection:'',wallPanelDirection:'',panelRows:'',panelColumns:'',panelIrregularShape:'Yes',wallPanelOverrides:[],panelSideTop:'',panelSideRight:'',panelSideBottom:'',panelSideLeft:'',wallWidth:'',wallHeight:'',wallSections:'',panelHorizontalHeight:'',panelVerticalHeight:'',wallOpenings:[],wallDoorEnabled:'',wallDoorWidth:'',wallDoorHeight:'',wallDoorX:'',wallWindowEnabled:'',wallWindowWidth:'',wallWindowHeight:'',wallWindowX:'',wallWindowBottom:'',shapeType:'rectangle',leftHeight:'',rightHeight:'',frameTop:'',frameRight:'',frameBottom:'',frameLeft:'',frameMiddle:'',frameEditZone:'left',hinges:'No',hingeSide:'auto',hingeOffset:100,hingeSpacing:'',pocketingEnabled:'',pocketRoundCorners:'',pocketSideMode:'',backFrameSize:'',sprayFinish:'No',spraySides:[],manualSheetIndex:'',manualSheetSize:'',manualX:'',manualY:'',manualRotated:'No',manualRotationAngle:0,text:'',quantity:1};
     const FOCUSABLE_FIELD_CLASSES = new Set(['smartTakeoffText','material','thickness','size','materialCost','cncServiceCost','globalShakerType','frameSize','reededDirection','reededSpacing','bidingMode','bidingSize','bidingClearance','bidingThickness','panelRows','panelColumns','panelShakerMode','panelShakerSize','panelHorizontalHeight','panelVerticalHeight','wallWidth','wallHeight','wallPartWidth','wallPartHeight','wallPartShakers','wallPartHorizontalPanelHeight','wallPartVerticalPanelHeight','wallOpeningName','wallOpeningWidth','wallOpeningHeight','wallOpeningX','wallOpeningBottom','wallSections','wallDoorWidth','wallDoorHeight','wallDoorX','wallWindowWidth','wallWindowHeight','wallWindowX','wallWindowBottom','panelDoorAllowance','panelSkirtingHeight','panelSideTop','panelSideRight','panelSideBottom','panelSideLeft','backFrameSize','extraProcess','pocketingMinutes','pocketLinePocketOffset','pocketLine6Offset','pocketLine2Offset','pocketLinePocket3Offset','pocketLineChamferOffset','pocketLineProfileOffset','pocketLinePocket2Offset','pocketLinePocket3Offset','timeMinutes','partWidth','partHeight','partDoorType','partPanelDirection','partPanels','partPanelRows','partPanelSize','partText','partQuantity','selectedPartDoorType','selectedPartPanelDirection','selectedPartLeftHeight','selectedPartRightHeight','selectedPartPanelRows','selectedPartPanelIrregular','selectedPartPanelSize','selectedPartPanels','selectedPartFrameZoneSize','selectedPartHingeOffset','selectedPartHingeSpacing','selectedPartBackFrameSize','selectedWallWidth','selectedWallHeight','selectedWallSections','selectedWallDoorWidth','selectedWallDoorHeight','selectedWallDoorX','selectedWallWindowWidth','selectedWallWindowHeight','selectedWallWindowX','selectedWallWindowBottom']);
     const DOOR_TYPE_OPTIONS = [
@@ -3018,12 +3025,13 @@
       if(block.pocketingEnabled !== 'Yes') return 0;
       return block.pocketingManualOverride ? Math.max(0, Number(block.pocketingMinutes || 0)) : computeBlockPocketingAutoMinutes(block);
     }
-    function pocketingPctFromMinutes(minutes){
+    function pocketingPctFromMinutes(minutes, sideMultiplier=1){
       const value = Math.max(0, Number(minutes || 0));
+      const cap = Math.max(20, 20 * Math.max(1, Number(sideMultiplier || 1)));
       if(value <= 0) return 0;
       if(value < 10) return 10;
-      if(value >= 15) return 20;
-      return Math.min(20, 10 + (value - 10) * 2);
+      if(value >= 15) return cap;
+      return Math.min(cap, 10 + (value - 10) * 2);
     }
     function displayPocketMinutes(minutes){
       return Math.max(0, Math.round(Number(minutes || 0)));
@@ -3031,13 +3039,16 @@
     function pocketingMetricsForPricing(block){
       const sources = Array.isArray(block.sourceBlocks) && block.sourceBlocks.length ? block.sourceBlocks : [block];
       let totalMinutes = 0;
+      let sideMultiplier = 1;
       sources.forEach(source=>{
         if(source.pocketingEnabled !== 'Yes') return;
         totalMinutes += effectivePocketingMinutesForBlock(source);
+        if(String(source.pocketSideMode || 'front') === 'front-back') sideMultiplier = Math.max(sideMultiplier, 2);
       });
       return {
         minutes: totalMinutes,
-        pct: pocketingPctFromMinutes(totalMinutes)
+        pct: pocketingPctFromMinutes(totalMinutes, sideMultiplier),
+        sideMultiplier
       };
     }
     function bindSegmentedControl(group, value, onChange){
@@ -3256,8 +3267,8 @@
     function roomWallSummary(block){
       if(!isPanelBlock(block)) return '';
       const walls = Array.isArray(block.parts) ? block.parts.length : 0;
-      const width = Math.round(Number(block.wallWidth || block.parts?.[0]?.wallWidth || 0));
-      const height = Math.round(Number(block.wallHeight || block.parts?.[0]?.wallHeight || 0));
+      const width = formatMm(block.wallWidth || block.parts?.[0]?.wallWidth || 0);
+      const height = formatMm(block.wallHeight || block.parts?.[0]?.wallHeight || 0);
       const size = width > 0 && height > 0 ? width + ' x ' + height + 'mm' : 'wall size open';
       return (walls || 1) + ' wall' + ((walls || 1) === 1 ? '' : 's') + ' • ' + size;
     }
@@ -3277,21 +3288,21 @@
       let match = raw.match(/(?:^|\s)(\d{1,2})\s*x\s*(\d+(?:\.\d+)?)\s*(?:mm)?\s*x\s*(\d+(?:\.\d+)?)(?:\s*mm)?(?:\s|$)/i);
       if(match){
         qty = Number(match[1]);
-        return {quantity:qty, width:Math.round(Number(match[2])), height:Math.round(Number(match[3])), text};
+        return {quantity:qty, width:roundPanelMm(Number(match[2])), height:roundPanelMm(Number(match[3])), text};
       }
       match = raw.match(/(?:^|\s)(\d+(?:\.\d+)?)\s*(?:mm)?\s*x\s*(\d+(?:\.\d+)?)(?:\s*mm)?\s*x\s*(\d{1,2})(?:\s|$)/i);
       if(match){
         qty = Number(match[3]);
-        return {quantity:qty, width:Math.round(Number(match[1])), height:Math.round(Number(match[2])), text};
+        return {quantity:qty, width:roundPanelMm(Number(match[1])), height:roundPanelMm(Number(match[2])), text};
       }
       match = raw.match(/(?:^|\s)(\d{1,2})\s+(\d+(?:\.\d+)?)\s*(?:mm)?\s*x\s*(\d+(?:\.\d+)?)(?:\s*mm)?(?:\s|$)/i);
       if(match){
         qty = Number(match[1]);
-        return {quantity:qty, width:Math.round(Number(match[2])), height:Math.round(Number(match[3])), text};
+        return {quantity:qty, width:roundPanelMm(Number(match[2])), height:roundPanelMm(Number(match[3])), text};
       }
       match = raw.match(/(?:^|\s)(\d+(?:\.\d+)?)\s*(?:mm)?\s*x\s*(\d+(?:\.\d+)?)(?:\s*mm)?(?:\s|$)/i);
       if(match){
-        return {quantity:1, width:Math.round(Number(match[1])), height:Math.round(Number(match[2])), text};
+        return {quantity:1, width:roundPanelMm(Number(match[1])), height:roundPanelMm(Number(match[2])), text};
       }
       return null;
     }
@@ -3655,6 +3666,12 @@
       });
     }
     function money(n){return '\u00a3'+Number(n||0).toFixed(2)}
+    function formatMm(value, maxDecimals=3){
+      const number = Number(value);
+      if(!Number.isFinite(number)) return String(value ?? '');
+      const factor = Math.pow(10, maxDecimals);
+      return String(Math.round(number * factor) / factor).replace(/\.?0+$/,'');
+    }
     function roundQuoteTotal(n){return Math.round(Number(n || 0) / 5) * 5}
     function sqm(n){return (Number(n||0)/1000000).toFixed(3)+' m\u00b2'}
     function escapeHtml(value){
@@ -3772,6 +3789,14 @@
         dot.dataset.tip = tip;
         dot.setAttribute('aria-label', labelText + ' info');
         field.appendChild(dot);
+      });
+    }
+    function enableDecimalNumberInputs(scope=document){
+      const root = scope || document;
+      root.querySelectorAll('input[type="number"]').forEach(input=>{
+        if(input.classList.contains('integer-only') || input.dataset.integerOnly === 'true') return;
+        input.setAttribute('step', '0.01');
+        input.setAttribute('inputmode', 'decimal');
       });
     }
     function parseThicknessMm(value){
@@ -6544,7 +6569,9 @@
           xStart:roundPanelMm(cursor),
           width:chosenWidth,
           heightOverride:span.heightOverride ?? '',
+          yStartOverride:span.yStartOverride ?? '',
           windowLowerPanel:span.windowLowerPanel === true,
+          emptyTopPanel:span.emptyTopPanel === true,
           shakerColumnWidths:group.map(roundPanelMm),
           panelSideLeft:leftRule,
           panelSideRight:rightRule,
@@ -6627,6 +6654,27 @@
         spans.length = 0;
         splitSpans.forEach((span, index)=>spans.push({...span, index}));
       }
+      const panelLineHeight = Math.min(wallHeight, panelVerticalHeightForPart(block, part));
+      allOpenings
+        .filter(opening=>opening.type === 'empty' && Number(opening.width || 0) > 0 && Number(opening.height || 0) > 0 && Number(opening.height || 0) < panelLineHeight - 0.5)
+        .forEach(opening=>{
+          const topHeight = roundPanelMm(panelLineHeight - Number(opening.height || 0));
+          if(topHeight <= frame * 2) return;
+          const emptyX = Math.max(0, Math.min(wallWidth, Number(opening.x || 0)));
+          const emptyW = Math.max(0, Math.min(wallWidth - emptyX, Number(opening.width || 0)));
+          if(emptyW <= frame * 2) return;
+          spans.push({
+            index:spans.length,
+            x:emptyX,
+            width:emptyW,
+            leftRule:'door',
+            rightRule:'door',
+            heightOverride:topHeight,
+            yStartOverride:roundPanelMm(Math.max(0, wallHeight - panelLineHeight)),
+            emptyTopPanel:true
+          });
+        });
+      spans.forEach((span, index)=>{ span.index = index; });
       const plan = panelShakerPlan(block, part, frame, panelMaxWidth);
       const spanPlan = plan;
       const sections = [];
@@ -6642,7 +6690,15 @@
           ? distributeFixedCountShakersForSpan(span.width, fitCount, frame, leftFrame, rightFrame)
           : distributeShakersForSpan(span.width, spanPlan, frame, leftFrame, rightFrame);
         buildPanelsForSpan(span, widths, {frame, thickness, doorAllowance, panelMaxWidth}).forEach(panel=>{
-          sections.push(panel);
+          const sectionIndex = sections.length;
+          const override = Array.isArray(part?.wallPanelOverrides) ? (part.wallPanelOverrides[sectionIndex] || {}) : {};
+          sections.push({
+            ...panel,
+            panelSideTop:normalizePanelSideRule(override.panelSideTop || panel.panelSideTop || effectivePanelSideRule(block, part, 'top')),
+            panelSideRight:normalizePanelSideRule(override.panelSideRight || panel.panelSideRight),
+            panelSideBottom:normalizePanelSideRule(override.panelSideBottom || panel.panelSideBottom || effectivePanelSideRule(block, part, 'bottom')),
+            panelSideLeft:normalizePanelSideRule(override.panelSideLeft || panel.panelSideLeft)
+          });
         });
       });
       return {wallMode, wallWidth, wallHeight, panelHeight, panelMaxWidth, frame, thickness, doorAllowance, door, window:windowOpening, openings:allOpenings, cutoutOpenings:allOpenings.filter(opening=>opening.type === 'window'), spanOpenings:openings, sections};
@@ -6708,9 +6764,10 @@
       const horizontalHeight = Math.max(1, Number(section?.heightOverride || layout?.panelHeight || panelHorizontalHeightForPart(block, part)));
       const wallHeight = Math.max(horizontalHeight, Number(layout?.wallHeight || horizontalHeight));
       if(direction !== 'vertical'){
+        const customY = section?.yStartOverride !== '' && section?.yStartOverride != null ? Number(section.yStartOverride) : null;
         return {
           xStart:roundPanelMm(Number(section?.xStart || 0)),
-          yStart:roundPanelMm(Math.max(0, wallHeight - horizontalHeight)),
+          yStart:roundPanelMm(Math.max(0, customY == null || !Number.isFinite(customY) ? wallHeight - horizontalHeight : customY)),
           width:roundPanelMm(horizontalWidth),
           height:roundPanelMm(horizontalHeight),
           direction
@@ -6753,7 +6810,8 @@
         const basePhysical = panelSectionPhysicalRect(part, block, layout, section, sectionIndex);
         if(direction !== 'vertical'){
           const horizontalHeight = Math.max(1, Number(section?.heightOverride || layout?.panelHeight || panelHorizontalHeightForPart(block, part)));
-          out.push(applyPanelPhysicalOverrides(part, {section:{...section}, sourceSection:section, sectionIndex, subIndex:'', labelSuffix:'', physical:{...basePhysical, yStart:roundPanelMm(Math.max(0, wallDisplayHeight - horizontalHeight)), height:roundPanelMm(horizontalHeight)}}));
+          const customY = section?.yStartOverride !== '' && section?.yStartOverride != null ? Number(section.yStartOverride) : null;
+          out.push(applyPanelPhysicalOverrides(part, {section:{...section}, sourceSection:section, sectionIndex, subIndex:'', labelSuffix:'', physical:{...basePhysical, yStart:roundPanelMm(Math.max(0, customY == null || !Number.isFinite(customY) ? wallDisplayHeight - horizontalHeight : customY)), height:roundPanelMm(horizontalHeight)}}));
           return;
         }
         const logicalWidth = Math.max(1, Number(section.width || 0));
@@ -7048,7 +7106,9 @@
       const sectionIndex = Number.isInteger(Number(item?.sectionIndex)) ? Number(item.sectionIndex) : null;
       const subIndex = item?.subIndex || '';
       const overrideRaw = sectionIndex == null ? undefined : panelVirtualOverrideValue(part, sectionIndex, subIndex, 'panelRows', undefined);
-      const overrideCount = overrideRaw === '' || overrideRaw == null ? 0 : Math.max(1, Math.round(Number(overrideRaw || 1)));
+      const partRaw = part?.panelRows === '' || part?.panelRows == null ? block?.panelRows : part?.panelRows;
+      const countRaw = overrideRaw === '' || overrideRaw == null ? partRaw : overrideRaw;
+      const overrideCount = countRaw === '' || countRaw == null ? 0 : Math.max(1, Math.round(Number(countRaw || 1)));
       const primaryAxis = physical.direction === 'vertical' ? 'y' : 'x';
       if(overrideCount > 0 && axis === primaryAxis){
         const frame = Math.max(1, Number(layout?.frame || block?.frameSize || 80));
@@ -7095,6 +7155,11 @@
       const subIndex = item?.subIndex || '';
       const physical = item?.physical || panelSectionPhysicalRect(part, block, layout, section, sectionIndex);
       const sectionOverride = Array.isArray(part?.wallPanelOverrides) ? (part.wallPanelOverrides[sectionIndex] || {}) : {};
+      const sideRuleFor = key=>{
+        const virtualValue = panelVirtualOverrideValue(part, sectionIndex, subIndex, key, undefined);
+        if(virtualValue !== '' && virtualValue != null) return virtualValue;
+        return section[key] || sectionOverride[key] || part?.[key] || block?.[key];
+      };
       const customColumns = panelAxisShakerSizes(block, part, layout, item, 'x');
       const customRows = panelAxisShakerSizes(block, part, layout, item, 'y');
       const panelRowsOverride = panelVirtualOverrideValue(part, sectionIndex, subIndex, 'panelRows', undefined);
@@ -7134,12 +7199,13 @@
         panelSkirtingEnabled:block?.panelSkirtingEnabled === 'Yes' ? 'Yes' : 'No',
         panelSkirtingHeight:Math.max(0, Number(block?.panelSkirtingHeight || PANEL_SKIRTING_DEFAULT_HEIGHT)),
         panelDoorAllowance:Math.max(0, Number(block?.panelDoorAllowance || 175)),
-        panelSideTop:effectivePanelSideRule(block, part, 'top'),
-        panelSideRight:normalizePanelSideRule(section.panelSideRight || part?.panelSideRight || block?.panelSideRight),
-        panelSideBottom:effectivePanelSideRule(block, part, 'bottom'),
-        panelSideLeft:normalizePanelSideRule(section.panelSideLeft || part?.panelSideLeft || block?.panelSideLeft),
+        panelSideTop:normalizePanelSideRule(sideRuleFor('panelSideTop') || effectivePanelSideRule(block, part, 'top')),
+        panelSideRight:normalizePanelSideRule(sideRuleFor('panelSideRight')),
+        panelSideBottom:normalizePanelSideRule(sideRuleFor('panelSideBottom') || effectivePanelSideRule(block, part, 'bottom')),
+        panelSideLeft:normalizePanelSideRule(sideRuleFor('panelSideLeft')),
         wallSectionIndex:Number(item?.physicalIndex ?? sectionIndex) + 1,
         wallSectionCount:Number(item?.physicalCount || layout?.sections?.length || 1),
+        emptyTopPanel:item?.emptyTopPanel === true || item?.section?.emptyTopPanel === true,
         wallXStart:roundPanelMm(Number(physical.xStart || 0)),
         wallTotalWidth:Number(layout?.wallWidth || physical.width || 0),
         wallDoorEnabled:layout?.door?.enabled ? 'Yes' : 'No',
@@ -7211,6 +7277,7 @@
       };
     }
     function panelOpeningRectsForPlacement(p){
+      if(p?.emptyTopPanel) return [];
       if(Array.isArray(p?.wallOpenings) && p.wallOpenings.length){
         const wallStart = Number(p.wallXStart || 0);
         const wallWidth = Number(p.wallTotalWidth || p.origW || p.width || p.w || 0);
@@ -7598,6 +7665,35 @@
       const size = SHEET_SIZES[sizeKey];
       if(!size || !Array.isArray(placements) || !placements.length) return [];
       let freeRects = [{x:0, y:0, w:size.width, h:size.height, priority:1}];
+      const placedRects = [];
+      const fitsBackPlacement = candidate=>
+        candidate &&
+        candidate.x >= -0.001 &&
+        candidate.y >= -0.001 &&
+        candidate.x + candidate.w <= size.width + 0.001 &&
+        candidate.y + candidate.h <= size.height + 0.001 &&
+        !placedRects.some(existing=>overlap(candidate, existing));
+      const fallbackBackPlacement = part=>{
+        const xs = [0, Math.max(0, size.width - part.w)];
+        const ys = [0, Math.max(0, size.height - part.h)];
+        placedRects.forEach(existing=>{
+          xs.push(existing.x, existing.x + existing.w, existing.x - part.w, existing.x + existing.w - part.w);
+          ys.push(existing.y, existing.y + existing.h, existing.y - part.h, existing.y + existing.h - part.h);
+        });
+        const clamp = (value, min, max)=>Math.max(min, Math.min(max, Number(value || 0)));
+        const xVals = [...new Set(xs.map(x=>Math.round(clamp(x, 0, Math.max(0, size.width - part.w)) * 100) / 100))].sort((a,b)=>a-b);
+        const yVals = [...new Set(ys.map(y=>Math.round(clamp(y, 0, Math.max(0, size.height - part.h)) * 100) / 100))].sort((a,b)=>a-b);
+        let best = null;
+        yVals.forEach(y=>{
+          xVals.forEach(x=>{
+            const candidate = {x, y, w:part.w, h:part.h};
+            if(!fitsBackPlacement(candidate)) return;
+            const score = y * size.width + x;
+            if(!best || score < best.score) best = {...candidate, score};
+          });
+        });
+        return best;
+      };
       return placements.map(original=>{
         const part = {...original};
         const candidates = [];
@@ -7613,10 +7709,14 @@
             });
           }
         });
-        candidates.sort((a,b)=>a.score-b.score);
-        const best = candidates[0];
-        if(!best) return part;
+        const best = candidates
+          .filter(fitsBackPlacement)
+          .sort((a,b)=>a.score-b.score)[0] || fallbackBackPlacement(part);
+        if(!best){
+          return {...part, x:0, y:size.height + placedRects.length * Math.max(1, part.h)};
+        }
         const placed = {...part, x:best.x, y:best.y};
+        placedRects.push({x:placed.x, y:placed.y, w:placed.w, h:placed.h});
         freeRects = compactFreeRects(splitRects(freeRects, {x:best.x, y:best.y, w:part.w, h:part.h}));
         return placed;
       });
@@ -8390,6 +8490,8 @@
           });
           wallsList.querySelectorAll('.removeOpeningBtn').forEach(button=>{
             button.addEventListener('click', e=>{
+              e.preventDefault();
+              e.stopPropagation();
               const wallRow = e.target.closest('.wall-config-row');
               const openingRow = e.target.closest('.wall-opening-row');
               const wallIndex = Math.max(0, Number(wallRow?.dataset.wallIndex || 0));
@@ -8400,6 +8502,7 @@
               const openings = normalizeWallOpeningsForPart(block, part);
               openings.splice(openingIndex, 1);
               part.wallOpenings = resolveWallOpeningPositions(openings, wallReferenceWidth(block, part), block.frameSize || 80);
+              selectedWallOpening = null;
               requestRender();
             });
           });
@@ -9004,6 +9107,7 @@
 
         function updatePreview(){
           node.querySelector('.nestingMessage').innerHTML = previewHtml(block);
+          enableDecimalNumberInputs(node.querySelector('.nestingMessage'));
           syncPocketingState();
           updateSheetPriceEditor();
           bindSheetOverrideControls(node.querySelector('.nestingMessage'), block);
@@ -9126,6 +9230,7 @@
         container.appendChild(node);
       });
       decorateInfoDots(container);
+      enableDecimalNumberInputs(container);
       restoreFocusState(focusState);
     }
 
@@ -9931,6 +10036,7 @@
         const sheet = ensureManualSheet(sheets, manual.sheetIndex, manual.sizeKey);
         const best = snapManualPlacement(sheet, part, manual);
         if(!best) return false;
+        best.manualLocked = true;
         commitPlacement(sheet, part, best);
         return true;
       }
@@ -9988,6 +10094,50 @@
             if(partIndex >= 0) remaining.splice(partIndex, 1);
             commitPlacement(sheet, fill.part, fill.placement);
           }
+        });
+      }
+      function placementFitsOnSheet(sheet, target, x, y, others){
+        const size = SHEET_SIZES[sheet.sizeKey];
+        if(!size) return false;
+        if(x < GAP - 0.001 || y < GAP - 0.001) return false;
+        if(x + target.w > size.width - GAP + 0.001) return false;
+        if(y + target.h > size.height - GAP + 0.001) return false;
+        const guarded = {x:x - GAP / 2, y:y - GAP / 2, w:target.w + GAP, h:target.h + GAP};
+        return !(others || []).some(other=>{
+          const otherGuard = {x:other.x - GAP / 2, y:other.y - GAP / 2, w:other.w + GAP, h:other.h + GAP};
+          return overlap(guarded, otherGuard);
+        });
+      }
+      function tightenSheetPlacements(sheet){
+        const placements = sheet?.placements || [];
+        if(!placements.length) return;
+        const locked = placements.filter(p=>p.manualLocked);
+        const movable = placements.filter(p=>!p.manualLocked).sort((a,b)=>a.y-b.y || a.x-b.x || b.h-a.h || b.w-a.w);
+        const fixed = locked.map(p=>({...p}));
+        movable.forEach(target=>{
+          const others = fixed.concat(movable.filter(p=>p !== target && !fixed.includes(p)));
+          const xs = [target.x, GAP];
+          const ys = [target.y, GAP];
+          others.forEach(other=>{
+            xs.push(other.x + other.w + GAP, other.x - target.w - GAP, other.x);
+            ys.push(other.y + other.h + GAP, other.y - target.h - GAP, other.y);
+          });
+          const size = SHEET_SIZES[sheet.sizeKey] || SHEET_SIZES['8x4'];
+          xs.push(Math.max(GAP, size.width - GAP - target.w));
+          ys.push(Math.max(GAP, size.height - GAP - target.h));
+          const xVals = uniqueSortedNumbers(xs).sort((a,b)=>a-b);
+          const yVals = uniqueSortedNumbers(ys).sort((a,b)=>a-b);
+          let best = {x:target.x, y:target.y, score:target.y * size.width + target.x};
+          yVals.forEach(y=>{
+            xVals.forEach(x=>{
+              if(!placementFitsOnSheet(sheet, target, x, y, others)) return;
+              const score = y * size.width + x;
+              if(score < best.score) best = {x, y, score};
+            });
+          });
+          target.x = Math.round(best.x * 100) / 100;
+          target.y = Math.round(best.y * 100) / 100;
+          fixed.push(target);
         });
       }
 
@@ -10073,6 +10223,7 @@
           sheets.push(sheet);
           sheetCursor++;
         }
+        sheets.forEach(tightenSheetPlacements);
         return summarizePlan(sheets.filter(sheet=>(sheet.placements || []).length), oversized);
       }
 
@@ -11162,12 +11313,36 @@
       a.remove();
     }
 
-    function showWallEdgeMenu(event, block, partIndex, side){
+    function deleteSelectedWallOpening(){
+      if(!selectedWallOpening) return false;
+      const block = blocks.find(item=>String(item.id) === String(selectedWallOpening.blockId));
+      const partIndex = Number(selectedWallOpening.partIndex);
+      const openingIndex = Number(selectedWallOpening.openingIndex);
+      const part = block?.parts?.[partIndex];
+      if(!block || !part || !Number.isInteger(openingIndex)) return false;
+      const openings = normalizeWallOpeningsForPart(block, part);
+      if(openingIndex < 0 || openingIndex >= openings.length) return false;
+      recordHistory('removed wall opening');
+      openings.splice(openingIndex, 1);
+      part.wallOpenings = resolveWallOpeningPositions(openings, wallReferenceWidth(block, part), block.frameSize || 80);
+      selectedWallOpening = null;
+      selectedSheetPart = null;
+      lastCalculation = null;
+      requestRender();
+      showMessage('Opening removed from wall.', 'success');
+      return true;
+    }
+
+    function showWallEdgeMenu(event, block, partIndex, side, sectionIndex=null, sectionSubIndex=''){
       if(!block || !block.parts?.[partIndex]) return;
       event.preventDefault();
       event.stopPropagation();
       const key = 'panelSide' + side.charAt(0).toUpperCase() + side.slice(1);
-      const current = normalizePanelSideRule(block.parts[partIndex][key] || block[key]);
+      const part = block.parts[partIndex];
+      const panelSpecific = Number.isInteger(Number(sectionIndex)) && Number(sectionIndex) >= 0;
+      const override = panelSpecific ? wallSectionOverride(part, Number(sectionIndex)) : null;
+      const overrideKey = panelSpecific ? panelVirtualOverrideKey(key, sectionSubIndex || '') : key;
+      const current = normalizePanelSideRule((override && override[overrideKey]) || (override && override[key]) || part[key] || block[key]);
       let menu = document.querySelector('.wall-edge-menu');
       if(!menu){
         menu = document.createElement('div');
@@ -11192,9 +11367,16 @@
         button.addEventListener('click', e=>{
           e.preventDefault();
           const next = normalizePanelSideRule(button.dataset.value);
-          setPartValue(block, partIndex, key, next);
+          if(panelSpecific){
+            const targetOverride = wallSectionOverride(part, Number(sectionIndex));
+            targetOverride[overrideKey] = next;
+            targetOverride[key] = next;
+            lastCalculation = null;
+          } else {
+            setPartValue(block, partIndex, key, next);
+          }
           selectedSheetPart = null;
-          showMessage('Wall ' + side + ' side set to ' + panelRuleLabel(next) + '.', 'success');
+          showMessage((panelSpecific ? 'Panel' : 'Wall') + ' ' + side + ' side set to ' + panelRuleLabel(next) + '.', 'success');
           close();
           requestRender();
         });
@@ -11495,6 +11677,31 @@
           showWallEdgeMenu(event, block, partIndex, side);
         });
       });
+      container.querySelectorAll('.panel-side-hit').forEach(sideNode=>{
+        sideNode.addEventListener('click', event=>{
+          const block = previewOwnerBlock;
+          const partIndex = Math.max(0, Number(sideNode.dataset.sourcePartIndex || 0));
+          const sectionIndex = Math.max(0, Number(sideNode.dataset.sourceSectionIndex || 0));
+          const subIndex = sideNode.dataset.sourceSectionSubIndex || '';
+          const side = String(sideNode.dataset.side || '').toLowerCase();
+          if(!block || !['left','right','top','bottom'].includes(side) || !block.parts?.[partIndex]) return;
+          selectedSheetPart = {blockId:String(block.id), partIndex:String(partIndex), instanceIndex:'0-' + sectionIndex + subIndex};
+          showWallEdgeMenu(event, block, partIndex, side, sectionIndex, subIndex);
+        });
+      });
+      container.querySelectorAll('.wall-opening-hit').forEach(openingNode=>{
+        openingNode.addEventListener('click', event=>{
+          event.preventDefault();
+          event.stopPropagation();
+          const block = previewOwnerBlock;
+          const partIndex = Math.max(0, Number(openingNode.dataset.sourcePartIndex || 0));
+          const openingIndex = Math.max(0, Number(openingNode.dataset.openingIndex || 0));
+          if(!block || !block.parts?.[partIndex]) return;
+          selectedWallOpening = {blockId:String(block.id), partIndex, openingIndex};
+          selectedSheetPart = null;
+          requestRender();
+        });
+      });
       container.querySelectorAll('.panel-wall-hit').forEach(panelNode=>{
         panelNode.addEventListener('click', event=>{
           event.preventDefault();
@@ -11508,6 +11715,7 @@
             partIndex:String(partIndex),
             instanceIndex
           };
+          selectedWallOpening = null;
           setOpenMaterialBlock(block);
           requestRender();
         });
@@ -11641,6 +11849,7 @@
           selectedSheetPart = isolated
             ? {blockId:String(isolated.block.id), partIndex:String(isolated.partIndex), instanceIndex:isolated.instanceIndex ?? instanceIndex ?? ''}
             : {blockId, partIndex, instanceIndex};
+          selectedWallOpening = null;
           zoomSheetPart = null;
           setOpenMaterialBlock(targetBlock);
           requestRender();
@@ -11770,6 +11979,7 @@
           zoomSheetPart = null;
           const isolated = isolatePartInstanceForEditing(blockId, partIndex, instanceIndex);
           selectedSheetPart = isolated ? {blockId:String(isolated.block.id), partIndex:String(isolated.partIndex), instanceIndex:isolated.instanceIndex ?? instanceIndex ?? ''} : {blockId, partIndex, instanceIndex};
+          selectedWallOpening = null;
           const found = findPartBySelection();
           if(found) setOpenMaterialBlock(found.block);
           requestRender();
@@ -12184,6 +12394,12 @@
             : '<rect x="'+(cavity.x*sx)+'" y="'+(cavity.y*sy)+'" width="'+(cavity.w*sx)+'" height="'+(cavity.h*sy)+'" rx="'+rx+'" ry="'+rx+'" fill="#fff" stroke="#16a34a" stroke-width="1"/>';
         });
         html += drawPocketLinesForPanel(panel, sx, sy);
+        if(partIndex != null){
+          const sideHit = Math.max(8, Math.min(22, Math.min(pw, ph) * 0.18));
+          const sideAttrs = ' data-source-block-id="'+escapeHtml(block.id)+'" data-source-part-index="'+escapeHtml(partIndex)+'" data-source-section-index="'+escapeHtml(sectionIndex)+'" data-source-section-sub-index="'+escapeHtml(item?.subIndex || '')+'"';
+          html += '<rect class="panel-side-hit" data-side="left"'+sideAttrs+' x="'+px+'" y="'+py+'" width="'+sideHit+'" height="'+ph+'"/>';
+          html += '<rect class="panel-side-hit" data-side="right"'+sideAttrs+' x="'+(px+pw-sideHit)+'" y="'+py+'" width="'+sideHit+'" height="'+ph+'"/>';
+        }
         if(String(panel.panelSkirtingEnabled || 'No') === 'Yes'){
           const skirtingGuide = Math.max(0, Number(panel.panelSkirtingHeight || PANEL_SKIRTING_DEFAULT_HEIGHT));
           const yLine = (panel.y + panel.h - skirtingGuide) * sy;
@@ -12191,36 +12407,46 @@
         }
         const labelText = (partIndex == null ? '' : (wallDisplayName(block, Number(partIndex)) + ' - ')) + (item?.displayLabel || ('P'+(Number(item?.physicalIndex ?? sectionIndex)+1)));
         const labelSize = Math.max(7, Math.min(12, (pw - 6) / Math.max(1, labelText.length * 0.55)));
-        html += '<text x="'+(px+Math.max(24, Math.min(pw/2, 82)))+'" y="'+(py+Math.min(ph-4, 18))+'" text-anchor="middle" font-size="'+labelSize+'" font-family="Arial" font-weight="900" fill="#064e3b">'+escapeHtml(labelText)+'</text>';
+        html += '<text x="'+(px+Math.max(24, Math.min(pw/2, 82)))+'" y="'+(py+Math.min(ph-4, 18))+'" text-anchor="middle" font-size="'+labelSize+'" font-family="Arial" font-weight="700" fill="#064e3b">'+escapeHtml(labelText)+'</text>';
         return html;
       };
-      const openingSvg = (layout, sx, sy, viewH)=>{
+      const openingSvg = (layout, sx, sy, viewH, partIndex=null)=>{
         let html = '';
         const openings = Array.isArray(layout.openings) && layout.openings.length
           ? layout.openings
           : [layout.door?.enabled ? {...layout.door, type:'door', name:'Door'} : null, layout.window?.enabled ? {...layout.window, type:'window', name:'Window'} : null].filter(Boolean);
-        openings.forEach(opening=>{
+        openings.forEach((opening, openingIndex)=>{
           const label = String(opening.name || opening.type || '').trim() || (opening.type === 'window' ? 'Window' : opening.type === 'door' ? 'Door' : 'Empty');
           const dx = opening.x * sx;
           const dw = opening.width * sx;
           const dh = Math.min(layout.wallHeight, opening.height) * sy;
           const isWindow = opening.type === 'window';
           const isEmpty = opening.type === 'empty';
+          const isSelected = selectedWallOpening &&
+            String(selectedWallOpening.blockId) === String(block.id) &&
+            Number(selectedWallOpening.partIndex) === Number(partIndex) &&
+            Number(selectedWallOpening.openingIndex) === Number(openingIndex);
+          const openingAttrs = partIndex == null ? '' : ' data-source-block-id="'+escapeHtml(block.id)+'" data-source-part-index="'+escapeHtml(partIndex)+'" data-opening-index="'+escapeHtml(openingIndex)+'"';
+          const hitClass = ' wall-opening-hit' + (isSelected ? ' selected' : '');
+          const dimText = formatMm(opening.width)+' x '+formatMm(opening.height)+'mm';
           if(isWindow){
             const wy = Math.max(0, (layout.wallHeight - Number(opening.bottom || 0) - opening.height) * sy);
-            html += '<rect class="wall-window-outline" x="'+dx+'" y="'+wy+'" width="'+dw+'" height="'+dh+'"/>';
-            html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(16, wy+22)+'" text-anchor="middle" font-size="14" font-family="Arial" font-weight="900" fill="#075985">'+escapeHtml(label.toUpperCase())+'</text>';
+            html += '<rect class="wall-window-outline'+hitClass+'"'+openingAttrs+' x="'+dx+'" y="'+wy+'" width="'+dw+'" height="'+dh+'"/>';
+            html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(16, wy+20)+'" text-anchor="middle" font-size="13" font-family="Arial" font-weight="700" fill="#075985">'+escapeHtml(label.toUpperCase())+'</text>';
+            html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(32, wy+38)+'" text-anchor="middle" font-size="10" font-family="Arial" font-weight="600" fill="#075985">'+escapeHtml(dimText)+'</text>';
             return;
           }
           const fillClass = isEmpty ? 'wall-empty-outline' : 'wall-door-outline';
-          html += '<rect class="'+fillClass+'" x="'+dx+'" y="'+(viewH-dh)+'" width="'+dw+'" height="'+dh+'"/>';
-          html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(16, viewH-dh+22)+'" text-anchor="middle" font-size="16" font-family="Arial" font-weight="900" fill="'+(isEmpty ? '#374151' : '#991b1b')+'">'+escapeHtml(label.toUpperCase())+'</text>';
+          const fillColor = isEmpty ? '#374151' : '#991b1b';
+          html += '<rect class="'+fillClass+hitClass+'"'+openingAttrs+' x="'+dx+'" y="'+(viewH-dh)+'" width="'+dw+'" height="'+dh+'"/>';
+          html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(16, viewH-dh+22)+'" text-anchor="middle" font-size="15" font-family="Arial" font-weight="700" fill="'+fillColor+'">'+escapeHtml(label.toUpperCase())+'</text>';
+          html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(34, viewH-dh+40)+'" text-anchor="middle" font-size="10" font-family="Arial" font-weight="600" fill="'+fillColor+'">'+escapeHtml(dimText)+'</text>';
           const dimY = Math.max(34, viewH - dh - 10);
           const leftRun = Math.max(0, opening.x);
           const rightRun = Math.max(0, layout.wallWidth - opening.x - opening.width);
-          if(leftRun > 0) html += '<text x="'+((leftRun/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="10" font-family="Arial" font-weight="900" fill="#111">'+Math.round(leftRun)+'mm</text>';
-          html += '<text x="'+((opening.x + opening.width/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="10" font-family="Arial" font-weight="900" fill="'+(isEmpty ? '#374151' : '#991b1b')+'">'+Math.round(opening.width)+'mm</text>';
-          if(rightRun > 0) html += '<text x="'+((opening.x + opening.width + rightRun/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="10" font-family="Arial" font-weight="900" fill="#111">'+Math.round(rightRun)+'mm</text>';
+          if(leftRun > 0) html += '<text x="'+((leftRun/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="10" font-family="Arial" font-weight="600" fill="#111">'+formatMm(leftRun)+'mm</text>';
+          html += '<text x="'+((opening.x + opening.width/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="10" font-family="Arial" font-weight="600" fill="'+fillColor+'">'+formatMm(opening.width)+'mm</text>';
+          if(rightRun > 0) html += '<text x="'+((opening.x + opening.width + rightRun/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="10" font-family="Arial" font-weight="600" fill="#111">'+formatMm(rightRun)+'mm</text>';
         });
         return html;
       };
@@ -12270,8 +12496,8 @@
             wallWidth:totalW,
             wallHeight:maxH
           };
-          svg += openingSvg(shiftedLayout, sx, sy, viewH);
-          svg += '<text x="'+(wallX+10)+'" y="'+Math.max(16, wallY+20)+'" font-size="13" font-family="Arial" font-weight="900" fill="#064e3b">'+escapeHtml(wallDisplayName(block, wallIndex))+'</text>';
+          svg += openingSvg(shiftedLayout, sx, sy, viewH, item.partIndex);
+          svg += '<text x="'+(wallX+10)+'" y="'+Math.max(16, wallY+20)+'" font-size="13" font-family="Arial" font-weight="700" fill="#064e3b">'+escapeHtml(wallDisplayName(block, wallIndex))+'</text>';
           cursor += layout.wallWidth;
         });
         svg += '</svg>';
@@ -12280,7 +12506,8 @@
       const wallCards = layouts.map(({part, partIndex, layout, physicalSections, displayHeight}, index)=>{
         const wallW = Math.max(1, layout.wallWidth);
         const wallH = Math.max(1, displayHeight);
-        const viewW = 900;
+        const maxWallWidth = Math.max(...layouts.map(item=>Number(item.layout.wallWidth || 0)), 1);
+        const viewW = Math.max(260, Math.min(900, Math.round(900 * wallW / maxWallWidth)));
         const viewH = Math.max(180, Math.min(520, Math.round(viewW * wallH / wallW)));
         const sx = viewW / wallW;
         const sy = viewH / wallH;
@@ -12294,17 +12521,17 @@
           if(Number(physicalItem.physical?.xStart || 0) >= wallW) return;
           svg += panelSvg(part, layout, physicalItem.section, physicalItem.sectionIndex, sx, sy, wallH, physicalItem, partIndex);
         });
-        svg += openingSvg({...layout, wallHeight:wallH}, sx, sy, viewH);
+        svg += openingSvg({...layout, wallHeight:wallH}, sx, sy, viewH, partIndex);
         const hit = 20;
         svg += '<rect class="wall-edge-hit" data-panel-wall-part-index="'+partIndex+'" data-side="left" x="0" y="0" width="'+hit+'" height="'+viewH+'"/>';
         svg += '<rect class="wall-edge-hit" data-panel-wall-part-index="'+partIndex+'" data-side="right" x="'+(viewW-hit)+'" y="0" width="'+hit+'" height="'+viewH+'"/>';
         svg += '<rect class="wall-edge-hit" data-panel-wall-part-index="'+partIndex+'" data-side="top" x="0" y="0" width="'+viewW+'" height="'+hit+'"/>';
         svg += '<rect class="wall-edge-hit" data-panel-wall-part-index="'+partIndex+'" data-side="bottom" x="0" y="'+(viewH-hit)+'" width="'+viewW+'" height="'+hit+'"/>';
         const wallTitle = wallDisplayName(block, index);
-        svg += '<text x="14" y="24" font-size="18" font-family="Arial" font-weight="900" fill="#064e3b">'+escapeHtml(wallTitle)+' - '+Math.round(layout.wallWidth)+' x '+Math.round(layout.wallHeight)+'mm</text>';
-        svg += '<text x="14" y="'+(viewH-12)+'" font-size="12" font-family="Arial" font-weight="900" fill="#166534">'+physicalSections.length+' cut panel'+(physicalSections.length === 1 ? '' : 's')+' - frame '+Math.round(layout.frame)+'mm - shaker '+Math.round(mainShakerWidth)+' x '+Math.round(mainShakerHeight)+'mm</text>';
+        svg += '<text x="14" y="24" font-size="18" font-family="Arial" font-weight="800" fill="#064e3b">'+escapeHtml(wallTitle)+' - '+formatMm(layout.wallWidth)+' x '+formatMm(layout.wallHeight)+'mm</text>';
+        svg += '<text x="14" y="'+(viewH-12)+'" font-size="12" font-family="Arial" font-weight="800" fill="#166534">'+physicalSections.length+' cut panel'+(physicalSections.length === 1 ? '' : 's')+' - frame '+formatMm(layout.frame)+'mm - shaker '+formatMm(mainShakerWidth)+' x '+formatMm(mainShakerHeight)+'mm</text>';
         svg += '</svg>';
-        return '<div class="panel-wall-preview"><div class="panel-wall-preview-head"><span>'+escapeHtml(wallTitle)+'</span><span>'+physicalSections.length+' cut panel'+(physicalSections.length === 1 ? '' : 's')+' from wall reference</span></div>'+svg+'</div>';
+        return '<div class="panel-wall-preview"><div class="panel-wall-preview-head"><span>'+escapeHtml(wallTitle)+'</span><span>'+physicalSections.length+' cut panel'+(physicalSections.length === 1 ? '' : 's')+' from wall reference</span></div><div style="max-width:'+viewW+'px">'+svg+'</div></div>';
       }).join('');
       return panorama + wallCards;
     }
@@ -12334,7 +12561,7 @@
           sheet.sheetNumber = i+1;
           const sheetSizeKey = sheet.sizeKey || res.sizeKey || block.size;
           const backSheet = backSheetForDisplay(previewBlock, sheet, sheetSizeKey);
-          const showBackFace = backSheet.placements.length > 0;
+          const showBackFace = showBackSidePocketingMode && backSheet.placements.length > 0;
           html += renderSheet(sheet, sheet.sizeKey || res.sizeKey || block.size, {
             editable:true,
             faceLabel:showBackFace ? 'Front' : '',
@@ -12345,7 +12572,7 @@
           if(showBackFace){
             html += renderSheet(backSheet, sheetSizeKey, {
               editable:false,
-              faceLabel:'Back',
+              faceLabel:'Back side pocketing',
               roomName,
               variant:'back'
             });
@@ -12469,7 +12696,7 @@
           if(d) svg += '<path d="'+d+'" fill="'+fillColor+'" stroke="none"/>';
         };
         const drawCenteredLabel = (showFrame=false)=>{
-          const dimensionLabel = p.origW+'x'+p.origH;
+          const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
           const safeDimensionLabel = escapeHtml(dimensionLabel);
           const customLabel = placementLabel(p);
           const safeCustomLabel = escapeHtml(customLabel);
@@ -12501,9 +12728,6 @@
 
         if(isPanelPlacement(p)){
           svg += partShape();
-          panelOpeningRectsForPlacement(p).forEach(opening=>{
-            svg += '<rect x="'+(opening.x*scale)+'" y="'+(opening.y*scale)+'" width="'+(opening.w*scale)+'" height="'+(opening.h*scale)+'" fill="'+boardFill+'" stroke="#1d4ed8" stroke-width="0.42"/>';
-          });
           const cavities = panelCellCavities(p);
           cavities.forEach(c=>{
             const pts = cavityPoints(c);
@@ -12540,7 +12764,7 @@
               drawPocketLineRectsSvg(c, p);
             }
           });
-          const dimensionLabel = p.origW+'x'+p.origH;
+          const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
           const safeDimensionLabel = escapeHtml(dimensionLabel);
           const customLabel = placementLabel(p);
           const safeCustomLabel = escapeHtml(customLabel);
@@ -12565,7 +12789,7 @@
           if(template){
             svg += renderCustomTemplateSvg(template, {x:p.x, y:p.y, w:p.w, h:p.h}, scale);
           }
-          const dimensionLabel = p.origW+'x'+p.origH;
+          const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
           const safeDimensionLabel = escapeHtml(dimensionLabel);
           const customLabel = placementLabel(p);
           const safeCustomLabel = escapeHtml(customLabel);
@@ -12636,7 +12860,7 @@
               if(!isBackVariant) drawPocketLineRectsSvg(c, p);
             });
           }
-          const dimensionLabel = p.origW+'x'+p.origH;
+          const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
           const safeDimensionLabel = escapeHtml(dimensionLabel);
           const customLabel = placementLabel(p);
           const safeCustomLabel = escapeHtml(customLabel);
@@ -12657,7 +12881,7 @@
           }
         } else {
           svg += partShape();
-          const dimensionLabel = p.origW+'x'+p.origH;
+          const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
           const safeDimensionLabel = escapeHtml(dimensionLabel);
           const customLabel = placementLabel(p);
           const safeCustomLabel = escapeHtml(customLabel);
@@ -13553,7 +13777,16 @@
         let dh = '<div class="mini-card-title">'+price.title+' Drawing</div>';
         if(nest.sheets.length){
           dh += '<div class="layout-head"><span>Layout preview</span><span>'+sqm(nest.totalPartArea)+' used</span></div>';
-          nest.sheets.forEach((sheet, i)=>{ sheet.sheetNumber = i+1; dh += renderSheet(sheet, sheet.sizeKey || nest.sizeKey || block.size); });
+          nest.sheets.forEach((sheet, i)=>{
+            sheet.sheetNumber = i+1;
+            const sizeKey = sheet.sizeKey || nest.sizeKey || block.size;
+            const backSheet = backSheetForDisplay(block, sheet, sizeKey);
+            const showBackFace = showBackSidePocketingMode && backSheet.placements.length > 0;
+            dh += renderSheet(sheet, sizeKey, {faceLabel:showBackFace ? 'Front' : ''});
+            if(showBackFace){
+              dh += renderSheet(backSheet, sizeKey, {variant:'back', faceLabel:'Back side pocketing'});
+            }
+          });
         } else {
           dh += '<div class="info-box">No drawing available.</div>';
         }
@@ -13636,8 +13869,8 @@
       const labels = [];
       filtered.forEach(({item, sheetIndex, p})=>{
         const source = labelSourceBlock(item, p);
-        const width = Math.round(Number(p.origW || p.w || 0));
-        const height = Math.round(Number(p.origH || p.h || 0));
+        const width = formatMm(p.origW || p.w || 0);
+        const height = formatMm(p.origH || p.h || 0);
         const quote = document.getElementById('quoteNumber').textContent || buildQuoteNumber();
         const role = String(p.assemblyRole || (p.insertKind ? p.insertKind : (p.shaker ? 'frame' : 'part')));
         const uid = shortHash([quote, item.block.id, p.sourceBlockId || '', p.sourcePartIndex ?? '', p.sourceInstanceIndex ?? '', sheetIndex, role, width, height, Math.round(Number(p.x || 0)), Math.round(Number(p.y || 0))].join('|'));
@@ -14300,10 +14533,20 @@
         btn.textContent = hideValuesMode ? 'Show Values' : 'Hide Values';
       }
     }
+    function setShowBackSidePocketingMode(value){
+      showBackSidePocketingMode = !!value;
+      const btn = document.getElementById('showBackPocketingBtn');
+      if(btn){
+        btn.classList.toggle('active', showBackSidePocketingMode);
+        btn.setAttribute('aria-pressed', showBackSidePocketingMode ? 'true' : 'false');
+        btn.textContent = showBackSidePocketingMode ? 'Back Side Pocketing' : 'Back Pocketing Hidden';
+      }
+    }
     function syncToolbarState(){
       const roundBtn = document.getElementById('toolbarRoundBtn');
       if(roundBtn) setToggleButtonValue(roundBtn, quoteRoundEnabled ? 'Yes' : 'No');
       setHideValuesMode(hideValuesMode);
+      setShowBackSidePocketingMode(showBackSidePocketingMode);
     }
     function updateToolbarJobStatus(text){
       const el = document.getElementById('toolbarJobStatus');
@@ -14337,6 +14580,12 @@
     document.getElementById('toolbarUndoBtn')?.addEventListener('click', ()=>{ undoHistory(); closeCommandMenus(); });
     document.getElementById('toolbarRedoBtn')?.addEventListener('click', ()=>{ redoHistory(); closeCommandMenus(); });
     document.getElementById('hideValuesBtn')?.addEventListener('click', ()=>{ setHideValuesMode(!hideValuesMode); closeCommandMenus(); });
+    document.getElementById('showBackPocketingBtn')?.addEventListener('click', ()=>{
+      setShowBackSidePocketingMode(!showBackSidePocketingMode);
+      lastCalculation = null;
+      requestRender();
+      closeCommandMenus();
+    });
     document.getElementById('showLabelsSettingsBtn')?.addEventListener('click', ()=>{
       const box = document.getElementById('labelsBox');
       if(box){
@@ -14410,6 +14659,8 @@
       } else if((e.ctrlKey || e.metaKey) && !e.altKey && key === 'y'){
         e.preventDefault();
         redoHistory();
+      } else if(!e.ctrlKey && !e.metaKey && !e.altKey && !isTextEntryTarget(e.target) && (e.key === 'Delete' || e.key === 'Backspace')){
+        if(deleteSelectedWallOpening()) e.preventDefault();
       } else if(!e.ctrlKey && !e.metaKey && !e.altKey && !isTextEntryTarget(e.target) && (key === '9' || key === '0')){
         if(rotateSelectedSheetPart(key === '9' ? 90 : -90)) e.preventDefault();
       }
@@ -14429,6 +14680,7 @@
     renderTemplateList();
     renderOffcutTemplateList();
     decorateInfoDots(document);
+    enableDecimalNumberInputs(document);
   </script>
 </body>
 </html>
