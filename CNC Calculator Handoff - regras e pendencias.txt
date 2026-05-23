@@ -17,6 +17,10 @@ ATUALIZACAO PANNELING - 23 May 2026
 - Part Dimensions deve ter ajuda curta; notas de 7mm/rotacao ficam perto das sheets.
 - Header da panoramic view usa nome da room e quantidade de walls, sem "panels shown in green".
 - Cores das rooms devem ser sobrias: verdes, castanhos, cinzas quentes e musgo; sem rosa, roxo, azul bebe ou amarelo.
+- Follow-up: arquivos antigos que usam wallDoor*/wallWindow* precisam ser convertidos para wallOpenings editaveis ao carregar, para Delete/Backspace conseguir apagar portas/janelas.
+- Follow-up: clicar em Door, Window ou Object no preview da wall da foco real no SVG; Delete/Backspace remove o opening selecionado.
+- Follow-up: X From mostra o toggle L/R ao lado do label e o campo de distancia embaixo.
+- Follow-up: Object cap panel e lower panel de Window ficam horizontais e nao herdam override vertical de outro panel.
 
 ATUALIZACAO PANNELING - 20 May 2026
 - Nao fazer deploy no Netlify nesta rodada.

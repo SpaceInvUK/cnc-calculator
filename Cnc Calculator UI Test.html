@@ -176,10 +176,10 @@
     .wall-opening-row.opening-collision{border-color:#ef4444;background:#fff7f7;box-shadow:0 0 0 2px rgba(239,68,68,.12)}
     .wall-opening-row.opening-collision input,.wall-opening-row.opening-collision select{border-color:#ef4444!important;color:#991b1b!important;background:#fff!important}
     .wall-opening-warning{grid-column:1/-1;color:#991b1b;font-size:10px;font-weight:900;line-height:1.25}
-    .x-from-control{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;align-items:center}
-    .x-from-control input{min-width:0}
-    .x-from-control .segmented{height:30px;grid-auto-columns:minmax(24px,auto)}
-    .x-from-control .segmented button{padding:4px 6px;font-size:9px}
+    .x-from-field label{display:flex;align-items:center;justify-content:space-between;gap:6px}
+    .x-from-control input{width:100%;min-width:0}
+    .x-from-label-control{height:22px;grid-auto-columns:minmax(24px,auto)}
+    .x-from-label-control button{padding:3px 6px;font-size:9px}
     .wall-opening-row .field{margin:0}
     .wall-opening-row .field label{font-size:9px}
     .wall-opening-row input,.wall-opening-row select{height:30px!important;padding:5px 8px!important;font-size:11px!important}
@@ -204,6 +204,7 @@
     .wall-window-outline{fill:#eff6ff;stroke:#1d4ed8;stroke-width:1.2}
     .wall-empty-outline{fill:#f8fafc;stroke:#64748b;stroke-width:1.2;stroke-dasharray:6 4}
     .wall-opening-hit{cursor:pointer}
+    .wall-opening-hit:focus{outline:none;stroke:#0b63ff!important;stroke-width:2.4!important;filter:drop-shadow(0 0 3px rgba(37,99,235,.45))}
     .wall-opening-hit.selected{stroke:#0b63ff!important;stroke-width:2.4!important;filter:drop-shadow(0 0 3px rgba(37,99,235,.45))}
     .wall-edge-hit{fill:transparent;stroke:transparent;cursor:pointer}
     .wall-edge-hit:hover{fill:rgba(14,165,233,.16);stroke:#0284c7;stroke-width:2}
@@ -6196,7 +6197,7 @@
       const wallWidth = wallReferenceWidth(block, part);
       const frame = Math.max(1, Number(block?.frameSize || 80));
       let openings = [];
-      if(Array.isArray(part?.wallOpenings) && part.wallOpenings.length){
+      if(Array.isArray(part?.wallOpenings)){
         openings = part.wallOpenings.map(opening=>normalizeWallOpening(opening, opening?.type || 'empty', wallWidth));
       } else {
         const door = wallDoorSettings(block, part);
@@ -6278,6 +6279,10 @@
         return String(override?.panelDirection || 'horizontal') === 'vertical' ? 'vertical' : 'horizontal';
       }
       return String(override?.panelDirection || part?.panelDirection || block?.panelDirection || 'horizontal') === 'vertical' ? 'vertical' : 'horizontal';
+    }
+    function panelDirectionForSection(part, block, section, sectionIndex=null){
+      if(section?.emptyTopPanel === true || section?.windowLowerPanel === true) return 'horizontal';
+      return panelDirectionForPart(part, block, sectionIndex);
     }
     function panelPhysicalItemForSelection(block, part, sectionIndex, sectionSubIndex=''){
       if(!block || !part || !Number.isInteger(sectionIndex)) return null;
@@ -6391,8 +6396,8 @@
       const previous = sections[sectionIndex - 1];
       const next = sections[sectionIndex + 1];
       return {
-        left:!!previous && panelSectionsTouch(previous, current) && panelDirectionForPart(part, block, sectionIndex - 1) === 'vertical',
-        right:!!next && panelSectionsTouch(current, next) && panelDirectionForPart(part, block, sectionIndex + 1) === 'vertical'
+        left:!!previous && panelSectionsTouch(previous, current) && panelDirectionForSection(part, block, previous, sectionIndex - 1) === 'vertical',
+        right:!!next && panelSectionsTouch(current, next) && panelDirectionForSection(part, block, next, sectionIndex + 1) === 'vertical'
       };
     }
     function dominantPositive(values, fallback=0){
@@ -6826,7 +6831,7 @@
       };
     }
     function panelSectionPhysicalRect(part, block, layout, section, sectionIndex){
-      const direction = panelDirectionForPart(part, block, sectionIndex);
+      const direction = panelDirectionForSection(part, block, section, sectionIndex);
       const horizontalWidth = Math.max(1, Number(section?.width || layout?.panelMaxWidth || PANEL_HORIZONTAL_DEFAULT_WIDTH));
       const horizontalHeight = Math.max(1, Number(section?.heightOverride || layout?.panelHeight || panelHorizontalHeightForPart(block, part)));
       const wallHeight = Math.max(horizontalHeight, Number(layout?.wallHeight || horizontalHeight));
@@ -6865,7 +6870,7 @@
       const frame = Math.max(1, Number(layout?.frame || block?.frameSize || 80));
       const minResidual = frame * 2 + PANEL_SHAKER_MIN;
       const layoutSections = layout.sections || [];
-      const hasVerticalPanels = layoutSections.some((section, sectionIndex)=>panelDirectionForPart(part, block, sectionIndex) === 'vertical');
+      const hasVerticalPanels = layoutSections.some((section, sectionIndex)=>panelDirectionForSection(part, block, section, sectionIndex) === 'vertical');
       const wallDisplayHeight = Math.max(
         Number(layout?.wallHeight || 0),
         Number(layout?.panelHeight || panelHorizontalHeightForPart(block, part)),
@@ -6873,7 +6878,7 @@
       );
       const verticalResidualByIndex = new Map();
       layoutSections.forEach((section, sectionIndex)=>{
-        const direction = panelDirectionForPart(part, block, sectionIndex);
+        const direction = panelDirectionForSection(part, block, section, sectionIndex);
         const basePhysical = panelSectionPhysicalRect(part, block, layout, section, sectionIndex);
         if(direction !== 'vertical'){
           const horizontalHeight = Math.max(1, Number(section?.heightOverride || layout?.panelHeight || panelHorizontalHeightForPart(block, part)));
@@ -8477,7 +8482,7 @@
                   <div class="field"><label>Name</label><input class="wallOpeningName" data-opening-key="name" type="text" value="${escapeHtml(opening.name)}"></div>
                   <div class="field"><label>Width</label><input class="wallOpeningWidth" data-opening-key="width" type="number" min="1" step="1" value="${escapeHtml(opening.width)}"></div>
                   <div class="field"><label>Height</label><input class="wallOpeningHeight" data-opening-key="height" type="number" min="1" step="1" value="${escapeHtml(opening.height)}"></div>
-                  <div class="field"><label>X From</label><div class="x-from-control"><input class="wallOpeningX" data-opening-key="x" type="number" min="0" step="1" value="${escapeHtml(xValue)}"><div class="segmented compact-toggle wallOpeningXFromControl"><button type="button" data-value="left"${xFrom === 'left' ? ' class="active"' : ''}>L</button><button type="button" data-value="right"${xFrom === 'right' ? ' class="active"' : ''}>R</button></div><select class="wallOpeningXFrom sr-only" data-opening-key="xFrom"><option value="left"${xFrom === 'left' ? ' selected' : ''}>L</option><option value="right"${xFrom === 'right' ? ' selected' : ''}>R</option></select></div></div>
+                  <div class="field x-from-field"><label>X From <span class="segmented compact-toggle wallOpeningXFromControl x-from-label-control"><button type="button" data-value="left"${xFrom === 'left' ? ' class="active"' : ''}>L</button><button type="button" data-value="right"${xFrom === 'right' ? ' class="active"' : ''}>R</button></span></label><div class="x-from-control"><input class="wallOpeningX" data-opening-key="x" type="number" min="0" step="1" value="${escapeHtml(xValue)}"><select class="wallOpeningXFrom sr-only" data-opening-key="xFrom"><option value="left"${xFrom === 'left' ? ' selected' : ''}>L</option><option value="right"${xFrom === 'right' ? ' selected' : ''}>R</option></select></div></div>
                   ${bottomField}
                   <button class="remove-btn removeOpeningBtn" type="button" aria-label="Remove opening">&times;</button>
                   ${collisionMsg}
@@ -10543,7 +10548,9 @@
       block.autoDefaultSnapshot = data.autoDefaultSnapshot ? String(data.autoDefaultSnapshot) : undefined;
       const rawParts = Array.isArray(data.parts) ? data.parts : [];
       block.parts = rawParts.length ? rawParts.map(part=>newPart(deepCopy(part))) : [newPart()];
-      block.parts.forEach(part=>{
+      block.parts.forEach((part, partIndex)=>{
+        const rawPart = rawParts[partIndex] && typeof rawParts[partIndex] === 'object' ? rawParts[partIndex] : {};
+        const rawHadWallOpenings = Object.prototype.hasOwnProperty.call(rawPart, 'wallOpenings');
         part.doorType = knownDoorTypeValue(part.doorType) || '';
         part.manualRotationAngle = normalizeRotationAngle(part.manualRotationAngle ?? (String(part.manualRotated || 'No') === 'Yes' ? 90 : 0));
         part.manualRotated = part.manualRotationAngle === 90 ? 'Yes' : 'No';
@@ -10558,6 +10565,7 @@
           part.wallPanelDirection = String(part.wallPanelDirection || 'horizontal') === 'vertical' ? 'vertical' : 'horizontal';
           part.panelHorizontalHeight = part.panelHorizontalHeight === '' || part.panelHorizontalHeight == null ? '' : Math.max(1, Number(part.panelHorizontalHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT));
           part.panelVerticalHeight = part.panelVerticalHeight === '' || part.panelVerticalHeight == null ? '' : Math.max(1, Number(part.panelVerticalHeight || PANEL_VERTICAL_DEFAULT_HEIGHT));
+          if(!rawHadWallOpenings) delete part.wallOpenings;
           part.wallOpenings = normalizeWallOpeningsForPart(block, part);
           if(!Array.isArray(part.wallPanelOverrides)) part.wallPanelOverrides = [];
         }
@@ -11451,9 +11459,12 @@
       if(!block || !part || !Number.isInteger(openingIndex)) return false;
       const openings = normalizeWallOpeningsForPart(block, part);
       if(openingIndex < 0 || openingIndex >= openings.length) return false;
+      const removedOpening = openings[openingIndex];
       recordHistory('removed wall opening');
       openings.splice(openingIndex, 1);
       part.wallOpenings = resolveWallOpeningPositions(openings, wallReferenceWidth(block, part), block.frameSize || 80);
+      if(removedOpening?.type === 'door' && !part.wallOpenings.some(opening=>opening.type === 'door')) part.wallDoorEnabled = 'No';
+      if(removedOpening?.type === 'window' && !part.wallOpenings.some(opening=>opening.type === 'window')) part.wallWindowEnabled = 'No';
       selectedWallOpening = null;
       selectedSheetPart = null;
       lastCalculation = null;
@@ -11826,6 +11837,8 @@
           const partIndex = Math.max(0, Number(openingNode.dataset.sourcePartIndex || 0));
           const openingIndex = Math.max(0, Number(openingNode.dataset.openingIndex || 0));
           if(!block || !block.parts?.[partIndex]) return;
+          if(document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
+          if(typeof openingNode.focus === 'function') openingNode.focus({preventScroll:true});
           selectedWallOpening = {blockId:String(block.id), partIndex, openingIndex};
           selectedSheetPart = null;
           requestRender();
@@ -12535,8 +12548,8 @@
           html += '<line x1="'+(panel.x*sx)+'" y1="'+yLine+'" x2="'+((panel.x+panel.w)*sx)+'" y2="'+yLine+'" stroke="#64748b" stroke-width="1" stroke-dasharray="5 3"/>';
         }
         const labelText = (partIndex == null ? '' : (wallDisplayName(block, Number(partIndex)) + ' - ')) + (item?.displayLabel || ('P'+(Number(item?.physicalIndex ?? sectionIndex)+1)));
-        const labelSize = Math.max(7, Math.min(12, (pw - 6) / Math.max(1, labelText.length * 0.55)));
-        html += '<text x="'+(px+Math.max(24, Math.min(pw/2, 82)))+'" y="'+(py+Math.min(ph-4, 18))+'" text-anchor="middle" font-size="'+labelSize+'" font-family="Arial" font-weight="700" fill="#064e3b">'+escapeHtml(labelText)+'</text>';
+        const labelSize = Math.max(8, Math.min(13, (pw - 4) / Math.max(1, labelText.length * 0.5)));
+        html += '<text x="'+(px+Math.max(24, Math.min(pw/2, 82)))+'" y="'+(py+Math.min(ph-4, 18))+'" text-anchor="middle" font-size="'+labelSize+'" font-family="Arial" font-weight="650" fill="#064e3b">'+escapeHtml(labelText)+'</text>';
         return html;
       };
       const openingSvg = (layout, sx, sy, viewH, partIndex=null)=>{
@@ -12555,7 +12568,7 @@
             String(selectedWallOpening.blockId) === String(block.id) &&
             Number(selectedWallOpening.partIndex) === Number(partIndex) &&
             Number(selectedWallOpening.openingIndex) === Number(openingIndex);
-          const openingAttrs = partIndex == null ? '' : ' data-source-block-id="'+escapeHtml(block.id)+'" data-source-part-index="'+escapeHtml(partIndex)+'" data-opening-index="'+escapeHtml(openingIndex)+'"';
+          const openingAttrs = partIndex == null ? '' : ' tabindex="0" focusable="true" data-source-block-id="'+escapeHtml(block.id)+'" data-source-part-index="'+escapeHtml(partIndex)+'" data-opening-index="'+escapeHtml(openingIndex)+'"';
           const hitClass = ' wall-opening-hit' + (isSelected ? ' selected' : '');
           const dimText = formatMm(opening.width)+' x '+formatMm(opening.height)+'mm';
           if(isWindow){

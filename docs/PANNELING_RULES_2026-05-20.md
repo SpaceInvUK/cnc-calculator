@@ -59,6 +59,8 @@ This document records the current confirmed Panneling rules for the active app:
 - Object itself has no panel coverage, but if Object stops below the vertical panel line, create a horizontal cap panel above it. That cap panel aligns to the normal panel line and does not exceed the neighboring panel height.
 - Opening names are editable.
 - Doors, windows, and objects can be selected from the wall preview and removed with Delete/Backspace.
+- Legacy quote files that store doors/windows in old `wallDoor*` / `wallWindow*` fields must be converted into editable `wallOpenings` on load so those openings can be deleted.
+- Clicking an opening in the wall preview gives it keyboard focus so Delete/Backspace removes it even when the previous focus was an input.
 - Opening labels in the wall preview show the opening width and height inside the opening with lighter text.
 - Window sill height is a Panneling setting. Default is 22mm. Window-side panel joints use this setting as the rule basis for the lower sill/joint area.
 
@@ -113,6 +115,8 @@ This document records the current confirmed Panneling rules for the active app:
 - Wall previews scale shorter walls narrower than wider walls so small walls are easier to read.
 - Sheet previews no longer draw the temporary opening cutout overlay on panel parts; actual cavity geometry still comes from the shared panel geometry functions.
 - Number inputs keep the cursor position while typing; spinner arrows can step by 1mm while typed decimals remain valid.
+- The `X From` L/R toggle sits beside the `X From` label, with the distance input below it.
 - Part Dimensions helper text is kept short; nesting margin/rotation notes live near the sheets.
 - Panoramic headers use the room name and wall count only, without redundant "panels shown in green" copy.
 - Room tint colors use sober greens, browns, warm grays, and moss tones; no pink, purple, baby blue, or yellow room themes.
+- Object cap panels and window lower panels remain horizontal; they must not inherit a vertical override from a neighboring/generated panel.
