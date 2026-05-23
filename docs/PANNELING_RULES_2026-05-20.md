@@ -37,26 +37,30 @@ This document records the current confirmed Panneling rules for the active app:
 - If the user requests fewer or more shakers, the app must distribute that count across the wall/panel.
 - If a requested shaker count would force a physical cut panel past its max width, the max-width rule takes priority and the app increases to the smallest count that can fit.
 - Main shakers should stay consistent within the wall where possible.
-- Edge shakers may grow/shrink near wall ends, doors, windows, empty spaces, corners, and columns.
+- Edge shakers may grow/shrink near wall ends, doors, windows, object spaces, corners, and columns.
 - Vertical panels may use more than one shaker column if the physical panel width allows it.
 
 ## Openings
 
 - Each wall can have multiple openings.
-- Opening types: Door, Window, Empty.
-- Empty defaults to 2000mm wide by 2000mm high.
+- Opening types: Door, Window, Object.
+- Object uses the internal legacy type `empty` for quote compatibility, but the user-facing label is Object.
+- Object defaults to 2000mm wide by 2000mm high.
 - Door defaults to 900mm wide by 2100mm high.
 - Window defaults to 1200mm wide by 1100mm high, with 900mm bottom height from the floor.
 - Openings must not overlap or touch each other; keep at least a frame-size gap when auto-positioning.
-- Door and Empty remove panel coverage from that wall span.
+- Adding or editing one opening must not move existing openings. If the new/current opening collides, show the collision on that opening instead of silently moving doors, windows, or objects.
+- Opening X can be measured from the left or right side of the wall with a From L/R control.
+- Door and Object remove panel coverage from that wall span.
 - Window remains a cutout in the panel geometry.
 - When a window starts below the normal horizontal panel top, create a separate lower panel under the full window width.
 - The lower window panel height follows the window bottom height for now.
 - Horizontal panels touching a lower window panel use half-frame joints on the window-facing side.
-- Empty itself has no panel coverage, but if Empty stops below the vertical panel line, create a horizontal cap panel above it. That cap panel aligns to the normal panel line and does not exceed the neighboring panel height.
+- Object itself has no panel coverage, but if Object stops below the vertical panel line, create a horizontal cap panel above it. That cap panel aligns to the normal panel line and does not exceed the neighboring panel height.
 - Opening names are editable.
-- Doors, windows, and empty openings can be selected from the wall preview and removed with Delete/Backspace.
+- Doors, windows, and objects can be selected from the wall preview and removed with Delete/Backspace.
 - Opening labels in the wall preview show the opening width and height inside the opening with lighter text.
+- Window sill height is a Panneling setting. Default is 22mm. Window-side panel joints use this setting as the rule basis for the lower sill/joint area.
 
 ## Skirting
 
@@ -75,6 +79,7 @@ This document records the current confirmed Panneling rules for the active app:
 - Do not show `lower combined` labels.
 - If horizontal pieces merge physically, keep normal panel names such as `P3`, `P4`.
 - Numeric labels preserve decimals where the user entered decimals; do not round 385.6mm to 386mm.
+- Numeric labels must not strip integer zeros. Example: 3500mm must stay 3500mm, not 35mm.
 
 ## Side Rules
 
@@ -101,9 +106,13 @@ This document records the current confirmed Panneling rules for the active app:
 ## Latest QA Fixes
 
 - Panneling Material & Pricing is full width in panel mode so Wall Setup has room to breathe.
-- Wall Setup rows are compact and put Door, Window, and Empty actions beneath the wall size/orientation controls.
+- Wall Setup rows are compact and put Door, Window, and Object actions beneath the wall size/orientation controls.
 - Full-wall vertical orientation must not leave empty gaps inside generated vertical sections.
 - Irregular Shape is stored per selected physical panel instance, including residual/secondary vertical pieces.
 - Manual sheet placements are locked, then the remaining parts are tightened around them to reduce large unused gaps without overlapping.
 - Wall previews scale shorter walls narrower than wider walls so small walls are easier to read.
 - Sheet previews no longer draw the temporary opening cutout overlay on panel parts; actual cavity geometry still comes from the shared panel geometry functions.
+- Number inputs keep the cursor position while typing; spinner arrows can step by 1mm while typed decimals remain valid.
+- Part Dimensions helper text is kept short; nesting margin/rotation notes live near the sheets.
+- Panoramic headers use the room name and wall count only, without redundant "panels shown in green" copy.
+- Room tint colors use sober greens, browns, warm grays, and moss tones; no pink, purple, baby blue, or yellow room themes.

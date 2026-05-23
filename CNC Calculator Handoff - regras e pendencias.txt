@@ -3,6 +3,21 @@ Data: 18 May 2026
 Atualizado: 20 May 2026
 Arquivo principal em uso: C:\Users\ednei\Documents\CNC App\Cnc Calculator UI Test.html
 
+ATUALIZACAO PANNELING - 23 May 2026
+- Nao fazer deploy no Netlify nesta rodada.
+- Empty passa a ser chamado de Object na interface; o tipo interno pode continuar como empty para compatibilidade de arquivos.
+- Object padrao continua 2000mm x 2000mm e remove cobertura de painel no trecho da wall.
+- Openings agora tem controle From L/R para medir X pela esquerda ou pela direita da wall.
+- Ao adicionar ou editar Door, Window ou Object, openings existentes nao podem mudar de posicao automaticamente.
+- Se houver colisao entre openings, o item em conflito deve ficar marcado em vermelho com aviso de collision.
+- Inputs numericos precisam aceitar decimais digitados, mas as setas podem continuar andando de 1mm em 1mm.
+- O cursor/prompt do input nao pode pular para o lado esquerdo enquanto o usuario digita.
+- Labels de milimetros nao podem remover zeros de inteiros: 3500mm fica 3500mm, nao 35mm.
+- Window Sill padrao 22mm foi adicionado como configuracao de Panneling.
+- Part Dimensions deve ter ajuda curta; notas de 7mm/rotacao ficam perto das sheets.
+- Header da panoramic view usa nome da room e quantidade de walls, sem "panels shown in green".
+- Cores das rooms devem ser sobrias: verdes, castanhos, cinzas quentes e musgo; sem rosa, roxo, azul bebe ou amarelo.
+
 ATUALIZACAO PANNELING - 20 May 2026
 - Nao fazer deploy no Netlify nesta rodada.
 - Regras atuais tambem foram registradas em docs/PANNELING_RULES_2026-05-20.md.
@@ -19,10 +34,10 @@ ATUALIZACAO PANNELING - 20 May 2026
 - Horizontal Panel Height e Vertical Panel Height sao alturas de panel, nao frame.
 - H Panel H por wall precisa mudar a altura fisica dos paineis horizontais gerados, mesmo se o part base ainda tiver height antigo salvo.
 - Frame continua controlando rail/stile/frame como antes.
-- Walls podem ter multiplas openings: Door, Window e Empty.
-- Empty padrao: 2000mm x 2000mm, com nome editavel.
+- Walls podem ter multiplas openings: Door, Window e Object.
+- Object padrao: 2000mm x 2000mm, com nome editavel.
 - Openings nao devem encostar nem sobrepor; auto-position usa pelo menos um frame de espaco.
-- Door e Empty removem cobertura de panel naquele trecho da wall.
+- Door e Object removem cobertura de panel naquele trecho da wall.
 - Window continua como cutout no panel.
 - Window que entra na zona dos panels horizontais cria um lower panel separado cobrindo toda a largura da window.
 - Por enquanto o lower panel da window usa a altura do window bottom.
