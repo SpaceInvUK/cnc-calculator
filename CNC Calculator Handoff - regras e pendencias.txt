@@ -8,6 +8,7 @@ ATUALIZACAO PANNELING - 24 May 2026
 - Sheets/nesting por Room ficam ocultos por default; botao Nesting mostra/oculta as sheets depois das previews das walls.
 - Em Window, o step lateral eh frame-only: depois do Window Sill Height, meia-frame entra para dentro da janela, sem deslocar nem redimensionar os shakers/cavidades do painel.
 - A geometria fisica do panel com step de Window guarda a base original do painel e a largura extra do frame para wall preview, sheet preview e DXF usarem o mesmo outline.
+- A Window preenchida deve ser desenhada atras dos panels; por cima fica apenas contorno/texto clicavel transparente para nao esconder o frame que entra dentro da window.
 - Na wall/panoramic preview, ArrowUp muda o panel selecionado para vertical e ArrowDown muda para horizontal.
 - Na wall/panoramic preview, ArrowLeft e ArrowRight selecionam o panel fisico anterior/proximo e podem atravessar para outra wall da mesma Room.
 - Esses atalhos de seta so valem para panels; Door, Window e Object nao mudam orientacao por seta.

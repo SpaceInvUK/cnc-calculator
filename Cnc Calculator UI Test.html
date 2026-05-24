@@ -12916,30 +12916,41 @@
         html += '<text x="'+(px+Math.max(24, Math.min(pw/2, 82)))+'" y="'+(py+Math.min(ph-4, 18))+'" text-anchor="middle" font-size="'+labelSize+'" font-family="Arial" font-weight="650" fill="#064e3b">'+escapeHtml(labelText)+'</text>';
         return html;
       };
-      const openingSvg = (layout, sx, sy, viewH, partIndex=null)=>{
+      const openingSvg = (layout, sx, sy, viewH, partIndex=null, options={})=>{
         let html = '';
         const openings = Array.isArray(layout.openings) && layout.openings.length
           ? layout.openings
           : [layout.door?.enabled ? {...layout.door, type:'door', name:'Door'} : null, layout.window?.enabled ? {...layout.window, type:'window', name:'Window'} : null].filter(Boolean);
+        const onlyTypes = Array.isArray(options.onlyTypes) ? options.onlyTypes.map(type=>String(type || '').toLowerCase()) : null;
+        const excludeTypes = Array.isArray(options.excludeTypes) ? options.excludeTypes.map(type=>String(type || '').toLowerCase()) : [];
+        const interactive = options.interactive !== false;
+        const transparentWindow = options.transparentWindow === true;
+        const hideText = options.hideText === true;
         openings.forEach((opening, openingIndex)=>{
+          const openingType = String(opening?.type || '').toLowerCase();
+          if(onlyTypes && !onlyTypes.includes(openingType)) return;
+          if(excludeTypes.includes(openingType)) return;
           const label = String(opening.name || openingTypeLabel(opening.type)).trim() || openingTypeLabel(opening.type);
           const dx = opening.x * sx;
           const dw = opening.width * sx;
           const dh = Math.min(layout.wallHeight, opening.height) * sy;
-          const isWindow = opening.type === 'window';
-          const isEmpty = opening.type === 'empty';
+          const isWindow = openingType === 'window';
+          const isEmpty = openingType === 'empty';
           const isSelected = selectedWallOpening &&
             String(selectedWallOpening.blockId) === String(block.id) &&
             Number(selectedWallOpening.partIndex) === Number(partIndex) &&
             Number(selectedWallOpening.openingIndex) === Number(openingIndex);
-          const openingAttrs = partIndex == null ? '' : ' tabindex="0" focusable="true" data-source-block-id="'+escapeHtml(block.id)+'" data-source-part-index="'+escapeHtml(partIndex)+'" data-opening-index="'+escapeHtml(openingIndex)+'"';
-          const hitClass = ' wall-opening-hit' + (isSelected ? ' selected' : '');
+          const openingAttrs = !interactive || partIndex == null ? '' : ' tabindex="0" focusable="true" data-source-block-id="'+escapeHtml(block.id)+'" data-source-part-index="'+escapeHtml(partIndex)+'" data-opening-index="'+escapeHtml(openingIndex)+'"';
+          const hitClass = interactive ? (' wall-opening-hit' + (isSelected ? ' selected' : '')) : '';
           const dimText = formatMm(opening.width)+' x '+formatMm(opening.height)+'mm';
           if(isWindow){
             const wy = Math.max(0, (layout.wallHeight - Number(opening.bottom || 0) - opening.height) * sy);
-            html += '<rect class="wall-window-outline'+hitClass+'"'+openingAttrs+' x="'+dx+'" y="'+wy+'" width="'+dw+'" height="'+dh+'"/>';
-            html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(16, wy+20)+'" text-anchor="middle" font-size="12" font-family="Arial" font-weight="500" fill="#075985">'+escapeHtml(label.toUpperCase())+'</text>';
-            html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(32, wy+38)+'" text-anchor="middle" font-size="9" font-family="Arial" font-weight="500" fill="#075985">'+escapeHtml(dimText)+'</text>';
+            const windowStyle = transparentWindow ? ' style="fill:transparent"' : '';
+            html += '<rect class="wall-window-outline'+hitClass+'"'+openingAttrs+windowStyle+' x="'+dx+'" y="'+wy+'" width="'+dw+'" height="'+dh+'"/>';
+            if(!hideText){
+              html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(16, wy+20)+'" text-anchor="middle" font-size="12" font-family="Arial" font-weight="500" fill="#075985">'+escapeHtml(label.toUpperCase())+'</text>';
+              html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(32, wy+38)+'" text-anchor="middle" font-size="9" font-family="Arial" font-weight="500" fill="#075985">'+escapeHtml(dimText)+'</text>';
+            }
             return;
           }
           const fillClass = isEmpty ? 'wall-empty-outline' : 'wall-door-outline';
@@ -12947,14 +12958,18 @@
           const openingBottom = isEmpty ? Math.max(0, Number(opening.bottom || 0)) : 0;
           const oy = Math.max(0, viewH - (openingBottom * sy) - dh);
           html += '<rect class="'+fillClass+hitClass+'"'+openingAttrs+' x="'+dx+'" y="'+oy+'" width="'+dw+'" height="'+dh+'"/>';
-          html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(16, oy+22)+'" text-anchor="middle" font-size="13" font-family="Arial" font-weight="500" fill="'+fillColor+'">'+escapeHtml(label.toUpperCase())+'</text>';
-          html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(34, oy+40)+'" text-anchor="middle" font-size="9" font-family="Arial" font-weight="500" fill="'+fillColor+'">'+escapeHtml(dimText)+'</text>';
+          if(!hideText){
+            html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(16, oy+22)+'" text-anchor="middle" font-size="13" font-family="Arial" font-weight="500" fill="'+fillColor+'">'+escapeHtml(label.toUpperCase())+'</text>';
+            html += '<text x="'+(dx+dw/2)+'" y="'+Math.max(34, oy+40)+'" text-anchor="middle" font-size="9" font-family="Arial" font-weight="500" fill="'+fillColor+'">'+escapeHtml(dimText)+'</text>';
+          }
           const dimY = Math.max(34, oy - 10);
           const leftRun = Math.max(0, opening.x);
           const rightRun = Math.max(0, layout.wallWidth - opening.x - opening.width);
-          if(leftRun > 0) html += '<text x="'+((leftRun/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="9" font-family="Arial" font-weight="500" fill="#111">'+formatMm(leftRun)+'mm</text>';
-          html += '<text x="'+((opening.x + opening.width/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="9" font-family="Arial" font-weight="500" fill="'+fillColor+'">'+formatMm(opening.width)+'mm</text>';
-          if(rightRun > 0) html += '<text x="'+((opening.x + opening.width + rightRun/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="9" font-family="Arial" font-weight="500" fill="#111">'+formatMm(rightRun)+'mm</text>';
+          if(!hideText){
+            if(leftRun > 0) html += '<text x="'+((leftRun/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="9" font-family="Arial" font-weight="500" fill="#111">'+formatMm(leftRun)+'mm</text>';
+            html += '<text x="'+((opening.x + opening.width/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="9" font-family="Arial" font-weight="500" fill="'+fillColor+'">'+formatMm(opening.width)+'mm</text>';
+            if(rightRun > 0) html += '<text x="'+((opening.x + opening.width + rightRun/2)*sx)+'" y="'+dimY+'" text-anchor="middle" font-size="9" font-family="Arial" font-weight="500" fill="#111">'+formatMm(rightRun)+'mm</text>';
+          }
         });
         return html;
       };
@@ -12982,6 +12997,15 @@
           const wallH = layout.wallHeight * sy;
           const wallY = viewH - wallH;
           svg += '<rect x="'+wallX+'" y="'+wallY+'" width="'+wallW+'" height="'+wallH+'" fill="#fff" stroke="#111" stroke-width="1.5"/>';
+          const shiftedLayout = {
+            ...layout,
+            door:{...layout.door, x:offsetX + layout.door.x},
+            window:{...layout.window, x:offsetX + layout.window.x},
+            openings:(layout.openings || []).map(opening=>({...opening, x:offsetX + Number(opening.x || 0)})),
+            wallWidth:totalW,
+            wallHeight:maxH
+          };
+          svg += openingSvg(shiftedLayout, sx, sy, viewH, item.partIndex, {onlyTypes:['window'], interactive:false, hideText:true});
           item.physicalSections.forEach(physicalItem=>{
             const yShift = Math.max(0, maxH - item.displayHeight);
             const shiftedItem = {
@@ -12996,15 +13020,8 @@
             };
             svg += panelSvg(item.part, {...layout, wallWidth:totalW, wallHeight:maxH}, shiftedItem.section, shiftedItem.sectionIndex, sx, sy, maxH, shiftedItem, item.partIndex);
           });
-          const shiftedLayout = {
-            ...layout,
-            door:{...layout.door, x:offsetX + layout.door.x},
-            window:{...layout.window, x:offsetX + layout.window.x},
-            openings:(layout.openings || []).map(opening=>({...opening, x:offsetX + Number(opening.x || 0)})),
-            wallWidth:totalW,
-            wallHeight:maxH
-          };
-          svg += openingSvg(shiftedLayout, sx, sy, viewH, item.partIndex);
+          svg += openingSvg(shiftedLayout, sx, sy, viewH, item.partIndex, {onlyTypes:['window'], transparentWindow:true});
+          svg += openingSvg(shiftedLayout, sx, sy, viewH, item.partIndex, {excludeTypes:['window']});
           svg += '<text x="'+(wallX+10)+'" y="'+Math.max(16, wallY+20)+'" font-size="13" font-family="Arial" font-weight="700" fill="#064e3b">'+escapeHtml(wallDisplayName(block, wallIndex))+'</text>';
           cursor += layout.wallWidth;
         });
@@ -13026,11 +13043,13 @@
         const mainShakerHeight = horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame);
         let svg = '<svg viewBox="0 0 '+viewW+' '+viewH+'" xmlns="http://www.w3.org/2000/svg">';
         svg += '<rect x="1" y="1" width="'+(viewW-2)+'" height="'+(viewH-2)+'" fill="#fff" stroke="#111" stroke-width="2"/>';
+        svg += openingSvg({...layout, wallHeight:wallH}, sx, sy, viewH, partIndex, {onlyTypes:['window'], interactive:false, hideText:true});
         physicalSections.forEach(physicalItem=>{
           if(Number(physicalItem.physical?.xStart || 0) >= wallW) return;
           svg += panelSvg(part, layout, physicalItem.section, physicalItem.sectionIndex, sx, sy, wallH, physicalItem, partIndex);
         });
-        svg += openingSvg({...layout, wallHeight:wallH}, sx, sy, viewH, partIndex);
+        svg += openingSvg({...layout, wallHeight:wallH}, sx, sy, viewH, partIndex, {onlyTypes:['window'], transparentWindow:true});
+        svg += openingSvg({...layout, wallHeight:wallH}, sx, sy, viewH, partIndex, {excludeTypes:['window']});
         const hit = 20;
         svg += '<rect class="wall-edge-hit" data-panel-wall-part-index="'+partIndex+'" data-side="left" x="0" y="0" width="'+hit+'" height="'+viewH+'"/>';
         svg += '<rect class="wall-edge-hit" data-panel-wall-part-index="'+partIndex+'" data-side="right" x="'+(viewW-hit)+'" y="0" width="'+hit+'" height="'+viewH+'"/>';
