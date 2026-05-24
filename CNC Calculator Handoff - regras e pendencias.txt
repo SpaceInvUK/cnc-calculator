@@ -11,6 +11,10 @@ ATUALIZACAO PANNELING - 24 May 2026
 - Teclas 9 e 0 continuam reservadas para rotacao na sheet/nesting.
 - Part Dimensions agora tem botao Auto por panel para devolver os shakers daquele panel ao calculo automatico da wall.
 - Auto shaker por enquanto recalcula o padrao comum da wall inteira mirando aproximadamente 350mm.
+- Arquivos JSON antigos podem ter panelRows salvo dentro de wallPanelOverrides sem flag manual; esses valores antigos sao tratados como Auto, nao como trava manual.
+- Um panel fisico so trava a quantidade de shakers quando o usuario editar o campo daquele panel ou quando existir panelRowsManual no override.
+- Wall-level shakers pode orientar a distribuicao geral da wall, mas nao deve fazer cada panel fisico repetir a mesma quantidade de shakers.
+- Vertical panel em Auto volta para 2 shakers/rows; row count vertical so muda por override manual daquele panel.
 - Object pode ter Bottom; se o Object comeca acima do chao, a parte de baixo funciona como regra de Window.
 - O cap panel acima de Object usa V Panel H - Object bottom - Object height.
 - O cap panel acima de Object cobre a largura do Object mais metade do frame em cada lado quando couber.
