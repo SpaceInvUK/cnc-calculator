@@ -34,6 +34,7 @@ This document records the current confirmed Panneling rules for the active app:
 - Shaker count can be overridden per wall.
 - Shaker count can still be overridden per physical panel in Part Dimensions.
 - A physical panel shaker override must change the wall preview, nesting/sheet preview, and DXF/cavity geometry for that selected physical panel.
+- Part Dimensions has an Auto button per panel to return that physical panel to the automatic wall shaker calculation.
 - If the user requests fewer or more shakers, the app must distribute that count across the wall/panel.
 - If a requested shaker count would force a physical cut panel past its max width, the max-width rule takes priority and the app increases to the smallest count that can fit.
 - Main shakers should stay consistent within the wall where possible.
@@ -55,8 +56,15 @@ This document records the current confirmed Panneling rules for the active app:
 - Window remains a cutout in the panel geometry.
 - When a window starts below the normal horizontal panel top, create a separate lower panel under the full window width.
 - The lower window panel height follows the window bottom height for now.
+- The lower window panel stays separate and horizontal.
 - Horizontal panels touching a lower window panel use half-frame joints on the window-facing side.
-- Object itself has no panel coverage, but if Object stops below the vertical panel line, create a horizontal cap panel above it. That cap panel aligns to the normal panel line and does not exceed the neighboring panel height.
+- Window side panels continue past the lower-window line by the Window Sill Height, then step inward by half the frame so the physical joint is real.
+- Object itself has no panel coverage, but if Object stops below the vertical panel line, create a cap panel above it.
+- Object cap panel height is based on the vertical panel height: cap height = V Panel H - Object bottom - Object height.
+- Object cap panel width covers the Object width plus half the frame on each side when space allows, clamped by the wall or neighboring openings.
+- Object cap panel side frames use half-frame joints. Example: frame 80mm means 40mm on each side.
+- If the Object cap panel is taller than about 1200mm, it may become one or more vertical panels, but it still must align to the same top line as the neighboring panels.
+- Object side panels keep full frame beside the Object, then step inward by half-frame above the Object to join the cap panel.
 - Opening names are editable.
 - Doors, windows, and objects can be selected from the wall preview and removed with Delete/Backspace.
 - Legacy quote files that store doors/windows in old `wallDoor*` / `wallWindow*` fields must be converted into editable `wallOpenings` on load so those openings can be deleted.
@@ -89,6 +97,14 @@ This document records the current confirmed Panneling rules for the active app:
 - Hover/click the left or right side of a physical panel to choose Normal, Joint, Vertical Joint, Corner, Column, or Door.
 - Panel-side overrides must flow into the wall preview, nesting/sheet preview, and generated panel geometry.
 
+## Keyboard Controls
+
+- In wall and panoramic previews, ArrowUp turns the selected wall panel vertical.
+- In wall and panoramic previews, ArrowDown turns the selected wall panel horizontal.
+- ArrowLeft and ArrowRight select the previous or next physical panel and can cross to another wall in the same Room.
+- These arrow controls apply only to wall panels, not Door, Window, or Object openings.
+- Sheet/nesting rotation keeps the 9 and 0 keys. Wall previews do not use 9/0 for orientation.
+
 ## Back Side Pocketing
 
 - Back side pocketing is shown in the calculator and print/PDF output by default.
@@ -116,6 +132,8 @@ This document records the current confirmed Panneling rules for the active app:
 - Sheet previews no longer draw the temporary opening cutout overlay on panel parts; actual cavity geometry still comes from the shared panel geometry functions.
 - Number inputs keep the cursor position while typing; spinner arrows can step by 1mm while typed decimals remain valid.
 - The `X From` L/R toggle sits beside the `X From` label, with the distance input below it.
+- Wall/panoramic preview shaker cavities and labels do not block clicking the physical panel underneath.
+- Arrow-key panel orientation keeps the selected physical panel active after the wall regenerates vertical/residual pieces.
 - Part Dimensions helper text is kept short; nesting margin/rotation notes live near the sheets.
 - Panoramic headers use the room name and wall count only, without redundant "panels shown in green" copy.
 - Room tint colors use sober greens, browns, warm grays, and moss tones; no pink, purple, baby blue, or yellow room themes.

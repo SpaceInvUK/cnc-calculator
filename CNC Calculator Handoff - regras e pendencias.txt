@@ -3,6 +3,25 @@ Data: 18 May 2026
 Atualizado: 20 May 2026
 Arquivo principal em uso: C:\Users\ednei\Documents\CNC App\Cnc Calculator UI Test.html
 
+ATUALIZACAO PANNELING - 24 May 2026
+- Nao fazer deploy no Netlify nesta rodada.
+- Na wall/panoramic preview, ArrowUp muda o panel selecionado para vertical e ArrowDown muda para horizontal.
+- Na wall/panoramic preview, ArrowLeft e ArrowRight selecionam o panel fisico anterior/proximo e podem atravessar para outra wall da mesma Room.
+- Esses atalhos de seta so valem para panels; Door, Window e Object nao mudam orientacao por seta.
+- Teclas 9 e 0 continuam reservadas para rotacao na sheet/nesting.
+- Part Dimensions agora tem botao Auto por panel para devolver os shakers daquele panel ao calculo automatico da wall.
+- Auto shaker por enquanto recalcula o padrao comum da wall inteira mirando aproximadamente 350mm.
+- Object pode ter Bottom; se o Object comeca acima do chao, a parte de baixo funciona como regra de Window.
+- O cap panel acima de Object usa V Panel H - Object bottom - Object height.
+- O cap panel acima de Object cobre a largura do Object mais metade do frame em cada lado quando couber.
+- Com frame 80mm, o cap panel acima de Object usa joint de 40mm em cada lateral; com frame 70mm, usa 35mm, etc.
+- Se o cap panel acima de Object passar de aproximadamente 1200mm de altura, ele pode virar panel vertical ou dividir em mais panels verticais.
+- Panels laterais de Object mantem frame cheio ao lado do Object e entram meia-frame acima dele para encaixar no cap panel.
+- Window Sill Height continua default 22mm e define o trecho acima da linha inferior da window antes do step de meia-frame nas laterais.
+- O panel debaixo da Window continua separado, horizontal, cobrindo a largura da Window.
+- Cavidades/shakers e textos no SVG da wall nao bloqueiam mais clique no panel fisico.
+- Selecionar panel e trocar orientacao por seta mantem o panel selecionado depois que a wall regenera os pedacos vertical/residual.
+
 ATUALIZACAO PANNELING - 23 May 2026
 - Nao fazer deploy no Netlify nesta rodada.
 - Empty passa a ser chamado de Object na interface; o tipo interno pode continuar como empty para compatibilidade de arquivos.
