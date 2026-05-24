@@ -507,6 +507,10 @@
     .sheet-caption{font-size:10px;font-weight:700;margin-top:5px;color:#111}
     .sheet-caption-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
     .sheet-help-note{margin:8px 0 2px;font-size:10px;line-height:1.35;color:#64748b;font-weight:650}
+    .nesting-toggle-row{display:flex;align-items:center;gap:8px;margin:8px 0 4px}
+    .nesting-toggle-row .pocket-title-toggle{height:30px}
+    .nesting-toggle-note{font-size:10px;color:#64748b;font-weight:700}
+    .room-nesting-sheets{margin-top:4px}
     .sheet-size-select{padding:5px 7px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-size:10px;font-weight:700;color:#111}
     .sheet-price-editor{grid-column:1/-1;margin-top:2px}
     .sheet-price-box{border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px;display:grid;gap:8px}
@@ -2212,15 +2216,32 @@
       const upperInsetRight = Math.max(0, Math.min(w / 2, Number(p?.panelUpperStepInsetRight || 0)));
       if(upperStepped && upperLowerHeight > 0 && upperLowerHeight < h && (upperInsetLeft > 0 || upperInsetRight > 0)){
         const upperBottom = Math.max(0, h - upperLowerHeight);
+        const baseOffsetLeftRaw = p?.panelUpperStepBaseOffsetLeft;
+        const baseWidthRaw = p?.panelUpperStepBaseWidth;
+        const hasExpandedBase = baseOffsetLeftRaw !== '' && baseOffsetLeftRaw != null && baseWidthRaw !== '' && baseWidthRaw != null && Number(baseWidthRaw) > 0;
+        if(hasExpandedBase){
+          const baseLeft = Math.max(0, Math.min(w, Number(baseOffsetLeftRaw || 0)));
+          const baseRight = Math.max(baseLeft, Math.min(w, baseLeft + Number(baseWidthRaw || 0)));
+          return cleanPolygonPoints([
+            {x:0,y:0},
+            {x:w,y:0},
+            {x:w,y:upperBottom},
+            {x:baseRight,y:upperBottom},
+            {x:baseRight,y:h},
+            {x:baseLeft,y:h},
+            {x:baseLeft,y:upperBottom},
+            {x:0,y:upperBottom}
+          ]);
+        }
         return cleanPolygonPoints([
-          {x:upperInsetLeft,y:0},
-          {x:w-upperInsetRight,y:0},
-          {x:w-upperInsetRight,y:upperBottom},
+          {x:-upperInsetLeft,y:0},
+          {x:w+upperInsetRight,y:0},
+          {x:w+upperInsetRight,y:upperBottom},
           {x:w,y:upperBottom},
           {x:w,y:h},
           {x:0,y:h},
           {x:0,y:upperBottom},
-          {x:upperInsetLeft,y:upperBottom}
+          {x:-upperInsetLeft,y:upperBottom}
         ]);
       }
       const stepped = p?.panelVerticalStepFrame === true || p?.panelVerticalStepFrame === 'Yes';
@@ -7047,11 +7068,18 @@
       const wallHeight = Math.max(horizontalHeight, Number(layout?.wallHeight || horizontalHeight));
       if(direction !== 'vertical'){
         const customY = section?.yStartOverride !== '' && section?.yStartOverride != null ? Number(section.yStartOverride) : null;
+        const baseXStart = roundPanelMm(Number(section?.xStart || 0));
+        const leftStepExtend = section?.upperStepLeft === true ? Math.max(0, Number(section?.upperStepInsetLeft || 0)) : 0;
+        const rightStepExtend = section?.upperStepRight === true ? Math.max(0, Number(section?.upperStepInsetRight || 0)) : 0;
+        const xStart = roundPanelMm(Math.max(0, baseXStart - leftStepExtend));
+        const baseOffsetLeft = roundPanelMm(Math.max(0, baseXStart - xStart));
         return {
-          xStart:roundPanelMm(Number(section?.xStart || 0)),
+          xStart,
           yStart:roundPanelMm(Math.max(0, customY == null || !Number.isFinite(customY) ? wallHeight - horizontalHeight : customY)),
-          width:roundPanelMm(horizontalWidth),
+          width:roundPanelMm(horizontalWidth + baseOffsetLeft + rightStepExtend),
           height:roundPanelMm(horizontalHeight),
+          upperStepBaseOffsetLeft:baseOffsetLeft,
+          upperStepBaseWidth:roundPanelMm(horizontalWidth),
           direction
         };
       }
@@ -7485,6 +7513,8 @@
         panelUpperStepRight:item?.upperStepRight === true || item?.section?.upperStepRight === true,
         panelUpperStepInsetLeft:item?.upperStepInsetLeft ?? item?.section?.upperStepInsetLeft ?? 0,
         panelUpperStepInsetRight:item?.upperStepInsetRight ?? item?.section?.upperStepInsetRight ?? 0,
+        panelUpperStepBaseOffsetLeft:physical?.upperStepBaseOffsetLeft ?? 0,
+        panelUpperStepBaseWidth:physical?.upperStepBaseWidth ?? physical.width,
         panelIrregularShape:item?.irregularShape === false ? 'No' : 'Yes',
         panelSkirtingEnabled:block?.panelSkirtingEnabled === 'Yes' ? 'Yes' : 'No',
         panelSkirtingHeight:Math.max(0, Number(block?.panelSkirtingHeight || PANEL_SKIRTING_DEFAULT_HEIGHT)),
@@ -7685,6 +7715,8 @@
                 panelUpperStepRight:panelData.panelUpperStepRight,
                 panelUpperStepInsetLeft:panelData.panelUpperStepInsetLeft,
                 panelUpperStepInsetRight:panelData.panelUpperStepInsetRight,
+                panelUpperStepBaseOffsetLeft:panelData.panelUpperStepBaseOffsetLeft,
+                panelUpperStepBaseWidth:panelData.panelUpperStepBaseWidth,
                 panelIrregularShape:panelData.panelIrregularShape,
                 panelSkirtingEnabled:panelData.panelSkirtingEnabled,
                 panelSkirtingHeight:panelData.panelSkirtingHeight,
@@ -9495,6 +9527,7 @@
           enableDecimalNumberInputs(node.querySelector('.nestingMessage'));
           syncPocketingState();
           updateSheetPriceEditor();
+          bindRoomNestingToggle(node.querySelector('.nestingMessage'), block);
           bindSheetOverrideControls(node.querySelector('.nestingMessage'), block);
           bindSheetPartControls(node.querySelector('.nestingMessage'), block);
         }
@@ -9997,93 +10030,33 @@
       return out;
     }
     function upperSteppedPanelCellCavities(p, settings, px, py, pw, ph){
-      const top = settings.sides.top;
-      const bottom = settings.sides.bottom;
-      const innerY = py + top;
-      const innerH = ph - top - bottom;
-      if(!(innerH > 0)) return [];
-      const rowHeights = scaledPanelAxisSizes(innerH, settings.rows, settings.frame, settings.rowHeights);
-      if(!rowHeights.length) return [];
-      const lowerHeight = Math.max(0, Math.min(ph, Number(settings.upperStepLowerHeight || 0)));
-      const upperBottom = py + ph - lowerHeight;
-      const upperLeftSide = settings.upperStepLeft ? Math.max(0, settings.frame / 2) : settings.sides.left;
-      const upperRightSide = settings.upperStepRight ? Math.max(0, settings.frame / 2) : settings.sides.right;
-      const bandMetrics = upperBand=>{
-        const outerInsetLeft = upperBand ? Number(settings.upperStepInsetLeft || 0) : 0;
-        const outerInsetRight = upperBand ? Number(settings.upperStepInsetRight || 0) : 0;
-        const left = upperBand ? upperLeftSide : settings.sides.left;
-        const right = upperBand ? upperRightSide : settings.sides.right;
-        const innerX = px + outerInsetLeft + left;
-        const innerW = pw - outerInsetLeft - outerInsetRight - left - right;
-        const columnWidths = innerW > 0 ? scaledPanelAxisSizes(innerW, settings.columns, settings.frame, settings.columnWidths) : [];
-        return {innerX, innerW, columnWidths};
-      };
-      const makeBandCells = (y0, y1, upperBand)=>{
-        const metrics = bandMetrics(upperBand);
-        const cellH = y1 - y0;
-        if(!(metrics.innerW > 0 && cellH > 0)) return [];
-        const cells = [];
-        let xCursor = metrics.innerX;
-        for(let col=0; col<metrics.columnWidths.length; col++){
-          const cellW = metrics.columnWidths[col] || 0;
-          if(cellW > 0) cells.push({x:xCursor, y:y0, w:cellW, h:cellH});
-          xCursor += cellW + settings.frame;
-        }
-        return cells;
-      };
-      const makeSteppedCells = (y0, y1)=>{
-        const upper = bandMetrics(true);
-        const lower = bandMetrics(false);
-        const cellH = y1 - y0;
-        if(!(upper.innerW > 0 && lower.innerW > 0 && cellH > 0)) return [];
-        const count = Math.min(upper.columnWidths.length, lower.columnWidths.length);
-        const cells = [];
-        let upperX = upper.innerX;
-        let lowerX = lower.innerX;
-        for(let col=0; col<count; col++){
-          const upperW = upper.columnWidths[col] || 0;
-          const lowerW = lower.columnWidths[col] || 0;
-          if(upperW > 0 && lowerW > 0){
-            const x0 = Math.min(upperX, lowerX);
-            const x1 = Math.max(upperX + upperW, lowerX + lowerW);
-            const sameLeft = Math.abs(upperX - lowerX) < 0.01;
-            const sameRight = Math.abs((upperX + upperW) - (lowerX + lowerW)) < 0.01;
-            const points = (sameLeft && sameRight)
-              ? cleanPolygonPoints([
-                  {x:upperX, y:y0},
-                  {x:upperX + upperW, y:y0},
-                  {x:upperX + upperW, y:y1},
-                  {x:upperX, y:y1}
-                ])
-              : cleanPolygonPoints([
-                  {x:upperX, y:y0},
-                  {x:upperX + upperW, y:y0},
-                  {x:upperX + upperW, y:upperBottom},
-                  {x:lowerX + lowerW, y:upperBottom},
-                  {x:lowerX + lowerW, y:y1},
-                  {x:lowerX, y:y1},
-                  {x:lowerX, y:upperBottom},
-                  {x:upperX, y:upperBottom}
-                ]);
-            cells.push({x:x0, y:y0, w:x1 - x0, h:cellH, points});
-          }
-          upperX += upperW + settings.frame;
-          lowerX += lowerW + settings.frame;
-        }
-        return cells;
-      };
+      const baseOffsetLeft = Math.max(0, Math.min(pw, Number(p?.panelUpperStepBaseOffsetLeft || 0)));
+      const baseWidthRaw = p?.panelUpperStepBaseWidth === '' || p?.panelUpperStepBaseWidth == null
+        ? pw - baseOffsetLeft
+        : Number(p.panelUpperStepBaseWidth || 0);
+      const baseWidth = Math.max(0, Math.min(pw - baseOffsetLeft, baseWidthRaw));
+      const innerX = px + baseOffsetLeft + settings.sides.left;
+      const innerY = py + settings.sides.top;
+      const innerW = baseWidth - settings.sides.left - settings.sides.right;
+      const innerH = ph - settings.sides.top - settings.sides.bottom;
+      if(!(innerW > 0 && innerH > 0)) return [];
+      const cols = settings.columns;
+      const rows = settings.rows;
+      const columnWidths = scaledPanelAxisSizes(innerW, cols, settings.frame, settings.columnWidths);
+      const rowHeights = scaledPanelAxisSizes(innerH, rows, settings.frame, settings.rowHeights);
+      if(!columnWidths.length || !rowHeights.length) return [];
       const out = [];
       let yCursor = innerY;
-      rowHeights.forEach(rowH=>{
-        const rowStart = yCursor;
-        const rowEnd = rowStart + rowH;
-        if(rowStart < upperBottom && rowEnd > upperBottom){
-          out.push(...makeSteppedCells(rowStart, rowEnd));
-        } else {
-          out.push(...makeBandCells(rowStart, rowEnd, rowEnd <= upperBottom));
+      for(let row=0; row<rowHeights.length; row++){
+        let xCursor = innerX;
+        for(let col=0; col<columnWidths.length; col++){
+          const cellW = columnWidths[col] || 0;
+          const cellH = rowHeights[row] || 0;
+          if(cellW > 0 && cellH > 0) out.push({x:xCursor, y:yCursor, w:cellW, h:cellH});
+          xCursor += cellW + settings.frame;
         }
-        yCursor = rowEnd + settings.frame;
-      });
+        yCursor += (rowHeights[row] || 0) + settings.frame;
+      }
       return out;
     }
     function panelCellCavitiesUnrotated(p){
@@ -10412,7 +10385,7 @@
         const frame = Number(part.frame || block.frameSize || 50);
         const backFrame = Number(part.backFrame || block.backFrameSize || frame);
         const angle = normalizeRotationAngle(best.rotationAngle ?? (best.rotated ? 90 : 0));
-        const placed = {...best, rotationAngle:angle, id:part.id, origW:part.width, origH:part.height, shaker:part.shaker, shakerType:part.shakerType, insertKind:part.insertKind, glassBeading:!!part.glassBeading, assemblyGroup:part.assemblyGroup || '', assemblyRole:part.assemblyRole || '', assemblyPanelIndex:part.assemblyPanelIndex ?? '', assemblyPanelCount:part.assemblyPanelCount ?? '', parentBlockId:part.parentBlockId ?? '', parentPartIndex:part.parentPartIndex ?? '', beadingFrame:part.beadingFrame, beadingClearance:part.beadingClearance, beadingGuideOffset:part.beadingGuideOffset, beadingRoundCorners:beadingRoundCornersForPart(part), panels:part.panels, panelSize:part.panelSize || '', panelMode:part.panelMode || '', calcMode:part.calcMode || '', panelDirection:part.panelDirection || '', panelRows:part.panelRows ?? '', panelColumns:part.panelColumns ?? '', shakerColumnWidths:Array.isArray(part.shakerColumnWidths) ? deepCopy(part.shakerColumnWidths) : [], shakerRowHeights:Array.isArray(part.shakerRowHeights) ? deepCopy(part.shakerRowHeights) : [], panelVerticalStepFrame:part.panelVerticalStepFrame === true, panelVerticalStepHeight:part.panelVerticalStepHeight ?? '', panelVerticalStepLeft:part.panelVerticalStepLeft === true, panelVerticalStepRight:part.panelVerticalStepRight === true, panelVerticalStepInsetLeft:part.panelVerticalStepInsetLeft ?? 0, panelVerticalStepInsetRight:part.panelVerticalStepInsetRight ?? 0, panelUpperStepFrame:part.panelUpperStepFrame === true, panelUpperStepLowerHeight:part.panelUpperStepLowerHeight ?? '', panelUpperStepLeft:part.panelUpperStepLeft === true, panelUpperStepRight:part.panelUpperStepRight === true, panelUpperStepInsetLeft:part.panelUpperStepInsetLeft ?? 0, panelUpperStepInsetRight:part.panelUpperStepInsetRight ?? 0, panelIrregularShape:part.panelIrregularShape || 'Yes', panelSkirtingEnabled:part.panelSkirtingEnabled || 'No', panelSkirtingHeight:part.panelSkirtingHeight ?? '', panelDoorAllowance:part.panelDoorAllowance ?? '', panelSideTop:part.panelSideTop || 'normal', panelSideRight:part.panelSideRight || 'normal', panelSideBottom:part.panelSideBottom || 'normal', panelSideLeft:part.panelSideLeft || 'normal', wallSectionIndex:part.wallSectionIndex ?? '', wallSectionCount:part.wallSectionCount ?? '', wallXStart:part.wallXStart ?? 0, wallTotalWidth:part.wallTotalWidth ?? part.width, wallDoorEnabled:part.wallDoorEnabled || 'No', wallDoorWidth:part.wallDoorWidth ?? '', wallDoorHeight:part.wallDoorHeight ?? '', wallDoorX:part.wallDoorX ?? '', wallWindowEnabled:part.wallWindowEnabled || 'No', wallWindowWidth:part.wallWindowWidth ?? '', wallWindowHeight:part.wallWindowHeight ?? '', wallWindowX:part.wallWindowX ?? '', wallWindowBottom:part.wallWindowBottom ?? '', wallOpenings:Array.isArray(part.wallOpenings) ? deepCopy(part.wallOpenings) : [], materialThicknessMm:part.materialThicknessMm || parseThicknessMm(block.thickness), shapePoints:Array.isArray(part.shapePoints) ? deepCopy(part.shapePoints) : undefined, shapeType:normalizePartShape(part.shapeType), leftHeight:part.leftHeight, rightHeight:part.rightHeight, frame, backFrame, frameTop:part.frameTop ?? '', frameRight:part.frameRight ?? '', frameBottom:part.frameBottom ?? '', frameLeft:part.frameLeft ?? '', frameMiddle:part.frameMiddle ?? '', frameEditZone:normalizeFrameZone(part.frameEditZone || 'left'), framePocket:!!part.framePocket, pocketSideMode:part.pocketSideMode || 'front', pocketRoundCorners:part.pocketRoundCorners === true || part.pocketRoundCorners === 'Yes', pocketLines:Array.isArray(part.pocketLines) ? deepCopy(part.pocketLines) : pocketLineSettingsForPart(part, block), reededDirection:normalizeReededDirection(part.reededDirection || block.reededDirection), reededSpacing:normalizeReededSpacing(part.reededSpacing || block.reededSpacing), hinges:part.hinges, hingeSide:normalizeHingeSide(part.hingeSide), hingeOffset:part.hingeOffset, hingeSpacing:part.hingeSpacing || '', sprayFinish:part.sprayFinish || 'No', spraySides:normalizeSpraySides(part.spraySides), text:part.text||'', sourceBlockId:part.sourceBlockId, sourcePartIndex:part.sourcePartIndex, sourceInstanceIndex:part.sourceInstanceIndex};
+        const placed = {...best, rotationAngle:angle, id:part.id, origW:part.width, origH:part.height, shaker:part.shaker, shakerType:part.shakerType, insertKind:part.insertKind, glassBeading:!!part.glassBeading, assemblyGroup:part.assemblyGroup || '', assemblyRole:part.assemblyRole || '', assemblyPanelIndex:part.assemblyPanelIndex ?? '', assemblyPanelCount:part.assemblyPanelCount ?? '', parentBlockId:part.parentBlockId ?? '', parentPartIndex:part.parentPartIndex ?? '', beadingFrame:part.beadingFrame, beadingClearance:part.beadingClearance, beadingGuideOffset:part.beadingGuideOffset, beadingRoundCorners:beadingRoundCornersForPart(part), panels:part.panels, panelSize:part.panelSize || '', panelMode:part.panelMode || '', calcMode:part.calcMode || '', panelDirection:part.panelDirection || '', panelRows:part.panelRows ?? '', panelColumns:part.panelColumns ?? '', shakerColumnWidths:Array.isArray(part.shakerColumnWidths) ? deepCopy(part.shakerColumnWidths) : [], shakerRowHeights:Array.isArray(part.shakerRowHeights) ? deepCopy(part.shakerRowHeights) : [], panelVerticalStepFrame:part.panelVerticalStepFrame === true, panelVerticalStepHeight:part.panelVerticalStepHeight ?? '', panelVerticalStepLeft:part.panelVerticalStepLeft === true, panelVerticalStepRight:part.panelVerticalStepRight === true, panelVerticalStepInsetLeft:part.panelVerticalStepInsetLeft ?? 0, panelVerticalStepInsetRight:part.panelVerticalStepInsetRight ?? 0, panelUpperStepFrame:part.panelUpperStepFrame === true, panelUpperStepLowerHeight:part.panelUpperStepLowerHeight ?? '', panelUpperStepLeft:part.panelUpperStepLeft === true, panelUpperStepRight:part.panelUpperStepRight === true, panelUpperStepInsetLeft:part.panelUpperStepInsetLeft ?? 0, panelUpperStepInsetRight:part.panelUpperStepInsetRight ?? 0, panelUpperStepBaseOffsetLeft:part.panelUpperStepBaseOffsetLeft ?? 0, panelUpperStepBaseWidth:part.panelUpperStepBaseWidth ?? part.width, panelIrregularShape:part.panelIrregularShape || 'Yes', panelSkirtingEnabled:part.panelSkirtingEnabled || 'No', panelSkirtingHeight:part.panelSkirtingHeight ?? '', panelDoorAllowance:part.panelDoorAllowance ?? '', panelSideTop:part.panelSideTop || 'normal', panelSideRight:part.panelSideRight || 'normal', panelSideBottom:part.panelSideBottom || 'normal', panelSideLeft:part.panelSideLeft || 'normal', wallSectionIndex:part.wallSectionIndex ?? '', wallSectionCount:part.wallSectionCount ?? '', wallXStart:part.wallXStart ?? 0, wallTotalWidth:part.wallTotalWidth ?? part.width, wallDoorEnabled:part.wallDoorEnabled || 'No', wallDoorWidth:part.wallDoorWidth ?? '', wallDoorHeight:part.wallDoorHeight ?? '', wallDoorX:part.wallDoorX ?? '', wallWindowEnabled:part.wallWindowEnabled || 'No', wallWindowWidth:part.wallWindowWidth ?? '', wallWindowHeight:part.wallWindowHeight ?? '', wallWindowX:part.wallWindowX ?? '', wallWindowBottom:part.wallWindowBottom ?? '', wallOpenings:Array.isArray(part.wallOpenings) ? deepCopy(part.wallOpenings) : [], materialThicknessMm:part.materialThicknessMm || parseThicknessMm(block.thickness), shapePoints:Array.isArray(part.shapePoints) ? deepCopy(part.shapePoints) : undefined, shapeType:normalizePartShape(part.shapeType), leftHeight:part.leftHeight, rightHeight:part.rightHeight, frame, backFrame, frameTop:part.frameTop ?? '', frameRight:part.frameRight ?? '', frameBottom:part.frameBottom ?? '', frameLeft:part.frameLeft ?? '', frameMiddle:part.frameMiddle ?? '', frameEditZone:normalizeFrameZone(part.frameEditZone || 'left'), framePocket:!!part.framePocket, pocketSideMode:part.pocketSideMode || 'front', pocketRoundCorners:part.pocketRoundCorners === true || part.pocketRoundCorners === 'Yes', pocketLines:Array.isArray(part.pocketLines) ? deepCopy(part.pocketLines) : pocketLineSettingsForPart(part, block), reededDirection:normalizeReededDirection(part.reededDirection || block.reededDirection), reededSpacing:normalizeReededSpacing(part.reededSpacing || block.reededSpacing), hinges:part.hinges, hingeSide:normalizeHingeSide(part.hingeSide), hingeOffset:part.hingeOffset, hingeSpacing:part.hingeSpacing || '', sprayFinish:part.sprayFinish || 'No', spraySides:normalizeSpraySides(part.spraySides), text:part.text||'', sourceBlockId:part.sourceBlockId, sourcePartIndex:part.sourcePartIndex, sourceInstanceIndex:part.sourceInstanceIndex};
         sheet.placements.push(placed);
         slopedVoidFreeRectsForPlacement(placed).forEach(r=>{
           if(r.w>0 && r.h>0) sheet.freeRects.unshift(r);
@@ -11799,6 +11772,18 @@
         });
       });
     }
+    function bindRoomNestingToggle(scope, block){
+      if(!scope || !block) return;
+      scope.querySelectorAll('.roomNestingToggle').forEach(button=>{
+        button.addEventListener('click', event=>{
+          event.preventDefault();
+          event.stopPropagation();
+          recordHistory(block.nestingOpen === 'Yes' ? 'hid room nesting' : 'showed room nesting');
+          block.nestingOpen = block.nestingOpen === 'Yes' ? 'No' : 'Yes';
+          requestRender();
+        });
+      });
+    }
     function downloadExampleTemplate(){
       const blob = new Blob([templateExampleDxf()], {type:'application/dxf'});
       const a = document.createElement('a');
@@ -13080,30 +13065,39 @@
         const roomName = isPanelBlock(block) ? roomDisplayName(block, Math.max(0, blocks.indexOf(block))) : '';
         const roomPrefix = isPanelBlock(block) ? '<strong>'+escapeHtml(roomName)+'</strong>: ' : '';
         const panelNote = isPanelBlock(block) ? ' for <strong>'+expandedParts.length+'</strong> panel'+(expandedParts.length===1?'':'s')+' in this room' : '';
+        const hasRoomNestingToggle = isPanelBlock(block) && block.wallEnabled === 'Yes';
+        const nestingOpen = !hasRoomNestingToggle || block.nestingOpen === 'Yes';
         html += '<div class="success-box">'+roomPrefix+'Requires <strong>'+res.sheets.length+'</strong> sheet'+(res.sheets.length===1?'':'s')+' ('+sheetSummary+')'+panelNote+'. Used: <strong>'+sqm(res.totalPartArea)+'</strong> ('+res.usagePercent.toFixed(1)+'%).'+groupedNote+'</div>';
-        html += '<div class="sheet-help-note">Sheets use 7mm outer margin and 7mm spacing. Select a sheet piece, then use 9 / 0 to rotate 90°.</div>';
-        res.sheets.forEach((sheet, i)=>{
-          sheet.sheetNumber = i+1;
-          const sheetSizeKey = sheet.sizeKey || res.sizeKey || block.size;
-          const backSheet = backSheetForDisplay(previewBlock, sheet, sheetSizeKey);
-          const showBackFace = showBackSidePocketingMode && backSheet.placements.length > 0;
-          html += renderSheet(sheet, sheet.sizeKey || res.sizeKey || block.size, {
-            editable:true,
-            faceLabel:showBackFace ? 'Front' : '',
-            roomName,
-            offcutTemplateId:Array.isArray(block.offcutTemplateOverrides) ? (block.offcutTemplateOverrides[i] || '') : '',
-            offcutPlacements:Array.isArray(block.offcutPlacements) ? block.offcutPlacements.filter(item=>Number(item.sheetIndex || 0) === i) : []
-          });
-          if(showBackFace){
-            html += renderSheet(backSheet, sheetSizeKey, {
-              editable:false,
-              faceLabel:'Back side pocketing',
+        if(hasRoomNestingToggle){
+          html += '<div class="nesting-toggle-row"><button type="button" class="pocket-title-toggle tiny-toggle roomNestingToggle'+(nestingOpen ? '' : ' off')+'">'+(nestingOpen ? 'Hide nesting' : 'Nesting')+'</button><span class="nesting-toggle-note">'+res.sheets.length+' sheet'+(res.sheets.length===1?'':'s')+'</span></div>';
+        }
+        if(nestingOpen){
+          html += '<div class="sheet-help-note">Sheets use 7mm outer margin and 7mm spacing. Select a sheet piece, then use 9 / 0 to rotate 90°.</div>';
+          html += '<div class="room-nesting-sheets">';
+          res.sheets.forEach((sheet, i)=>{
+            sheet.sheetNumber = i+1;
+            const sheetSizeKey = sheet.sizeKey || res.sizeKey || block.size;
+            const backSheet = backSheetForDisplay(previewBlock, sheet, sheetSizeKey);
+            const showBackFace = showBackSidePocketingMode && backSheet.placements.length > 0;
+            html += renderSheet(sheet, sheet.sizeKey || res.sizeKey || block.size, {
+              editable:true,
+              faceLabel:showBackFace ? 'Front' : '',
               roomName,
-              variant:'back'
+              offcutTemplateId:Array.isArray(block.offcutTemplateOverrides) ? (block.offcutTemplateOverrides[i] || '') : '',
+              offcutPlacements:Array.isArray(block.offcutPlacements) ? block.offcutPlacements.filter(item=>Number(item.sheetIndex || 0) === i) : []
             });
-          }
-        });
-        html += sheetZoomPanelHtml(res);
+            if(showBackFace){
+              html += renderSheet(backSheet, sheetSizeKey, {
+                editable:false,
+                faceLabel:'Back side pocketing',
+                roomName,
+                variant:'back'
+              });
+            }
+          });
+          html += '</div>';
+          html += sheetZoomPanelHtml(res);
+        }
       }
       html += selectedSheetPartEditorHtml(previewBlock);
       return html || '<div class="info-box">No layout generated yet.</div>';
