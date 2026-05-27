@@ -110,6 +110,8 @@
     .material-block[data-calc-mode="panel"] .door-only{display:none!important}
     .material-block[data-calc-mode="panel"] .dimension-head,
     .material-block[data-calc-mode="panel"] .dimension-item{grid-template-columns:minmax(72px,.8fr) minmax(72px,1fr) minmax(72px,1fr) minmax(96px,.9fr) minmax(120px,1.2fr) minmax(110px,1fr) minmax(58px,.65fr) 34px}
+    .material-block[data-calc-mode="panel"] .grain-head,
+    .material-block[data-calc-mode="panel"] .grain-cell{display:none!important}
     .material-block[data-calc-mode="panel"] .panel-size-head,
     .material-block[data-calc-mode="panel"] .panel-size-cell,
     .material-block[data-calc-mode="panel"] .hinges-head,
@@ -411,7 +413,6 @@
     .modal-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
     @media (max-width:680px){.template-actions{grid-template-columns:1fr}}
     .btn-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:18px}
-    .btn-row #roundQuoteBtn{height:auto;min-height:48px}
     @media (max-width:760px){.btn-row{grid-template-columns:1fr 1fr}}
     button{border:none;border-radius:12px;padding:12px 14px;font-size:13px;font-weight:900;cursor:pointer}
     .btn-primary{background:#111;color:#fff}.btn-secondary{background:#eef2f7;color:#111}.btn-outline{background:#fff;color:#111;border:1.5px solid var(--border)}.btn-ghost{background:#f3f4f6;color:#111}
@@ -451,7 +452,7 @@
     .dimensions-wrap{margin-top:12px;padding-top:10px;border-top:1.5px solid var(--line)}
     .dimensions-title{font-size:12px;font-weight:900;margin-bottom:8px}
     .helper-line{display:flex;justify-content:space-between;gap:8px;margin-top:4px;font-size:11px;color:var(--muted)}
-    .dimension-head,.dimension-item{display:grid;grid-template-columns:minmax(72px,.8fr) minmax(64px,1fr) minmax(64px,1fr) minmax(66px,.8fr) minmax(58px,.65fr) minmax(72px,.8fr) minmax(66px,.8fr) minmax(96px,1.1fr) minmax(58px,.65fr) 34px;gap:8px;align-items:end}
+    .dimension-head,.dimension-item{display:grid;grid-template-columns:minmax(72px,.8fr) minmax(50px,.55fr) minmax(64px,1fr) minmax(64px,1fr) minmax(66px,.8fr) minmax(58px,.65fr) minmax(72px,.8fr) minmax(66px,.8fr) minmax(96px,1.1fr) minmax(58px,.65fr) 34px;gap:8px;align-items:end}
     .dimension-head{font-size:11px;font-weight:900;margin-bottom:6px;color:#111}
     .dimension-item{margin-bottom:8px;padding:3px;border-radius:8px}
     .dimension-item:nth-child(even){background:rgba(255,255,255,.56)}
@@ -478,6 +479,7 @@
     .layout-head{display:flex;justify-content:space-between;gap:8px;margin-top:8px;margin-bottom:6px;flex-wrap:wrap}
     .layout-head span{font-size:11px;font-weight:800;color:#111}
     .sheet-visual{display:inline-block;vertical-align:top;width:min(100%,var(--sheet-visual-width,360px));border:1.5px solid var(--border);border-radius:10px;padding:8px;background:#fff;margin:6px 8px 0 0}
+    .sheet-visual.woodgrain{background:linear-gradient(90deg,rgba(120,82,42,.18),rgba(186,139,82,.22) 18%,rgba(105,72,38,.16) 35%,rgba(210,164,98,.2) 52%,rgba(132,88,48,.18) 70%,rgba(190,145,86,.22)),repeating-linear-gradient(90deg,rgba(74,47,26,.18) 0 2px,transparent 2px 14px)}
     .sheet-visual svg{display:block;width:100%;height:auto}
     .sheet-visual svg *{pointer-events:none}
     .sheet-part-hit{cursor:pointer}
@@ -491,12 +493,13 @@
     body.sheet-dragging .sheet-visual{cursor:grabbing}
     .sheet-part-editor{margin:8px 0 10px;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:#f8fafc}
     .sheet-part-editor-title{font-size:11px;font-weight:900;margin-bottom:6px}
-    .sheet-part-editor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;align-items:end}
+    .sheet-part-editor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:7px;align-items:end}
     .sheet-part-editor .field label{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:#374151;margin-bottom:4px}
     .sheet-part-editor input,.sheet-part-editor select{height:30px;padding:5px 8px;border-radius:7px;border:1px solid var(--border);font-size:12px;font-weight:800}
     .sheet-part-editor .segmented{height:30px}
     .sheet-part-editor-note{font-size:10px;color:#4b5563;margin-top:6px}
     .selected-editor-section{grid-column:auto;border:1px solid #dbe5f0;border-radius:7px;background:#fff;padding:6px}
+    .selected-editor-section.wide{grid-column:span 2}
     .selected-editor-section-title{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-bottom:5px;font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#1f2937}
     .selected-editor-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
     .selected-editor-subgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-items:end}
@@ -633,7 +636,7 @@
     .editor-section .pocket-lines{gap:8px}
     .editor-section .pocket-line-item{border:1px solid #e2e8f0;border-radius:8px;padding:7px 8px;background:#f8fafc}
     .ui-test .dimensions-wrap{margin:0;padding:12px;border-top:1px solid var(--block-line,#e2e8f0);background:color-mix(in srgb, var(--block-tint,#fbfdff) 58%, #fff);overflow-x:auto}
-    .ui-test .dimension-head,.ui-test .dimension-item{grid-template-columns:minmax(68px,.75fr) minmax(72px,.9fr) minmax(72px,.9fr) minmax(96px,.95fr) minmax(58px,.6fr) minmax(70px,.75fr) minmax(70px,.75fr) minmax(120px,1.2fr) minmax(56px,.55fr) 34px}
+    .ui-test .dimension-head,.ui-test .dimension-item{grid-template-columns:minmax(68px,.75fr) minmax(48px,.52fr) minmax(72px,.9fr) minmax(72px,.9fr) minmax(96px,.95fr) minmax(58px,.6fr) minmax(70px,.75fr) minmax(70px,.75fr) minmax(120px,1.2fr) minmax(56px,.55fr) 34px}
     .ui-test .sheet-visual{width:min(100%,var(--sheet-visual-width,300px));padding:7px;margin:6px 7px 0 0}
     .ui-test #quoteArea{display:grid;gap:12px}
     .pricing-card{border:1.5px solid #d9dee7;border-radius:10px;background:#fff;margin-bottom:10px;overflow:hidden}
@@ -1024,7 +1027,6 @@
 
           <div class="btn-row">
             <button class="btn-primary" id="calculateBtn">Calculate Price</button>
-            <button class="pocket-title-toggle off" id="roundQuoteBtn" type="button" aria-pressed="false">Round?</button>
             <button class="btn-secondary" id="saveQuoteBtn" type="button">Save Quote</button>
             <button class="btn-secondary" id="loadQuoteBtn" type="button">Load Quote</button>
             <button class="btn-secondary" id="downloadDxfBtn">Save DXF by Thickness</button>
@@ -1170,6 +1172,7 @@
             <div class="field price-only"><label>Material Cost (&pound;)</label><input class="materialCost" type="text" value="15"><div class="hint materialCostHint">Editable. You can overwrite the automatic price.</div></div>
             <div class="field price-only"><label>CNC Service (&pound;)</label><input class="cncServiceCost" type="number" min="0" step="1" value="85"><div class="hint">Editable cutting/service charge for this material block.</div></div>
             <div class="field price-only"><label>CNC With Pocket (&pound;)</label><input class="effectiveCncServiceCost" type="text" value="85" readonly><div class="hint">Shows CNC after extra processes, drilling, and pocketing.</div></div>
+            <div class="field inline-control price-only"><label>Quantity Discount (%)</label><input class="quantityDiscountPct" type="number" min="0" max="100" step="0.1" value="0"><div class="hint">Editable. Hidden from totals when 0%.</div></div>
             <div class="field inline-control price-only"><label>Time (&pound;250/hr)</label><input class="timeMinutes" type="number" min="0" step="1" value="0"></div>
             <div class="sheet-price-editor price-only"></div>
           </div>
@@ -1187,6 +1190,7 @@
             <div class="control-row primary panel-wrap-row">
               <div class="panel-wrap-title panel-only">Paneling Setup</div>
               <div class="field inline-control door-only"><label>Door Type</label><select class="globalShakerType door-type-select" title="Door machining style"><option value="no">Flat</option><option value="traditional">Traditional</option><option value="flushback">Flushback</option><option value="reeded">Reeded</option></select></div>
+              <div class="field inline-control door-only"><label>Grain Direction</label><select class="grainDirectionEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle tiny-toggle grainDirectionControl off" type="button" aria-pressed="false" title="Locks selected parts to the sheet grain direction.">Grain Direction</button></div>
               <div class="field inline-control"><label>Frame (mm) <span class="frameWarnMark"></span></label><input class="frameSize digits-2" type="number" min="1" step="1" value="50" title="Visible frame rail/stile width in millimetres"></div>
               <div class="field inline-control panel-only"><label>Door Side (mm)</label><input class="panelDoorAllowance" type="number" min="0" step="1" value="175"></div>
               <div class="field inline-control panel-only"><label>Window Sill Height</label><input class="panelWindowSillHeight" type="number" min="0" step="1" value="22"></div>
@@ -1300,7 +1304,7 @@
       <div class="dimensions-wrap">
         <div class="dimensions-title">Part Dimensions</div>
         <div class="helper-line dimensions-helper-line"><span>Edit size, orientation, shakers, text, and quantity.</span><span>Click a preview piece to edit it.</span></div>
-        <div class="dimension-head"><div class="part-head">Part</div><div class="width-head">Width</div><div class="height-head">Height</div><div class="door-type-head">Door Type</div><div class="panels-head">Panels</div><div class="panel-size-head">Panel Size</div><div class="hinges-head">Hinges</div><div class="text-head">Text</div><div class="qty-head">Qty</div><div></div></div>
+        <div class="dimension-head"><div class="part-head">Part</div><div class="grain-head door-only">Grain</div><div class="width-head">Width</div><div class="height-head">Height</div><div class="door-type-head">Door Type</div><div class="panels-head">Panels</div><div class="panel-size-head">Panel Size</div><div class="hinges-head">Hinges</div><div class="text-head">Text</div><div class="qty-head">Qty</div><div></div></div>
         <div class="dimensions-list"></div>
         <div class="nestingMessage"></div>
       </div>
@@ -1335,7 +1339,6 @@
     let historyStatusTimer = null;
     let selectedPartRenderTimer = null;
     let labelsEnabled = false;
-    let quoteRoundEnabled = false;
     let zoomSheetPart = null;
     let sheetDragState = null;
     let sheetDragSuppressUntil = 0;
@@ -1343,8 +1346,8 @@
     let hideValuesMode = false;
     let showBackSidePocketingMode = true;
     let selectedWallOpening = null;
-    const PART_DEFAULTS = {width:'',height:'',doorType:'',shaker:'No',panels:1,panelSize:'',panelDirection:'',wallPanelDirection:'',panelRows:'',panelColumns:'',panelIrregularShape:'Yes',wallPanelOverrides:[],panelSideTop:'',panelSideRight:'',panelSideBottom:'',panelSideLeft:'',wallWidth:'',wallHeight:'',wallSections:'',panelHorizontalHeight:'',panelVerticalHeight:'',wallOpenings:[],wallDoorEnabled:'',wallDoorWidth:'',wallDoorHeight:'',wallDoorX:'',wallWindowEnabled:'',wallWindowWidth:'',wallWindowHeight:'',wallWindowX:'',wallWindowBottom:'',shapeType:'rectangle',leftHeight:'',rightHeight:'',frameTop:'',frameRight:'',frameBottom:'',frameLeft:'',frameMiddle:'',frameEditZone:'left',hinges:'No',hingeSide:'auto',hingeOffset:100,hingeSpacing:'',pocketingEnabled:'',pocketRoundCorners:'',pocketSideMode:'',backFrameSize:'',sprayFinish:'No',spraySides:[],manualSheetIndex:'',manualSheetSize:'',manualX:'',manualY:'',manualRotated:'No',manualRotationAngle:0,text:'',quantity:1};
-    const FOCUSABLE_FIELD_CLASSES = new Set(['smartTakeoffText','material','thickness','size','materialCost','cncServiceCost','globalShakerType','frameSize','reededDirection','reededSpacing','bidingMode','bidingSize','bidingClearance','bidingThickness','panelRows','panelColumns','panelShakerMode','panelShakerSize','panelHorizontalHeight','panelVerticalHeight','panelWindowSillHeight','wallWidth','wallHeight','wallPartWidth','wallPartHeight','wallPartShakers','wallPartHorizontalPanelHeight','wallPartVerticalPanelHeight','wallPartSkirtingEnabled','wallPartSkirtingHeight','wallOpeningName','wallOpeningWidth','wallOpeningHeight','wallOpeningX','wallOpeningXFrom','wallOpeningBottom','wallSections','wallDoorWidth','wallDoorHeight','wallDoorX','wallWindowWidth','wallWindowHeight','wallWindowX','wallWindowBottom','panelDoorAllowance','panelSkirtingHeight','panelSideTop','panelSideRight','panelSideBottom','panelSideLeft','backFrameSize','extraProcess','pocketingMinutes','pocketLinePocketOffset','pocketLine6Offset','pocketLine2Offset','pocketLinePocket3Offset','pocketLineChamferOffset','pocketLineProfileOffset','pocketLinePocket2Offset','pocketLinePocket3Offset','timeMinutes','partWidth','partHeight','partDoorType','partPanelDirection','partPanels','partPanelRows','partPanelSize','partText','partQuantity','selectedPartDoorType','selectedPartPanelDirection','selectedPartLeftHeight','selectedPartRightHeight','selectedPartPanelRows','selectedPartPanelIrregular','selectedPartPanelSize','selectedPartPanels','selectedPartFrameZoneSize','selectedPartHingeOffset','selectedPartHingeSpacing','selectedPartBackFrameSize','selectedWallWidth','selectedWallHeight','selectedWallSections','selectedWallDoorWidth','selectedWallDoorHeight','selectedWallDoorX','selectedWallWindowWidth','selectedWallWindowHeight','selectedWallWindowX','selectedWallWindowBottom']);
+    const PART_DEFAULTS = {width:'',height:'',doorType:'',shaker:'No',panels:1,panelSize:'',grainDirection:'',panelDirection:'',wallPanelDirection:'',panelRows:'',panelColumns:'',panelIrregularShape:'Yes',wallPanelOverrides:[],panelSideTop:'',panelSideRight:'',panelSideBottom:'',panelSideLeft:'',wallWidth:'',wallHeight:'',wallSections:'',panelHorizontalHeight:'',panelVerticalHeight:'',wallOpenings:[],wallDoorEnabled:'',wallDoorWidth:'',wallDoorHeight:'',wallDoorX:'',wallWindowEnabled:'',wallWindowWidth:'',wallWindowHeight:'',wallWindowX:'',wallWindowBottom:'',shapeType:'rectangle',leftHeight:'',rightHeight:'',frameTop:'',frameRight:'',frameBottom:'',frameLeft:'',frameMiddle:'',frameEditZone:'left',hinges:'No',hingeSide:'auto',hingeOffset:100,hingeSpacing:'',pocketingEnabled:'',pocketRoundCorners:'',pocketSideMode:'',backFrameSize:'',sprayFinish:'No',spraySides:[],manualSheetIndex:'',manualSheetSize:'',manualX:'',manualY:'',manualRotated:'No',manualRotationAngle:0,text:'',quantity:1};
+    const FOCUSABLE_FIELD_CLASSES = new Set(['smartTakeoffText','material','thickness','size','materialCost','cncServiceCost','quantityDiscountPct','globalShakerType','frameSize','reededDirection','reededSpacing','bidingMode','bidingSize','bidingClearance','bidingThickness','panelRows','panelColumns','panelShakerMode','panelShakerSize','panelHorizontalHeight','panelVerticalHeight','panelWindowSillHeight','wallWidth','wallHeight','wallPartWidth','wallPartHeight','wallPartShakers','wallPartHorizontalPanelHeight','wallPartVerticalPanelHeight','wallPartSkirtingEnabled','wallPartSkirtingHeight','wallOpeningName','wallOpeningWidth','wallOpeningHeight','wallOpeningX','wallOpeningXFrom','wallOpeningBottom','wallSections','wallDoorWidth','wallDoorHeight','wallDoorX','wallWindowWidth','wallWindowHeight','wallWindowX','wallWindowBottom','panelDoorAllowance','panelSkirtingHeight','panelSideTop','panelSideRight','panelSideBottom','panelSideLeft','backFrameSize','extraProcess','pocketingMinutes','pocketLinePocketOffset','pocketLine6Offset','pocketLine2Offset','pocketLinePocket3Offset','pocketLineChamferOffset','pocketLineProfileOffset','pocketLinePocket2Offset','pocketLinePocket3Offset','timeMinutes','partWidth','partHeight','partDoorType','partPanelDirection','partPanels','partPanelRows','partPanelSize','partText','partQuantity','selectedPartDoorType','selectedPartPanelDirection','selectedPartLeftHeight','selectedPartRightHeight','selectedPartPanelRows','selectedPartPanelIrregular','selectedPartPanelSize','selectedPartPanels','selectedPartFrameZoneSize','selectedPartHingeOffset','selectedPartHingeSpacing','selectedPartBackFrameSize','selectedWallWidth','selectedWallHeight','selectedWallSections','selectedWallDoorWidth','selectedWallDoorHeight','selectedWallDoorX','selectedWallWindowWidth','selectedWallWindowHeight','selectedWallWindowX','selectedWallWindowBottom']);
     const DOOR_TYPE_OPTIONS = [
       {value:'no', label:'Flat'},
       {value:'traditional', label:'Traditional'},
@@ -1469,6 +1472,9 @@
         pocketingEnabled:'pocketing',
         pocketSideMode:'pocket sides',
         pocketingMinutes:'pocket minutes',
+        quantityDiscountPct:'quantity discount',
+        grainDirectionEnabled:'grain direction',
+        grainDirection:'part grain direction',
         timeMinutes:'time',
         width:'part width',
         height:'part height',
@@ -1983,9 +1989,11 @@
         size:'8x4',
         materialCost:'55',
         cncServiceCost:'85',
+        quantityDiscountPct:0,
         sheetQuantity:1,
         partsCount:1,
         globalShakerType:'no',
+        grainDirectionEnabled:'No',
         frameSize:50,
         panelDirection:'horizontal',
         panelRows:'',
@@ -2807,6 +2815,10 @@
       const index = Number(partIndex);
       if(!block || !Number.isInteger(index) || !block.parts[index]) return false;
       const part = block.parts[index];
+      if(partGrainDirectionValue(part, block) === 'Yes'){
+        showMessage('Grain direction is locked for this piece. Turn Grain off to rotate it.', 'error');
+        return false;
+      }
       recordHistory('rotated part on sheet');
       const current = normalizeRotationAngle(node.dataset.rotationAngle ?? part.manualRotationAngle ?? (node.dataset.rotated === 'Yes' ? 90 : 0));
       const next = normalizeRotationAngle(current + delta);
@@ -2866,10 +2878,13 @@
     }
     function requestRender(){
       if(renderQueued) return;
+      const keepScrollX = window.scrollX;
+      const keepScrollY = window.scrollY;
       renderQueued = true;
       requestAnimationFrame(()=>{
         renderQueued = false;
         render();
+        window.scrollTo(keepScrollX, keepScrollY);
       });
     }
     function captureFocusState(){
@@ -2982,6 +2997,12 @@
       if(value === 'Yes' || value === 'No') return value;
       return fallback === 'Yes' ? 'Yes' : 'No';
     }
+    function grainDirectionBlockValue(block){
+      return yesNoValue(block?.grainDirectionEnabled, 'No');
+    }
+    function partGrainDirectionValue(part, block){
+      return yesNoValue(part?.grainDirection, grainDirectionBlockValue(block));
+    }
     function partPocketingValue(part, block){
       return yesNoValue(part?.pocketingEnabled, block?.pocketingEnabled === 'Yes' ? 'Yes' : 'No');
     }
@@ -3075,10 +3096,10 @@
       return [];
     }
     function computeBlockPocketingAutoMinutes(block){
-      if(block.pocketingEnabled !== 'Yes') return 0;
       let totalArea = 0;
       (block.parts || []).forEach(part=>{
         const qty = Math.max(1, Number(part.quantity || 1));
+        if(partPocketingValue(part, block) !== 'Yes') return;
         if(!blockHasFrameDrivenPocket(block, part)) return;
         pocketCavitiesForPart(block, part, 'front').forEach(cavity=>{
           totalArea += Math.max(0, Number(cavity.w || 0)) * Math.max(0, Number(cavity.h || 0)) * qty;
@@ -3091,9 +3112,12 @@
       });
       return totalArea / 1000000 * 12;
     }
+    function blockHasPocketingForPricing(block){
+      return block?.pocketingEnabled === 'Yes' || (block?.parts || []).some(part=>partPocketingValue(part, block) === 'Yes');
+    }
     function effectivePocketingMinutesForBlock(block){
-      if(block.pocketingEnabled !== 'Yes') return 0;
-      return block.pocketingManualOverride ? Math.max(0, Number(block.pocketingMinutes || 0)) : computeBlockPocketingAutoMinutes(block);
+      if(!blockHasPocketingForPricing(block)) return 0;
+      return block.pocketingManualOverride && block.pocketingEnabled === 'Yes' ? Math.max(0, Number(block.pocketingMinutes || 0)) : computeBlockPocketingAutoMinutes(block);
     }
     function pocketingPctFromMinutes(minutes, sideMultiplier=1){
       const value = Math.max(0, Number(minutes || 0));
@@ -3111,9 +3135,10 @@
       let totalMinutes = 0;
       let sideMultiplier = 1;
       sources.forEach(source=>{
-        if(source.pocketingEnabled !== 'Yes') return;
-        totalMinutes += effectivePocketingMinutesForBlock(source);
-        if(String(source.pocketSideMode || 'front') === 'front-back') sideMultiplier = Math.max(sideMultiplier, 2);
+        const minutes = effectivePocketingMinutesForBlock(source);
+        if(minutes <= 0) return;
+        totalMinutes += minutes;
+        if(String(source.pocketSideMode || 'front') === 'front-back' || (source.parts || []).some(part=>partPocketingValue(part, source) === 'Yes' && partPocketSideMode(part, source) === 'front-back')) sideMultiplier = Math.max(sideMultiplier, 2);
       });
       return {
         minutes: totalMinutes,
@@ -3193,7 +3218,7 @@
     }
     function appendBlankPart(block){
       recordHistory('added next part');
-      block.parts.push(newPart({shaker:block.globalShakerType==='no'?'No':'Yes'}));
+      block.parts.push(newPart({shaker:block.globalShakerType==='no'?'No':'Yes', grainDirection:grainDirectionBlockValue(block)}));
       block.partsCount = block.parts.length;
       lastCalculation = null;
     }
@@ -3741,7 +3766,7 @@
         const row = blockNode.querySelectorAll('.dimension-item')[nextIndex];
         const target = row ? (row.querySelector('.partWidth') || row.querySelector('.' + fieldClass)) : null;
         if(target){
-          target.focus();
+          target.focus({preventScroll:true});
           if(typeof target.select === 'function') target.select();
         }
       });
@@ -3757,7 +3782,7 @@
         const row = rows[Math.min(renderedIndex + 1, rows.length - 1)];
         const target = row ? (row.querySelector('.partWidth') || row.querySelector('.' + fieldClass)) : null;
         if(target){
-          target.focus();
+          target.focus({preventScroll:true});
           if(typeof target.select === 'function') target.select();
         }
       });
@@ -3770,7 +3795,6 @@
       const rounded = Math.round(number * factor) / factor;
       return rounded.toFixed(maxDecimals).replace(/(\.\d*?)0+$/,'$1').replace(/\.$/,'');
     }
-    function roundQuoteTotal(n){return Math.round(Number(n || 0) / 5) * 5}
     function sqm(n){return (Number(n||0)/1000000).toFixed(3)+' m\u00b2'}
     function escapeHtml(value){
       return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({
@@ -7713,7 +7737,7 @@
     }
     function expandBlockParts(block){
       if(block.preExpandedParts){
-        return block.preExpandedParts.map((p, index)=>({...p, id:index + 1, framePocket:!!p.framePocket, pocketSideMode:p.pocketSideMode || 'front', pocketRoundCorners:p.pocketRoundCorners === true || p.pocketRoundCorners === 'Yes', beadingRoundCorners:beadingRoundCornersForPart(p), manualSheetIndex:p.manualSheetIndex ?? '', manualSheetSize:p.manualSheetSize ?? '', manualX:p.manualX ?? '', manualY:p.manualY ?? '', manualRotated:String(p.manualRotated || 'No') === 'Yes' ? 'Yes' : 'No', manualRotationAngle:normalizeRotationAngle(p.manualRotationAngle ?? p.rotationAngle ?? (String(p.manualRotated || 'No') === 'Yes' ? 90 : 0))}));
+        return block.preExpandedParts.map((p, index)=>({...p, id:index + 1, framePocket:!!p.framePocket, pocketSideMode:p.pocketSideMode || 'front', pocketRoundCorners:p.pocketRoundCorners === true || p.pocketRoundCorners === 'Yes', beadingRoundCorners:beadingRoundCornersForPart(p), grainDirection:partGrainDirectionValue(p, block), manualSheetIndex:p.manualSheetIndex ?? '', manualSheetSize:p.manualSheetSize ?? '', manualX:p.manualX ?? '', manualY:p.manualY ?? '', manualRotated:partGrainDirectionValue(p, block) === 'Yes' ? 'No' : (String(p.manualRotated || 'No') === 'Yes' ? 'Yes' : 'No'), manualRotationAngle:partGrainDirectionValue(p, block) === 'Yes' ? 0 : normalizeRotationAngle(p.manualRotationAngle ?? p.rotationAngle ?? (String(p.manualRotated || 'No') === 'Yes' ? 90 : 0))}));
       }
       const out = [];
       block.parts.forEach((p, sourcePartIndex)=>{
@@ -7779,6 +7803,7 @@
                 panelSideRight:panelData.panelSideRight,
                 panelSideBottom:panelData.panelSideBottom,
                 panelSideLeft:panelData.panelSideLeft,
+                grainDirection:'No',
                 materialThicknessMm:parseThicknessMm(block.thickness),
                 shapeType:normalizePartShape(p.shapeType),
                 leftHeight:p.leftHeight === '' || p.leftHeight == null ? '' : Math.max(0, Number(p.leftHeight || 0)),
@@ -7873,6 +7898,7 @@
             reededSpacing:normalizeReededSpacing(block.reededSpacing),
             panels:Math.max(1, Number(p.panels||1)),
             panelSize:p.panelSize === '' || p.panelSize == null ? '' : Math.max(0, Number(p.panelSize || 0)),
+            grainDirection:partGrainDirectionValue(p, block),
             hinges:(p.hinges||'No'),
             hingeSide:normalizeHingeSide(p.hingeSide),
             hingeOffset:Math.max(1, Number(p.hingeOffset||100)),
@@ -7883,8 +7909,8 @@
             manualSheetSize:SHEET_SIZES[p.manualSheetSize] ? p.manualSheetSize : '',
             manualX:p.manualX === '' || p.manualX == null ? '' : Math.max(0, Number(p.manualX || 0)),
             manualY:p.manualY === '' || p.manualY == null ? '' : Math.max(0, Number(p.manualY || 0)),
-            manualRotated:String(p.manualRotated || 'No') === 'Yes' ? 'Yes' : 'No',
-            manualRotationAngle:normalizeRotationAngle(p.manualRotationAngle ?? (String(p.manualRotated || 'No') === 'Yes' ? 90 : 0)),
+            manualRotated:partGrainDirectionValue(p, block) === 'Yes' ? 'No' : (String(p.manualRotated || 'No') === 'Yes' ? 'Yes' : 'No'),
+            manualRotationAngle:partGrainDirectionValue(p, block) === 'Yes' ? 0 : normalizeRotationAngle(p.manualRotationAngle ?? (String(p.manualRotated || 'No') === 'Yes' ? 90 : 0)),
             text:(p.text||'').trim(),
             sourceBlockId:block.id,
             sourcePartIndex,
@@ -7973,6 +7999,8 @@
             calcMode:calcModeForBlock(block),
             globalShakerType:block.globalShakerType,
             doorTypeSummary:block.globalShakerType,
+            quantityDiscountPct:Number(block.quantityDiscountPct || 0),
+            grainDirectionEnabled:block.grainDirectionEnabled || 'No',
             timeMinutes:0
           });
         }
@@ -7980,6 +8008,8 @@
         group.sourceBlocks.push(block);
         group.materialCost = group.materialCost || block.materialCost;
         group.cncServiceCost = group.cncServiceCost || block.cncServiceCost;
+        group.quantityDiscountPct = Math.max(Number(group.quantityDiscountPct || 0), Number(block.quantityDiscountPct || 0));
+        group.grainDirectionEnabled = group.grainDirectionEnabled === 'Yes' || block.grainDirectionEnabled === 'Yes' ? 'Yes' : 'No';
         group.extraProcess = Math.max(Number(group.extraProcess||0), Number(block.extraProcess||0));
         group.drillings = (group.drillings === 'Yes' || block.drillings === 'Yes' || block.parts.some(p=>p.hinges === 'Yes')) ? 'Yes' : 'No';
         group.pocketingEnabled = maxPocketing(group.pocketingEnabled || 'No', block.pocketingEnabled || 'No');
@@ -8461,6 +8491,8 @@
         materialCostInput.classList.remove('check-price');
         const cncServiceInput = node.querySelector('.cncServiceCost');
         cncServiceInput.value = block.cncServiceCost;
+        const quantityDiscountInput = node.querySelector('.quantityDiscountPct');
+        if(quantityDiscountInput) quantityDiscountInput.value = Math.max(0, Number(block.quantityDiscountPct || 0));
         const effectiveCncInput = node.querySelector('.effectiveCncServiceCost');
         const syncEffectiveCncField = ()=>{
           if(effectiveCncInput) effectiveCncInput.value = formatPriceValue(effectiveCncServiceCost(block));
@@ -8471,6 +8503,10 @@
         }
         const doorTypeSelect = node.querySelector('.globalShakerType');
         populateDoorTypeSelect(doorTypeSelect, block.globalShakerType);
+        const grainDirectionSelect = node.querySelector('.grainDirectionEnabled');
+        const grainDirectionControl = node.querySelector('.grainDirectionControl');
+        if(grainDirectionSelect) grainDirectionSelect.value = grainDirectionBlockValue(block);
+        setToggleButtonValue(grainDirectionControl, grainDirectionBlockValue(block));
         const setupTitle = node.querySelector('.setup-section-title');
         if(setupTitle) setupTitle.textContent = panelMode ? 'Room Setup' : 'Door Setup';
         const panelsHead = node.querySelector('.panels-head');
@@ -8540,10 +8576,6 @@
               if(!target) return;
               setOpenMaterialBlock(target);
               render();
-              setTimeout(()=>{
-                const targetNode = [...document.querySelectorAll('.material-block')].find(el=>String(el.dataset.blockId) === String(target.id));
-                targetNode?.scrollIntoView({block:'start', behavior:'smooth'});
-              }, 0);
             });
           });
         }
@@ -8692,6 +8724,18 @@
           setBlockValue(block, 'globalShakerType', value);
           block.parts.forEach(p=>p.shaker = block.globalShakerType==='no' ? 'No' : 'Yes');
           syncReededControls();
+          requestRender();
+        });
+        bindToggleButton(grainDirectionControl, grainDirectionBlockValue(block), value=>{
+          if(grainDirectionSelect) grainDirectionSelect.value = value;
+          setBlockValue(block, 'grainDirectionEnabled', value);
+          block.parts.forEach(part=>{
+            part.grainDirection = value;
+            if(value === 'Yes'){
+              part.manualRotated = 'No';
+              part.manualRotationAngle = 0;
+            }
+          });
           requestRender();
         });
         bindSegmentedControl(reededDirectionControl, reededDirectionSelect.value, value=>{
@@ -9395,6 +9439,7 @@
           const rowDoorType = effectivePartDoorType(p, block);
           row.innerHTML = `
             <div class="part-label">${escapeHtml(rowInfo.label)}</div>
+            <div class="dimension-cell grain-cell door-only" data-label="Grain"><button class="pocket-title-toggle tiny-toggle partGrainDirectionControl off" type="button" aria-pressed="false">Grain</button></div>
             <div class="dimension-cell width-cell" data-label="Width"><input class="partWidth" type="number" min="0" step="1"></div>
             <div class="dimension-cell height-cell" data-label="Height"><input class="partHeight" type="number" min="0" step="1"></div>
             <div class="dimension-cell door-type-cell" data-label="${panelMode ? 'Orientation' : 'Door Type'}">${panelMode ? '<select class="partPanelDirection"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select>' : '<select class="partDoorType">'+doorTypeOptionsHtml(block, rowDoorType)+'</select>'}</div>
@@ -9432,6 +9477,16 @@
           const flatDoorType = rowDoorType === 'no';
           const flatPanelsAllowed = blockUsesPocketFrame(block);
           if(!panelMode) row.querySelector('.partPanels').disabled = flatDoorType && !flatPanelsAllowed;
+          if(!panelMode){
+            bindToggleButton(row.querySelector('.partGrainDirectionControl'), partGrainDirectionValue(sourcePart || p, block), value=>{
+              setPartValue(block, pIdx, 'grainDirection', value);
+              if(value === 'Yes'){
+                setPartValue(block, pIdx, 'manualRotated', 'No');
+                setPartValue(block, pIdx, 'manualRotationAngle', 0);
+              }
+              requestRender();
+            });
+          }
           row.querySelector('.partPanelSize').disabled = (flatDoorType && !flatPanelsAllowed) || Math.max(1, Number(p.panels || 1)) < 2;
           bindToggleButton(row.querySelector('.partHingesControl'), row.querySelector('.partHinges').value, value=>{
             row.querySelector('.partHinges').value = value;
@@ -9637,6 +9692,10 @@
           block.sheetCncOverrides = [];
           updateSheetPriceEditor();
         });
+        quantityDiscountInput?.addEventListener('input', e=>{
+          const value = Math.min(100, Math.max(0, Number(e.target.value || 0)));
+          setBlockValue(block, 'quantityDiscountPct', value);
+        });
         doorTypeSelect.addEventListener('change', e=>{
           setBlockValue(block, 'globalShakerType', e.target.value);
           block.parts.forEach(p=>p.shaker = block.globalShakerType==='no' ? 'No' : 'Yes');
@@ -9823,6 +9882,13 @@
     function partPackingSize(part){
       const width = Math.max(0, Number(part.width || 0));
       const height = Math.max(0, Number(part.height || 0));
+      if(partGrainDirectionValue(part, null) === 'Yes'){
+        if(normalizePartShape(part.shapeType) === 'sloped'){
+          const side = partSideHeights(part);
+          return {width, height:Math.max(1, side.left, side.right), lockRotation:true, rotationAngle:0};
+        }
+        return {width, height, lockRotation:true, rotationAngle:0};
+      }
       const manualAngle = normalizeRotationAngle(part.manualRotationAngle ?? (String(part.manualRotated || 'No') === 'Yes' ? 90 : 0));
       if(manualAngle){
         const geometry = rotatedLocalGeometry({...part, w:width, h:height, origW:width, origH:height, rotationAngle:manualAngle}, manualAngle);
@@ -10455,7 +10521,7 @@
         const frame = Number(part.frame || block.frameSize || 50);
         const backFrame = Number(part.backFrame || block.backFrameSize || frame);
         const angle = normalizeRotationAngle(best.rotationAngle ?? (best.rotated ? 90 : 0));
-        const placed = {...best, rotationAngle:angle, id:part.id, origW:part.width, origH:part.height, shaker:part.shaker, shakerType:part.shakerType, insertKind:part.insertKind, glassBeading:!!part.glassBeading, assemblyGroup:part.assemblyGroup || '', assemblyRole:part.assemblyRole || '', assemblyPanelIndex:part.assemblyPanelIndex ?? '', assemblyPanelCount:part.assemblyPanelCount ?? '', parentBlockId:part.parentBlockId ?? '', parentPartIndex:part.parentPartIndex ?? '', beadingFrame:part.beadingFrame, beadingClearance:part.beadingClearance, beadingGuideOffset:part.beadingGuideOffset, beadingRoundCorners:beadingRoundCornersForPart(part), panels:part.panels, panelSize:part.panelSize || '', panelMode:part.panelMode || '', calcMode:part.calcMode || '', panelDirection:part.panelDirection || '', panelRows:part.panelRows ?? '', panelColumns:part.panelColumns ?? '', shakerColumnWidths:Array.isArray(part.shakerColumnWidths) ? deepCopy(part.shakerColumnWidths) : [], shakerRowHeights:Array.isArray(part.shakerRowHeights) ? deepCopy(part.shakerRowHeights) : [], panelVerticalStepFrame:part.panelVerticalStepFrame === true, panelVerticalStepHeight:part.panelVerticalStepHeight ?? '', panelVerticalStepLeft:part.panelVerticalStepLeft === true, panelVerticalStepRight:part.panelVerticalStepRight === true, panelVerticalStepInsetLeft:part.panelVerticalStepInsetLeft ?? 0, panelVerticalStepInsetRight:part.panelVerticalStepInsetRight ?? 0, panelUpperStepFrame:part.panelUpperStepFrame === true, panelUpperStepLowerHeight:part.panelUpperStepLowerHeight ?? '', panelUpperStepLeft:part.panelUpperStepLeft === true, panelUpperStepRight:part.panelUpperStepRight === true, panelUpperStepInsetLeft:part.panelUpperStepInsetLeft ?? 0, panelUpperStepInsetRight:part.panelUpperStepInsetRight ?? 0, panelUpperStepBaseOffsetLeft:part.panelUpperStepBaseOffsetLeft ?? 0, panelUpperStepBaseWidth:part.panelUpperStepBaseWidth ?? part.width, panelIrregularShape:part.panelIrregularShape || 'Yes', panelSkirtingEnabled:part.panelSkirtingEnabled || 'No', panelSkirtingHeight:part.panelSkirtingHeight ?? '', panelDoorAllowance:part.panelDoorAllowance ?? '', panelSideTop:part.panelSideTop || 'normal', panelSideRight:part.panelSideRight || 'normal', panelSideBottom:part.panelSideBottom || 'normal', panelSideLeft:part.panelSideLeft || 'normal', wallSectionIndex:part.wallSectionIndex ?? '', wallSectionCount:part.wallSectionCount ?? '', wallXStart:part.wallXStart ?? 0, wallTotalWidth:part.wallTotalWidth ?? part.width, wallDoorEnabled:part.wallDoorEnabled || 'No', wallDoorWidth:part.wallDoorWidth ?? '', wallDoorHeight:part.wallDoorHeight ?? '', wallDoorX:part.wallDoorX ?? '', wallWindowEnabled:part.wallWindowEnabled || 'No', wallWindowWidth:part.wallWindowWidth ?? '', wallWindowHeight:part.wallWindowHeight ?? '', wallWindowX:part.wallWindowX ?? '', wallWindowBottom:part.wallWindowBottom ?? '', wallOpenings:Array.isArray(part.wallOpenings) ? deepCopy(part.wallOpenings) : [], materialThicknessMm:part.materialThicknessMm || parseThicknessMm(block.thickness), shapePoints:Array.isArray(part.shapePoints) ? deepCopy(part.shapePoints) : undefined, shapeType:normalizePartShape(part.shapeType), leftHeight:part.leftHeight, rightHeight:part.rightHeight, frame, backFrame, frameTop:part.frameTop ?? '', frameRight:part.frameRight ?? '', frameBottom:part.frameBottom ?? '', frameLeft:part.frameLeft ?? '', frameMiddle:part.frameMiddle ?? '', frameEditZone:normalizeFrameZone(part.frameEditZone || 'left'), framePocket:!!part.framePocket, pocketSideMode:part.pocketSideMode || 'front', pocketRoundCorners:part.pocketRoundCorners === true || part.pocketRoundCorners === 'Yes', pocketLines:Array.isArray(part.pocketLines) ? deepCopy(part.pocketLines) : pocketLineSettingsForPart(part, block), reededDirection:normalizeReededDirection(part.reededDirection || block.reededDirection), reededSpacing:normalizeReededSpacing(part.reededSpacing || block.reededSpacing), hinges:part.hinges, hingeSide:normalizeHingeSide(part.hingeSide), hingeOffset:part.hingeOffset, hingeSpacing:part.hingeSpacing || '', sprayFinish:part.sprayFinish || 'No', spraySides:normalizeSpraySides(part.spraySides), text:part.text||'', sourceBlockId:part.sourceBlockId, sourcePartIndex:part.sourcePartIndex, sourceInstanceIndex:part.sourceInstanceIndex};
+        const placed = {...best, rotationAngle:angle, id:part.id, origW:part.width, origH:part.height, shaker:part.shaker, shakerType:part.shakerType, insertKind:part.insertKind, glassBeading:!!part.glassBeading, assemblyGroup:part.assemblyGroup || '', assemblyRole:part.assemblyRole || '', assemblyPanelIndex:part.assemblyPanelIndex ?? '', assemblyPanelCount:part.assemblyPanelCount ?? '', parentBlockId:part.parentBlockId ?? '', parentPartIndex:part.parentPartIndex ?? '', beadingFrame:part.beadingFrame, beadingClearance:part.beadingClearance, beadingGuideOffset:part.beadingGuideOffset, beadingRoundCorners:beadingRoundCornersForPart(part), panels:part.panels, panelSize:part.panelSize || '', panelMode:part.panelMode || '', calcMode:part.calcMode || '', panelDirection:part.panelDirection || '', panelRows:part.panelRows ?? '', panelColumns:part.panelColumns ?? '', shakerColumnWidths:Array.isArray(part.shakerColumnWidths) ? deepCopy(part.shakerColumnWidths) : [], shakerRowHeights:Array.isArray(part.shakerRowHeights) ? deepCopy(part.shakerRowHeights) : [], panelVerticalStepFrame:part.panelVerticalStepFrame === true, panelVerticalStepHeight:part.panelVerticalStepHeight ?? '', panelVerticalStepLeft:part.panelVerticalStepLeft === true, panelVerticalStepRight:part.panelVerticalStepRight === true, panelVerticalStepInsetLeft:part.panelVerticalStepInsetLeft ?? 0, panelVerticalStepInsetRight:part.panelVerticalStepInsetRight ?? 0, panelUpperStepFrame:part.panelUpperStepFrame === true, panelUpperStepLowerHeight:part.panelUpperStepLowerHeight ?? '', panelUpperStepLeft:part.panelUpperStepLeft === true, panelUpperStepRight:part.panelUpperStepRight === true, panelUpperStepInsetLeft:part.panelUpperStepInsetLeft ?? 0, panelUpperStepInsetRight:part.panelUpperStepInsetRight ?? 0, panelUpperStepBaseOffsetLeft:part.panelUpperStepBaseOffsetLeft ?? 0, panelUpperStepBaseWidth:part.panelUpperStepBaseWidth ?? part.width, panelIrregularShape:part.panelIrregularShape || 'Yes', panelSkirtingEnabled:part.panelSkirtingEnabled || 'No', panelSkirtingHeight:part.panelSkirtingHeight ?? '', panelDoorAllowance:part.panelDoorAllowance ?? '', panelSideTop:part.panelSideTop || 'normal', panelSideRight:part.panelSideRight || 'normal', panelSideBottom:part.panelSideBottom || 'normal', panelSideLeft:part.panelSideLeft || 'normal', wallSectionIndex:part.wallSectionIndex ?? '', wallSectionCount:part.wallSectionCount ?? '', wallXStart:part.wallXStart ?? 0, wallTotalWidth:part.wallTotalWidth ?? part.width, wallDoorEnabled:part.wallDoorEnabled || 'No', wallDoorWidth:part.wallDoorWidth ?? '', wallDoorHeight:part.wallDoorHeight ?? '', wallDoorX:part.wallDoorX ?? '', wallWindowEnabled:part.wallWindowEnabled || 'No', wallWindowWidth:part.wallWindowWidth ?? '', wallWindowHeight:part.wallWindowHeight ?? '', wallWindowX:part.wallWindowX ?? '', wallWindowBottom:part.wallWindowBottom ?? '', wallOpenings:Array.isArray(part.wallOpenings) ? deepCopy(part.wallOpenings) : [], materialThicknessMm:part.materialThicknessMm || parseThicknessMm(block.thickness), shapePoints:Array.isArray(part.shapePoints) ? deepCopy(part.shapePoints) : undefined, shapeType:normalizePartShape(part.shapeType), leftHeight:part.leftHeight, rightHeight:part.rightHeight, frame, backFrame, frameTop:part.frameTop ?? '', frameRight:part.frameRight ?? '', frameBottom:part.frameBottom ?? '', frameLeft:part.frameLeft ?? '', frameMiddle:part.frameMiddle ?? '', frameEditZone:normalizeFrameZone(part.frameEditZone || 'left'), framePocket:!!part.framePocket, pocketSideMode:part.pocketSideMode || 'front', pocketRoundCorners:part.pocketRoundCorners === true || part.pocketRoundCorners === 'Yes', pocketLines:Array.isArray(part.pocketLines) ? deepCopy(part.pocketLines) : pocketLineSettingsForPart(part, block), reededDirection:normalizeReededDirection(part.reededDirection || block.reededDirection), reededSpacing:normalizeReededSpacing(part.reededSpacing || block.reededSpacing), hinges:part.hinges, hingeSide:normalizeHingeSide(part.hingeSide), hingeOffset:part.hingeOffset, hingeSpacing:part.hingeSpacing || '', sprayFinish:part.sprayFinish || 'No', spraySides:normalizeSpraySides(part.spraySides), grainDirection:partGrainDirectionValue(part, block), text:part.text||'', sourceBlockId:part.sourceBlockId, sourcePartIndex:part.sourcePartIndex, sourceInstanceIndex:part.sourceInstanceIndex};
         sheet.placements.push(placed);
         slopedVoidFreeRectsForPlacement(placed).forEach(r=>{
           if(r.w>0 && r.h>0) sheet.freeRects.unshift(r);
@@ -10808,6 +10874,7 @@
         shaker:String(p.shaker ?? 'No'),
         panels:String(p.panels ?? 1),
         panelSize:String(p.panelSize ?? ''),
+        grainDirection:String(p.grainDirection ?? ''),
         panelDirection:String(p.panelDirection ?? ''),
         wallPanelDirection:String(p.wallPanelDirection ?? ''),
         panelRows:String(p.panelRows ?? ''),
@@ -10862,9 +10929,11 @@
       block.size = SHEET_SIZES[data.size] ? data.size : block.size;
       block.materialCost = String(data.materialCost ?? block.materialCost);
       block.cncServiceCost = String(data.cncServiceCost ?? block.cncServiceCost);
+      block.quantityDiscountPct = Math.min(100, Math.max(0, Number(data.quantityDiscountPct ?? 0)));
       block.sheetQuantity = Math.max(1, Number(data.sheetQuantity || block.sheetQuantity));
       block.partsCount = Math.max(1, Number(data.partsCount || block.partsCount));
       block.globalShakerType = String(data.globalShakerType ?? block.globalShakerType);
+      block.grainDirectionEnabled = String(data.grainDirectionEnabled ?? 'No') === 'Yes' ? 'Yes' : 'No';
       block.frameSize = Math.max(1, Number(data.frameSize || block.frameSize));
       block.panelDirection = String(data.panelDirection || block.panelDirection) === 'vertical' ? 'vertical' : 'horizontal';
       block.panelRows = data.panelRows === '' || data.panelRows == null ? '' : Math.max(1, Math.round(Number(data.panelRows || 1)));
@@ -10954,6 +11023,7 @@
         const rawPart = rawParts[partIndex] && typeof rawParts[partIndex] === 'object' ? rawParts[partIndex] : {};
         const rawHadWallOpenings = Object.prototype.hasOwnProperty.call(rawPart, 'wallOpenings');
         part.doorType = knownDoorTypeValue(part.doorType) || '';
+        part.grainDirection = part.grainDirection === 'Yes' || part.grainDirection === 'No' ? part.grainDirection : '';
         part.manualRotationAngle = normalizeRotationAngle(part.manualRotationAngle ?? (String(part.manualRotated || 'No') === 'Yes' ? 90 : 0));
         part.manualRotated = part.manualRotationAngle === 90 ? 'Yes' : 'No';
         if(Array.isArray(part.shapePoints)){
@@ -10995,7 +11065,6 @@
           cuttingListHours:String(document.getElementById('cuttingListHours').value || 0),
           assemblyHours:String(document.getElementById('assemblyHours').value || 0)
         },
-        quoteRoundEnabled,
         spray:getSprayPayload(),
         nextId,
         blocks:deepCopy(blocks)
@@ -11037,8 +11106,7 @@
         document.getElementById('designHours').value = payload.services?.designHours ?? 0;
         document.getElementById('cuttingListHours').value = payload.services?.cuttingListHours ?? 0;
         document.getElementById('assemblyHours').value = payload.services?.assemblyHours ?? 0;
-        quoteRoundEnabled = !!payload.quoteRoundEnabled;
-        setToggleButtonValue(document.getElementById('roundQuoteBtn'), quoteRoundEnabled ? 'Yes' : 'No');
+        // Legacy quote files may include quoteRoundEnabled, but rounding is no longer part of the UI.
         blocks = payload.blocks.map((block, index)=>sanitizeLoadedBlock(block, index + 1));
         activeCalculatorMode = payload.activeCalculatorMode === 'panel' ? 'panel' : 'doors';
         nextId = Math.max(Number(payload.nextId || 1), ...blocks.map(block=>Number(block.id || 0) + 1), 1);
@@ -11072,6 +11140,8 @@
         roomName:String(block.roomName ?? ''),
         materialCost:String(block.materialCost ?? ''),
         cncServiceCost:String(block.cncServiceCost ?? ''),
+        quantityDiscountPct:String(block.quantityDiscountPct ?? 0),
+        grainDirectionEnabled:String(block.grainDirectionEnabled ?? 'No'),
         panelDirection:String(block.panelDirection ?? 'horizontal'),
         panelRows:String(block.panelRows ?? ''),
         panelColumns:String(block.panelColumns ?? ''),
@@ -11153,6 +11223,8 @@
         size:'Size',
         materialCost:'Material Cost',
         cncServiceCost:'CNC Service',
+        quantityDiscountPct:'Quantity Discount',
+        grainDirectionEnabled:'Grain Direction',
         reededDirection:'Reeded Direction',
         reededSpacing:'Reeded Spacing',
         bidingEnabled:'Beading',
@@ -11181,6 +11253,7 @@
         shaker:'Shaker',
         panels:'Panels',
         panelSize:'Panel Size',
+        grainDirection:'Grain',
         hinges:'Hinges',
         beadingRoundCorners:'Beading Corners',
         text:'Text',
@@ -11221,6 +11294,8 @@
       block.size = snapshot.size;
       block.materialCost = snapshot.materialCost;
       block.cncServiceCost = snapshot.cncServiceCost;
+      block.quantityDiscountPct = Math.min(100, Math.max(0, Number(snapshot.quantityDiscountPct || 0)));
+      block.grainDirectionEnabled = snapshot.grainDirectionEnabled === 'Yes' ? 'Yes' : 'No';
       block.reededDirection = normalizeReededDirection(snapshot.reededDirection);
       block.reededSpacing = normalizeReededSpacing(snapshot.reededSpacing);
       block.bidingEnabled = snapshot.bidingEnabled === 'Yes' ? 'Yes' : 'No';
@@ -11988,6 +12063,7 @@
       const title = partRowLabel(found.block, found.partIndex);
       const hingeWarning = hingeWarningForPlacement({...part, x:0, y:0, w:width, h:height, shapeType:shape, hingeSide});
       const hingesOn = String(part.hinges || 'No') === 'Yes';
+      const grainOn = partGrainDirectionValue(part, found.block) === 'Yes';
       const pocketOn = partPocketingValue(part, found.block) === 'Yes';
       const pocketRoundOn = partPocketRoundCornersValue(part, found.block) === 'Yes';
       const pocketSide = partPocketSideMode(part, found.block);
@@ -12022,7 +12098,7 @@
       };
       return `
         <div class="sheet-part-editor ${panelEditor ? 'panel-editor' : ''}" data-editor-block-id="${escapeHtml(found.block.id)}" data-editor-part-index="${escapeHtml(found.partIndex)}" data-editor-section-index="${selectedSectionIndex == null ? '' : escapeHtml(selectedSectionIndex)}" data-editor-section-sub-index="${escapeHtml(selectedSectionSubIndex)}">
-          <div class="sheet-part-editor-title">Selected piece: ${escapeHtml(title)}${selectedPanelItem ? ' - ' + escapeHtml(selectedPanelItem.displayLabel || ('P' + (Number(selectedPanelItem.physicalIndex ?? selectedSectionIndex) + 1) + (selectedPanelItem.physical?.direction === 'vertical' ? 'V' : ''))) : (selectedSectionIndex == null ? '' : ' - Panel ' + escapeHtml(selectedSectionIndex + 1))}</div>
+          <div class="sheet-part-editor-title">Edit piece: ${escapeHtml(title)}${selectedPanelItem ? ' - ' + escapeHtml(selectedPanelItem.displayLabel || ('P' + (Number(selectedPanelItem.physicalIndex ?? selectedSectionIndex) + 1) + (selectedPanelItem.physical?.direction === 'vertical' ? 'V' : ''))) : (selectedSectionIndex == null ? '' : ' - Panel ' + escapeHtml(selectedSectionIndex + 1))}</div>
           <div class="sheet-part-editor-grid">
             <div class="field selected-shape-field"><label>Shape</label><select class="selectedPartShape"><option value="rectangle"${shape==='rectangle'?' selected':''}>Rectangle</option><option value="sloped"${shape==='sloped'?' selected':''}>Sloped / Loft</option></select></div>
             <div class="field door-edit-only"><label>Door type</label><select class="selectedPartDoorType">${doorTypeOptionsHtml(found.block, effectivePartDoorType(part, found.block))}</select></div>
@@ -12070,6 +12146,9 @@
                 <div class="field inline-control"><label>Zone</label><div class="segmented selectedFrameZoneControl">${selectedFrameZoneButtons}</div></div>
                 <div class="field"><label>${escapeHtml(frameZoneLabel(selectedFrameZone))} frame</label><input class="selectedPartFrameZoneSize" type="number" min="1" step="1" value="${escapeHtml(selectedFrameZoneValue)}"></div>
               </div>
+            </div>
+            <div class="selected-editor-section door-edit-only">
+              <div class="selected-editor-section-title"><span>Grain</span><button class="pocket-title-toggle tiny-toggle selectedPartGrainDirection ${grainOn ? '' : 'off'}" type="button" aria-pressed="${grainOn ? 'true' : 'false'}">Grain</button></div>
             </div>
             <div class="selected-editor-section door-edit-only">
               <div class="selected-editor-section-title"><span>Panels</span></div>
@@ -12176,7 +12255,7 @@
             if(!selector) return;
             const next = document.querySelector('.sheet-part-editor '+selector);
             if(!next) return;
-            next.focus();
+            next.focus({preventScroll:true});
             if(start != null && typeof next.setSelectionRange === 'function'){
               const max = String(next.value || '').length;
               next.setSelectionRange(Math.min(start, max), Math.min(end ?? start, max));
@@ -12358,7 +12437,8 @@
         const index = Number(partIndex);
         if(!block || !Number.isInteger(index) || !block.parts[index]) return false;
         const part = block.parts[index];
-        const angle = normalizeRotationAngle(state.rotationAngle ?? (state.rotated ? 90 : 0));
+        const grainLockedDrag = partGrainDirectionValue(part, block) === 'Yes';
+        const angle = grainLockedDrag ? 0 : normalizeRotationAngle(state.rotationAngle ?? (state.rotated ? 90 : 0));
         const panelDrag = isPanelBlock(block) && block.wallEnabled === 'Yes' && !!panelInstanceFromKey(instanceIndex);
         const tempPart = {...part, manualRotationAngle:angle, manualRotated:angle === 90 ? 'Yes' : 'No'};
         const dims = panelDrag
@@ -12686,6 +12766,14 @@
         const raw = e.target.value;
         setPartValue(block, partIndex, frameOverrideKey(zone), raw === '' ? '' : Math.max(1, Number(raw || 1)));
         scheduleEditorRender(e.target);
+      });
+      bindToggleButton(editor.querySelector('.selectedPartGrainDirection'), partGrainDirectionValue(part, block), value=>{
+        setPartValue(block, partIndex, 'grainDirection', value);
+        if(value === 'Yes'){
+          setPartValue(block, partIndex, 'manualRotated', 'No');
+          setPartValue(block, partIndex, 'manualRotationAngle', 0);
+        }
+        requestRender();
       });
       editor.querySelector('.selectedPartPanelRows')?.addEventListener('input', e=>{
         const raw = e.target.value;
@@ -13186,6 +13274,7 @@
               editable:true,
               faceLabel:showBackFace ? 'Front' : '',
               roomName,
+              woodgrain:grainDirectionBlockValue(previewBlock) === 'Yes',
               offcutTemplateId:Array.isArray(block.offcutTemplateOverrides) ? (block.offcutTemplateOverrides[i] || '') : '',
               offcutPlacements:Array.isArray(block.offcutPlacements) ? block.offcutPlacements.filter(item=>Number(item.sheetIndex || 0) === i) : []
             });
@@ -13261,6 +13350,7 @@
       const boardStroke = isBackVariant ? '#b91c1c' : '#111';
       const boardFill = isBackVariant ? '#fff5f5' : '#fff';
       const watermarkFill = isBackVariant ? 'rgba(185,28,28,.06)' : 'rgba(17,17,17,.07)';
+      const woodgrainOn = !isBackVariant && (!!options.woodgrain || (sheet.placements || []).some(p=>partGrainDirectionValue(p, null) === 'Yes'));
       const partColors = isBackVariant
         ? ['#fee2e2','#fecaca','#fca5a5','#f87171','#fca5a5','#fecaca','#fee2e2','#fecaca']
         : ['#f0f0f0','#e0e0e0','#d0d0d0','#c0c0c0','#b0b0b0','#a0a0a0','#909090','#808080'];
@@ -13294,8 +13384,14 @@
       };
       const sheetIndex = sheet.originalIndex ?? Math.max(0, Number(sheet.sheetNumber || 1) - 1);
       const activeOffcutTemplate = !isBackVariant && options.editable && !!options.offcutTemplateId;
-      let svg = '<div class="sheet-visual'+(activeOffcutTemplate ? ' offcut-active' : '')+'" data-sheet-index="'+escapeHtml(sheetIndex)+'" data-sheet-size="'+escapeHtml(sizeKey)+'" style="--sheet-visual-width:'+visualWidth+'px"><svg viewBox="0 0 '+dw+' '+dh+'" xmlns="http://www.w3.org/2000/svg">';
-      svg += '<rect x="0.75" y="0.75" width="'+(dw-1.5)+'" height="'+(dh-1.5)+'" fill="'+boardFill+'" stroke="'+boardStroke+'" stroke-width="0.8"/>';
+      const woodId = 'woodgrain_'+String(sheetIndex).replace(/[^A-Za-z0-9_-]/g,'')+'_'+String(sizeKey).replace(/[^A-Za-z0-9_-]/g,'');
+      const woodLineId = woodId + '_lines';
+      let svg = '<div class="sheet-visual'+(activeOffcutTemplate ? ' offcut-active' : '')+(woodgrainOn ? ' woodgrain' : '')+'" data-sheet-index="'+escapeHtml(sheetIndex)+'" data-sheet-size="'+escapeHtml(sizeKey)+'" style="--sheet-visual-width:'+visualWidth+'px"><svg viewBox="0 0 '+dw+' '+dh+'" xmlns="http://www.w3.org/2000/svg">';
+      if(woodgrainOn){
+        svg += '<defs><linearGradient id="'+woodId+'" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#d8b07a"/><stop offset="18%" stop-color="#efcf9f"/><stop offset="35%" stop-color="#c39860"/><stop offset="52%" stop-color="#f1d4a4"/><stop offset="70%" stop-color="#bf8d55"/><stop offset="100%" stop-color="#e1b77c"/></linearGradient><pattern id="'+woodLineId+'" patternUnits="userSpaceOnUse" width="14" height="'+dh+'"><rect width="2" height="'+dh+'" fill="rgba(74,47,26,.18)"/></pattern></defs>';
+      }
+      svg += '<rect x="0.75" y="0.75" width="'+(dw-1.5)+'" height="'+(dh-1.5)+'" fill="'+(woodgrainOn ? 'url(#'+woodId+')' : boardFill)+'" stroke="'+boardStroke+'" stroke-width="0.8"/>';
+      if(woodgrainOn) svg += '<rect x="0.75" y="0.75" width="'+(dw-1.5)+'" height="'+(dh-1.5)+'" fill="url(#'+woodLineId+')" stroke="none" opacity=".85"/>';
       svg += '<text x="'+(dw/2)+'" y="'+(dh/2)+'" text-anchor="middle" font-size="'+Math.max(16, dw/8)+'" font-family="Arial" font-weight="900" fill="'+watermarkFill+'">'+size.watermark+'</text>';
       if(faceLabel){
         svg += '<text x="'+(dw-5)+'" y="10" text-anchor="end" font-size="6.5" font-family="Arial" font-weight="900" fill="'+(isBackVariant ? '#b91c1c' : '#374151')+'">'+escapeHtml(faceLabel.toUpperCase())+'</text>';
@@ -13619,16 +13715,16 @@
       return {
         units:breakdown.reduce((sum, item)=>sum + item.units, 0),
         breakdown,
-        label:breakdown.map(item=>'S'+item.index+' '+(item.units === 1 ? 'full' : '0')).join(', ')
+        label:breakdown.filter(item=>item.units > 0).map(item=>'S'+item.index).join(', ')
       };
     }
 
     function sheetChargeLabel(units){
-      if(Math.abs(Number(units || 0) - 1) < 0.0001) return 'full sheet';
+      if(Math.abs(Number(units || 0) - 1) < 0.0001) return 'sheet';
       return 'not charged';
     }
     function sheetChargePluralLabel(units){
-      if(Math.abs(Number(units || 0) - 1) < 0.0001) return 'full';
+      if(Math.abs(Number(units || 0) - 1) < 0.0001) return 'sheet';
       return '0';
     }
     function normalizeSheetChargeUnits(value){
@@ -13646,10 +13742,10 @@
         if(key === '0') return;
         counts.set(key, (counts.get(key) || 0) + 1);
       });
-      const order = ['full'];
+      const order = ['sheet'];
       const parts = order.filter(key=>counts.has(key)).map(key=>{
         const count = counts.get(key);
-        return count + ' sheet' + (count === 1 ? '' : 's') + ' ' + key;
+        return count + ' sheet' + (count === 1 ? '' : 's');
       });
       return parts.join(', ');
     }
@@ -13698,7 +13794,7 @@
           + '</div>';
       }).join('');
       return '<details class="sheet-price-box">'
-        + '<summary class="sheet-price-head"><div class="sheet-price-title">Individual price per sheet</div><div class="sheet-price-note">Click to show full-sheet prices and CNC values.</div></summary>'
+        + '<summary class="sheet-price-head"><div class="sheet-price-title">Individual price per sheet</div><div class="sheet-price-note">Click to show sheet prices and CNC values.</div></summary>'
         + '<div class="sheet-price-list"><div class="sheet-price-row head"><div class="sheet-price-colhead">Sheet</div><div class="sheet-price-colhead">Price</div><div class="sheet-price-colhead">CNC service</div></div>'+rows+'</div>'
         + '</details>';
     }
@@ -13733,8 +13829,9 @@
         ? cncSheetLines.reduce((sum, item)=>sum + item.amount, 0)
         : cncSubtotal * sheetQuantity;
       let orderSubtotal = materialLineTotal + cncLineTotal + timeAmountPerSheet * sheetQuantity;
-      const discountPct = sheetQuantity>=10 ? -15 : sheetQuantity>=5 ? -10 : 0;
-      if(discountPct<0) orderSubtotal *= 1 - Math.abs(discountPct)/100;
+      const discountPct = Math.min(100, Math.max(0, Number(block.quantityDiscountPct || 0)));
+      const discountAmount = discountPct > 0 ? orderSubtotal * (discountPct / 100) : 0;
+      orderSubtotal -= discountAmount;
 
       const sheetSummary = Object.entries(nest.sheetCounts || {}).map(([key,count])=>count+'x '+SHEET_SIZES[key].label).join(', ');
       const titleSize = nest.sizeKey ? SHEET_SIZES[nest.sizeKey].label : (sheetSummary || SHEET_SIZES[block.size].label);
@@ -13746,7 +13843,7 @@
         materialSheetUnits:materialBilling.units || sheetQuantity,
         materialTierSummary:materialBilling.label,
         cncPrice, adjustedCncPrice:cncSubtotal, cncSheetLines, cncLineTotal, rawSubtotal:materialBase+cncPrice,
-        extraPct,extraAmount,drillingPct,drillingAmount,pocketPct,pocketMinutes,pocketAmount,timeAmountPerSheet,discountPct,
+        extraPct,extraAmount,drillingPct,drillingAmount,pocketPct,pocketMinutes,pocketAmount,timeAmountPerSheet,discountPct,discountAmount,
         finalPricePerSheet:sheetQuantity ? orderSubtotal/sheetQuantity : orderSubtotal,totalOrderPrice:orderSubtotal,sheetQuantity,partsCount
       };
     }
@@ -14322,7 +14419,7 @@
       const sprayTotals = calculateSpray();
       const vatRate = VAT_RATE;
       const rawSubtotalExVat = materialsTotal + design + cuttingList + assembly + sprayTotals.total;
-      const subtotalExVat = quoteRoundEnabled ? roundQuoteTotal(rawSubtotalExVat) : rawSubtotalExVat;
+      const subtotalExVat = rawSubtotalExVat;
       const vatAmount = subtotalExVat * vatRate / 100;
       const grandTotal = subtotalExVat + vatAmount;
 
@@ -14348,8 +14445,7 @@
         const firstSheetLine = Array.isArray(price.materialSheetLines) ? price.materialSheetLines.find(line=>Number(line.units || 0) > 0) : null;
         const displayedSheetPrice = firstSheetLine ? firstSheetLine.defaultAmount / Math.max(0.0001, Number(firstSheetLine.units || 1)) : Number(block.materialCost)||0;
         html += '<div class="row"><div class="label">Sheet price</div><div class="value">'+money(displayedSheetPrice)+'</div></div>';
-        const chargeSummary = sheetChargeSummary(price.materialSheetLines);
-        html += '<div class="row"><div class="label">Sheets</div><div class="value">x '+price.sheetQuantity+(chargeSummary ? ' ('+escapeHtml(chargeSummary)+')' : '')+'</div></div>';
+        html += '<div class="row"><div class="label">Sheets</div><div class="value">'+price.sheetQuantity+'</div></div>';
         html += '<div class="row"><div class="label">Material subtotal</div><div class="value">'+money(price.materialLineTotal)+'</div></div>';
         if((block.doorTypeSummary || block.globalShakerType) !== 'no') html += '<div class="row"><div class="label">Door Type</div><div class="value"><span class="pill">'+doorTypeLabel(block.doorTypeSummary || block.globalShakerType)+'</span></div></div>';
         html += '</div>';
@@ -14364,7 +14460,7 @@
         html += '<div class="row service-subtotal"><div class="label">CNC per sheet</div><div class="value">'+cncPerSheetLabel+'</div></div>';
         html += '<div class="row"><div class="label">CNC total</div><div class="value">'+money(serviceTotal)+'</div></div>';
         if(price.timeAmountPerSheet>0) html += '<div class="row"><div class="label">Time total</div><div class="value">'+money(timeTotal)+'</div></div>';
-        if(price.discountPct!==0) html += '<div class="row"><div class="label">Quantity Discount</div><div class="value"><span class="pill">'+price.discountPct+'%</span></div></div>';
+        if(price.discountPct>0) html += '<div class="row"><div class="label">Discount <span class="pill">-'+price.discountPct+'%</span></div><div class="value">-'+money(price.discountAmount)+'</div></div>';
         html += '</div></div>';
         if(nest.oversized.length){
           html += '<div class="warning-box">'+nest.oversized.map(p=>{
@@ -15086,8 +15182,6 @@
       document.getElementById('assemblyHours').value=0;
       setLabelsEnabled(false);
       applySprayPayload(null);
-      quoteRoundEnabled = false;
-      setToggleButtonValue(document.getElementById('roundQuoteBtn'), 'No');
       syncToolbarState();
       document.getElementById('loadQuoteFile').value='';
       document.getElementById('quoteNumber').textContent='EDNEI160426';
@@ -15198,11 +15292,6 @@
     });
     document.querySelectorAll('.command-menu').forEach(menu=>{
       menu.addEventListener('toggle', ()=>{ if(menu.open) closeCommandMenus(menu); });
-    });
-    bindToggleButton(document.getElementById('roundQuoteBtn'), 'No', value=>{
-      quoteRoundEnabled = value === 'Yes';
-      lastCalculation = null;
-      syncToolbarState();
     });
     document.getElementById('saveQuoteBtn').addEventListener('click', saveQuoteToFile);
     document.getElementById('loadQuoteBtn').addEventListener('click', ()=>{ document.getElementById('loadQuoteFile').click(); });
