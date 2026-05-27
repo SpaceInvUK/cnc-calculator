@@ -3,7 +3,8 @@
 ## Repository
 
 - GitHub repo: `https://github.com/SpaceInvUK/cnc-calculator`
-- Branch to continue from: `codex/update-calculator-1-0`
+- Branch to continue from in Codex Cloud: `main`
+- Previous handoff branch: `codex/update-calculator-1-0`
 - Current working target: `CNC Calculator 1.0.html`
 
 ## How To Continue On Another PC Or Codex Cloud
@@ -11,7 +12,7 @@
 ```powershell
 git clone https://github.com/SpaceInvUK/cnc-calculator.git
 cd cnc-calculator
-git checkout codex/update-calculator-1-0
+git checkout main
 ```
 
 Open locally:
@@ -31,7 +32,7 @@ When returning to this PC:
 ```powershell
 cd "C:\Users\ednei\Documents\CNC App"
 git fetch origin
-git checkout codex/update-calculator-1-0
+git checkout main
 git pull --ff-only
 ```
 

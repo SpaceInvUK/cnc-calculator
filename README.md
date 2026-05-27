@@ -2,15 +2,17 @@
 
 Single-file FAST CNC calculator for Doors and Panneling.
 
-## Current Codex Cloud Branch
+## Current Codex Cloud Version
 
-Current continuation branch:
+Use this branch in Codex Cloud:
 
-- `codex/update-calculator-1-0`
+- `main`
 
-Current active file on that branch:
+Current active calculator file:
 
 - `CNC Calculator 1.0.html`
+
+The earlier handoff branch was `codex/update-calculator-1-0`, but the latest calculator work is intended to continue from `main`.
 
 See `AGENTS.md` and `docs/CODEX_CLOUD_HANDOFF_2026-05-27.md` before continuing work in Codex Cloud or on another PC.
 

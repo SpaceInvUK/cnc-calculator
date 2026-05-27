@@ -2,7 +2,8 @@
 
 ## Current Branch And Target
 
-- Current Git branch: `codex/update-calculator-1-0`.
+- Latest/default branch for Codex Cloud: `main`.
+- Previous handoff branch: `codex/update-calculator-1-0`.
 - Current active file for this branch: `CNC Calculator 1.0.html`.
 - Historical/test file: `Cnc Calculator UI Test.html`. Do not edit it unless the user explicitly switches back to it.
 - Keep the app as a single-file HTML calculator unless the user explicitly asks for a build system.
@@ -51,7 +52,7 @@ Before working:
 
 ```powershell
 git fetch origin
-git checkout codex/update-calculator-1-0
+git checkout main
 git pull --ff-only
 ```
 
