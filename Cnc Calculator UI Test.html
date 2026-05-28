@@ -7739,7 +7739,7 @@
     }
     function expandBlockParts(block){
       if(block.preExpandedParts){
-        return block.preExpandedParts.map((p, index)=>({...p, id:index + 1, framePocket:!!p.framePocket, pocketSideMode:p.pocketSideMode || 'front', pocketRoundCorners:p.pocketRoundCorners === true || p.pocketRoundCorners === 'Yes', beadingRoundCorners:beadingRoundCornersForPart(p), grainDirection:partGrainDirectionValue(p, block), manualSheetIndex:p.manualSheetIndex ?? '', manualSheetSize:p.manualSheetSize ?? '', manualX:p.manualX ?? '', manualY:p.manualY ?? '', manualRotated:partGrainDirectionValue(p, block) === 'Yes' ? 'No' : (String(p.manualRotated || 'No') === 'Yes' ? 'Yes' : 'No'), manualRotationAngle:partGrainDirectionValue(p, block) === 'Yes' ? 0 : normalizeRotationAngle(p.manualRotationAngle ?? p.rotationAngle ?? (String(p.manualRotated || 'No') === 'Yes' ? 90 : 0))}));
+        return block.preExpandedParts.map((p, index)=>({...p, id:index + 1, framePocket:!!p.framePocket, pocketSideMode:p.pocketSideMode || 'front', pocketRoundCorners:p.pocketRoundCorners === true || p.pocketRoundCorners === 'Yes', beadingRoundCorners:beadingRoundCornersForPart(p), grainDirection:partGrainDirectionValue(p, block), manualSheetIndex:p.manualSheetIndex ?? '', manualSheetSize:p.manualSheetSize ?? '', manualX:p.manualX ?? '', manualY:p.manualY ?? '', manualRotated:partGrainDirectionValue(p, block) === 'Yes' ? 'Yes' : (String(p.manualRotated || 'No') === 'Yes' ? 'Yes' : 'No'), manualRotationAngle:partGrainDirectionValue(p, block) === 'Yes' ? 90 : normalizeRotationAngle(p.manualRotationAngle ?? p.rotationAngle ?? (String(p.manualRotated || 'No') === 'Yes' ? 90 : 0))}));
       }
       const out = [];
       block.parts.forEach((p, sourcePartIndex)=>{
@@ -7911,8 +7911,8 @@
             manualSheetSize:SHEET_SIZES[p.manualSheetSize] ? p.manualSheetSize : '',
             manualX:p.manualX === '' || p.manualX == null ? '' : Math.max(0, Number(p.manualX || 0)),
             manualY:p.manualY === '' || p.manualY == null ? '' : Math.max(0, Number(p.manualY || 0)),
-            manualRotated:partGrainDirectionValue(p, block) === 'Yes' ? 'No' : (String(p.manualRotated || 'No') === 'Yes' ? 'Yes' : 'No'),
-            manualRotationAngle:partGrainDirectionValue(p, block) === 'Yes' ? 0 : normalizeRotationAngle(p.manualRotationAngle ?? (String(p.manualRotated || 'No') === 'Yes' ? 90 : 0)),
+            manualRotated:partGrainDirectionValue(p, block) === 'Yes' ? 'Yes' : (String(p.manualRotated || 'No') === 'Yes' ? 'Yes' : 'No'),
+            manualRotationAngle:partGrainDirectionValue(p, block) === 'Yes' ? 90 : normalizeRotationAngle(p.manualRotationAngle ?? (String(p.manualRotated || 'No') === 'Yes' ? 90 : 0)),
             text:(p.text||'').trim(),
             sourceBlockId:block.id,
             sourcePartIndex,
@@ -9885,11 +9885,8 @@
       const width = Math.max(0, Number(part.width || 0));
       const height = Math.max(0, Number(part.height || 0));
       if(partGrainDirectionValue(part, null) === 'Yes'){
-        if(normalizePartShape(part.shapeType) === 'sloped'){
-          const side = partSideHeights(part);
-          return {width, height:Math.max(1, side.left, side.right), lockRotation:true, rotationAngle:0};
-        }
-        return {width, height, lockRotation:true, rotationAngle:0};
+        const geometry = rotatedLocalGeometry({...part, w:width, h:height, origW:width, origH:height, rotationAngle:90}, 90);
+        return {width:Math.max(1, geometry.width), height:Math.max(1, geometry.height), lockRotation:true, rotationAngle:90};
       }
       const manualAngle = normalizeRotationAngle(part.manualRotationAngle ?? (String(part.manualRotated || 'No') === 'Yes' ? 90 : 0));
       if(manualAngle){
@@ -12437,7 +12434,7 @@
         if(!block || !Number.isInteger(index) || !block.parts[index]) return false;
         const part = block.parts[index];
         const grainLockedDrag = partGrainDirectionValue(part, block) === 'Yes';
-        const angle = grainLockedDrag ? 0 : normalizeRotationAngle(state.rotationAngle ?? (state.rotated ? 90 : 0));
+        const angle = grainLockedDrag ? 90 : normalizeRotationAngle(state.rotationAngle ?? (state.rotated ? 90 : 0));
         const panelDrag = isPanelBlock(block) && block.wallEnabled === 'Yes' && !!panelInstanceFromKey(instanceIndex);
         const tempPart = {...part, manualRotationAngle:angle, manualRotated:angle === 90 ? 'Yes' : 'No'};
         const dims = panelDrag
