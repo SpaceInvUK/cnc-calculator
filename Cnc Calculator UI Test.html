@@ -14188,13 +14188,8 @@
       }
       function drawPanelPartDxf(p, ox=0, oy=0, face='front'){
         placementOutline('OUT', p, ox, oy);
-        panelOpeningRectsForPlacement(p).forEach(opening=>{
-          rect('OUT', ox + opening.x, oy + opening.y, opening.w, opening.h);
-        });
         panelCellCavities(p).forEach(c=>{
           const shifted = shiftedPoints(cavityPoints(c), ox, oy);
-          if(p.pocketRoundCorners) writeRoundedPolyline('OUT', shifted, true, 2.5);
-          else writePolyline('OUT', shifted, true);
           if(face === 'front'){
             drawPocketGuideLayers({x:ox+c.x, y:oy+c.y, w:c.w, h:c.h, points:shifted, sloped:false}, Array.isArray(p.pocketLines) ? p.pocketLines : [], !!p.pocketRoundCorners);
           }
