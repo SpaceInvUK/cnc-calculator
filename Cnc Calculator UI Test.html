@@ -615,6 +615,7 @@
     .material-block[data-calc-mode="panel"] .walls-list{grid-column:1/-1}
     .editor-section{border:1.5px solid var(--block-line,#dbe3ec);border-radius:8px;background:#fff;overflow:hidden}
     .editor-section.wide{grid-column:1/-1}
+    .editor-section.pocketing-section{grid-column:1/-1}
     .editor-section.compact{align-self:start}
     .editor-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--block-line,#e6ebf1);background:var(--block-tint-strong,#f8fafc)}
     .editor-section-title{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#334155}
@@ -631,6 +632,9 @@
     .editor-section .reeded-row.show{grid-template-columns:1fr}
     .editor-section .control-row .field.inline-control,
     .editor-section .field.inline-control{justify-content:space-between;min-height:38px}
+    .door-machining-section{grid-column:1/-1;border-top:1px solid var(--block-line,#e6ebf1);padding-top:10px}
+    .door-machining-section .editor-section-head{padding:0 0 8px;border-bottom:0;background:transparent}
+    .door-machining-section .editor-section-grid{padding:0}
     .editor-section .pocket-panel{border:0;border-radius:0;background:#fff;padding:0;gap:0}
     .editor-section .pocket-panel-head{padding:12px;border-bottom:1px solid var(--block-line,#e6ebf1);background:#fff}
     .editor-section .pocket-options.show{display:grid;padding:12px;gap:12px}
@@ -1254,10 +1258,7 @@
               <div class="field inline-control biding-options"><label>Thickness</label><select class="bidingThickness"><option value="3mm">3mm</option><option value="6mm">6mm</option></select></div>
               <div class="hint biding-options">G + Enter in part text becomes Glass. Glass parts do not generate inserts. Auto uses 0.15mm fit gap; manual lets you change that rule.</div>
             </div>
-          </div>
-        </div>
-
-        <div class="editor-section compact machining-section">
+            <div class="door-machining-section machining-section">
           <div class="editor-section-head"><div class="editor-section-title">Machining</div></div>
           <div class="editor-section-grid single">
             <div class="control-row process">
@@ -1265,9 +1266,11 @@
               <div class="field inline-control"><label>Drillings (+5%)</label><select class="drillings sr-only"><option>No</option><option>Yes</option></select><div class="control-with-info"><button class="pocket-title-toggle tiny-toggle drillingsControl off" type="button" aria-pressed="false" title="Adds drilling operations and applies the drilling charge to CNC Service only.">Drillings</button><span class="info-dot" tabindex="0" data-tip="Adds drilling operations and applies the drilling charge to CNC Service only." aria-label="Drillings info">i</span></div></div>
             </div>
           </div>
+            </div>
+          </div>
         </div>
 
-        <div class="editor-section">
+        <div class="editor-section pocketing-section">
           <div class="editor-section-head"><div class="editor-section-title">Pocketing</div></div>
           <div class="pocket-panel">
             <div class="pocket-panel-head">
@@ -1323,6 +1326,9 @@
     };
     const SHEET_ORDER = ["8x4", "10x4", "10x5", "jumbo"];
     const GAP = 7;
+    function sheetGap(sizeKey){
+      return String(sizeKey || '').toLowerCase() === 'jumbo' ? 13 : GAP;
+    }
     const materialOptions=['MDF','Standard MDF','Moisture-Resistant MDF (MR MDF)','Fire-Rated MDF (FR MDF)','Veneered MDF (Oak, Walnut, Ash)','Black MDF (Valchromat)','Tricoya (Exterior-grade MDF)','MDF Hidrofugo Plus','Birch','Birch Plywood','Hardwood Plywood','Softwood Plywood','Marine Plywood','Poplar Plywood','Phenolic-coated Plywood','Standard Chipboard','Moisture-Resistant Chipboard','Melamine-Faced Chipboard (MFC)','Veneered Chipboard','Standard HDF','White-faced HDF','Oil-tempered Hardboard','OSB/2','OSB/3 (structural/exterior)','Solid Oak Panels','Solid Pine Panels','Solid Beech Panels','Bamboo Panels','Melamine-faced boards','Laminated boards (HPL)','Veneered boards (oak, walnut, ash)','Other (specify)'];
     const thicknessMap={'MDF':['3mm','6mm','9mm','12mm','15mm','18mm','22mm','25mm','30mm'],'Standard MDF':['3mm','6mm','9mm','12mm','15mm','18mm','22mm','25mm','30mm'],'Moisture-Resistant MDF (MR MDF)':['3mm','6mm','9mm','12mm','15mm','18mm','22mm','25mm','30mm'],'Fire-Rated MDF (FR MDF)':['3mm','6mm','9mm','12mm','15mm','18mm','22mm','25mm','30mm'],'Veneered MDF (Oak, Walnut, Ash)':['3mm','6mm','9mm','12mm','15mm','18mm','22mm','25mm','30mm'],'Black MDF (Valchromat)':['3mm','6mm','9mm','12mm','15mm','18mm','22mm','25mm','30mm'],'Tricoya (Exterior-grade MDF)':['3mm','6mm','9mm','12mm','15mm','18mm','22mm','25mm','30mm'],'MDF Hidrofugo Plus':['3mm','6mm','9mm','12mm','15mm','18mm','22mm','25mm','30mm'],'Birch':['4mm','6mm','9mm','12mm','15mm','18mm','24mm'],'Birch Plywood':['4mm','6mm','9mm','12mm','15mm','18mm','24mm'],'Hardwood Plywood':['6mm','9mm','12mm','15mm','18mm','24mm'],'Softwood Plywood':['6mm','9mm','12mm','15mm','18mm','24mm'],'Marine Plywood':['6mm','9mm','12mm','15mm','18mm','24mm'],'Poplar Plywood':['6mm','9mm','12mm','15mm','18mm','24mm'],'Phenolic-coated Plywood':['6mm','9mm','12mm','15mm','18mm','24mm'],'Standard Chipboard':['6mm','9mm','12mm','15mm','18mm','25mm'],'Moisture-Resistant Chipboard':['6mm','9mm','12mm','15mm','18mm','25mm'],'Melamine-Faced Chipboard (MFC)':['6mm','9mm','12mm','15mm','18mm','25mm'],'Veneered Chipboard':['6mm','9mm','12mm','15mm','18mm','25mm'],'Standard HDF':['3mm','6mm','9mm','12mm'],'White-faced HDF':['3mm','6mm','9mm','12mm'],'Oil-tempered Hardboard':['3mm','6mm'],'OSB/2':['6mm','9mm','12mm','15mm'],'OSB/3 (structural/exterior)':['6mm','9mm','12mm','15mm'],'Solid Oak Panels':['12mm','18mm','24mm'],'Solid Pine Panels':['12mm','18mm','24mm'],'Solid Beech Panels':['12mm','18mm','24mm'],'Bamboo Panels':['12mm','18mm','24mm'],'Melamine-faced boards':['6mm','9mm','12mm','15mm','18mm','25mm'],'Laminated boards (HPL)':['6mm','9mm','12mm','15mm','18mm','25mm'],'Veneered boards (oak, walnut, ash)':['6mm','9mm','12mm','15mm','18mm','25mm'],'Other (specify)':['3mm','6mm','9mm','12mm','15mm','18mm','22mm','24mm','25mm','30mm']};
     const basePrices={'MDF':{'3mm':15,'6mm':25,'9mm':35,'12mm':40,'15mm':45,'18mm':55,'22mm':65,'25mm':75,'30mm':15},'Standard MDF':{'3mm':15,'6mm':25,'9mm':35,'12mm':40,'15mm':45,'18mm':55,'22mm':65,'25mm':75,'30mm':15},'Moisture-Resistant MDF (MR MDF)':{'3mm':25,'6mm':35,'9mm':45,'12mm':50,'15mm':55,'18mm':65,'22mm':75,'25mm':85,'30mm':25},'Fire-Rated MDF (FR MDF)':{'3mm':30,'6mm':40,'9mm':50,'12mm':60,'15mm':70,'18mm':80,'22mm':90,'25mm':100,'30mm':30},'Veneered MDF (Oak, Walnut, Ash)':{'3mm':35,'6mm':45,'9mm':55,'12mm':65,'15mm':75,'18mm':85,'22mm':95,'25mm':105,'30mm':35},'Black MDF (Valchromat)':{'3mm':40,'6mm':50,'9mm':60,'12mm':70,'15mm':80,'18mm':90,'22mm':100,'25mm':110,'30mm':40},'Tricoya (Exterior-grade MDF)':{'3mm':50,'6mm':60,'9mm':70,'12mm':80,'15mm':90,'18mm':100,'22mm':110,'25mm':120,'30mm':50},'MDF Hidrofugo Plus':{'3mm':25,'6mm':35,'9mm':45,'12mm':50,'15mm':55,'18mm':65,'22mm':75,'25mm':85,'30mm':25},'Birch':{'4mm':45,'6mm':55,'9mm':65,'12mm':75,'15mm':85,'18mm':95,'24mm':120},'Birch Plywood':{'4mm':45,'6mm':55,'9mm':65,'12mm':75,'15mm':85,'18mm':95,'24mm':120},'Hardwood Plywood':{'6mm':60,'9mm':75,'12mm':90,'15mm':105,'18mm':120,'24mm':150},'Softwood Plywood':{'6mm':40,'9mm':50,'12mm':60,'15mm':70,'18mm':80,'24mm':100},'Marine Plywood':{'6mm':80,'9mm':100,'12mm':120,'15mm':140,'18mm':160,'24mm':200},'Poplar Plywood':{'6mm':35,'9mm':45,'12mm':55,'15mm':65,'18mm':75,'24mm':95},'Phenolic-coated Plywood':{'6mm':90,'9mm':110,'12mm':130,'15mm':150,'18mm':170,'24mm':210},'Standard Chipboard':{'6mm':20,'9mm':25,'12mm':30,'15mm':35,'18mm':40,'25mm':50},'Moisture-Resistant Chipboard':{'6mm':30,'9mm':35,'12mm':40,'15mm':45,'18mm':50,'25mm':60},'Melamine-Faced Chipboard (MFC)':{'6mm':35,'9mm':40,'12mm':45,'15mm':50,'18mm':55,'25mm':65},'Veneered Chipboard':{'6mm':40,'9mm':50,'12mm':60,'15mm':70,'18mm':80,'25mm':100},'Standard HDF':{'3mm':18,'6mm':28,'9mm':38,'12mm':48},'White-faced HDF':{'3mm':25,'6mm':35,'9mm':45,'12mm':55},'Oil-tempered Hardboard':{'3mm':15,'6mm':22},'OSB/2':{'6mm':15,'9mm':18,'12mm':22,'15mm':28},'OSB/3 (structural/exterior)':{'6mm':18,'9mm':22,'12mm':28,'15mm':35},'Solid Oak Panels':{'12mm':120,'18mm':140,'24mm':180},'Solid Pine Panels':{'12mm':80,'18mm':100,'24mm':130},'Solid Beech Panels':{'12mm':100,'18mm':120,'24mm':150},'Bamboo Panels':{'12mm':95,'18mm':115,'24mm':145},'Melamine-faced boards':{'6mm':35,'9mm':40,'12mm':45,'15mm':50,'18mm':55,'25mm':65},'Laminated boards (HPL)':{'6mm':50,'9mm':60,'12mm':70,'15mm':80,'18mm':90,'25mm':110},'Veneered boards (oak, walnut, ash)':{'6mm':45,'9mm':55,'12mm':65,'15mm':75,'18mm':85,'25mm':105},'Other (specify)':{'3mm':0,'6mm':0,'9mm':0,'12mm':0,'15mm':0,'18mm':0,'22mm':0,'24mm':0,'25mm':0,'30mm':0}};
@@ -6147,7 +6153,7 @@
     }
     function autoWallSectionCount(block, width){
       const size = SHEET_SIZES[block?.size] || SHEET_SIZES['8x4'];
-      const usable = Math.max(1, size.width - GAP * 2);
+      const usable = Math.max(1, size.width - sheetGap(block?.size) * 2);
       return Math.max(1, Math.ceil(Math.max(0, Number(width || 0)) / usable));
     }
     function wallSectionCountForPart(block, part){
@@ -8247,29 +8253,30 @@
     function wasteLinesFromSheet(sheet, sizeKey){
       if(!sheet.placements || !sheet.placements.length) return [];
       const size = SHEET_SIZES[sizeKey];
+      const gap = sheetGap(sizeKey);
       const maxRight = Math.max(...sheet.placements.map(p=>p.x + p.w));
       const maxBottom = Math.max(...sheet.placements.map(p=>p.y + p.h));
-      const verticalX = maxRight + GAP;
-      const horizontalY = maxBottom + GAP;
+      const verticalX = maxRight + gap;
+      const horizontalY = maxBottom + gap;
       const candidates = [];
-      if(verticalX <= size.width - GAP){
+      if(verticalX <= size.width - gap){
         candidates.push({
-          x1:verticalX, y1:GAP, x2:verticalX, y2:size.height-GAP,
-          labelX:Math.min(size.width - GAP - 20, verticalX + Math.max(12, (size.width - GAP - verticalX) / 2)),
+          x1:verticalX, y1:gap, x2:verticalX, y2:size.height-gap,
+          labelX:Math.min(size.width - gap - 20, verticalX + Math.max(12, (size.width - gap - verticalX) / 2)),
           labelY:size.height / 2,
-          area:(size.width - GAP - verticalX) * (size.height - GAP*2),
-          offcutW:Math.max(0, Math.round(size.width - GAP - verticalX)),
-          offcutH:Math.max(0, Math.round(size.height - GAP*2))
+          area:(size.width - gap - verticalX) * (size.height - gap*2),
+          offcutW:Math.max(0, Math.round(size.width - gap - verticalX)),
+          offcutH:Math.max(0, Math.round(size.height - gap*2))
         });
       }
-      if(horizontalY <= size.height - GAP){
+      if(horizontalY <= size.height - gap){
         candidates.push({
-          x1:GAP, y1:horizontalY, x2:size.width-GAP, y2:horizontalY,
+          x1:gap, y1:horizontalY, x2:size.width-gap, y2:horizontalY,
           labelX:size.width / 2,
-          labelY:Math.min(size.height - GAP - 20, horizontalY + Math.max(12, (size.height - GAP - horizontalY) / 2)),
-          area:(size.height - GAP - horizontalY) * (size.width-GAP*2),
-          offcutW:Math.max(0, Math.round(size.width - GAP*2)),
-          offcutH:Math.max(0, Math.round(size.height - GAP - horizontalY))
+          labelY:Math.min(size.height - gap - 20, horizontalY + Math.max(12, (size.height - gap - horizontalY) / 2)),
+          area:(size.height - gap - horizontalY) * (size.width-gap*2),
+          offcutW:Math.max(0, Math.round(size.width - gap*2)),
+          offcutH:Math.max(0, Math.round(size.height - gap - horizontalY))
         });
       }
       return candidates.sort((a,b)=>b.area-a.area).slice(0,1);
@@ -8280,11 +8287,12 @@
     function offcutRectsFromSheet(sheet, sizeKey){
       if(!sheet.placements || !sheet.placements.length) return [];
       const size = SHEET_SIZES[sizeKey];
+      const gap = sheetGap(sizeKey);
       const blocked = sheet.placements.map(p=>({
-        x1:Math.max(0, p.x - GAP),
-        y1:Math.max(0, p.y - GAP),
-        x2:Math.min(size.width, p.x + p.w + GAP),
-        y2:Math.min(size.height, p.y + p.h + GAP)
+        x1:Math.max(0, p.x - gap),
+        y1:Math.max(0, p.y - gap),
+        x2:Math.min(size.width, p.x + p.w + gap),
+        y2:Math.min(size.height, p.y + p.h + gap)
       })).filter(r=>r.x2 > r.x1 && r.y2 > r.y1);
       const xs = [...new Set([0, size.width, ...blocked.flatMap(r=>[r.x1, r.x2])])].sort((a,b)=>a-b);
       const candidates = [];
@@ -9236,8 +9244,6 @@
           setBlockValue(block, 'pocketingEnabled', value);
           if(value === 'Yes' && !wasEnabled){
             setBlockValue(block, 'pocketLinePocketEnabled', 'Yes');
-            setBlockValue(block, 'pocketLine6Enabled', 'Yes');
-            setBlockValue(block, 'pocketLine2Enabled', 'Yes');
           }
           setBlockValue(block, 'flatFrameToggle', value === 'Yes' && block.globalShakerType === 'no' ? 'Yes' : 'No');
           flatFrameSelect.value = block.flatFrameToggle;
@@ -9785,7 +9791,8 @@
 
     function usableSheetRect(sizeKey){
       const s = SHEET_SIZES[sizeKey];
-      return {x:GAP, y:GAP, w:s.width-GAP*2, h:s.height-GAP*2, priority:1};
+      const gap = sheetGap(sizeKey);
+      return {x:gap, y:gap, w:s.width-gap*2, h:s.height-gap*2, priority:1};
     }
     function overlap(a,b){return !(a.x+a.w<=b.x || b.x+b.w<=a.x || a.y+a.h<=b.y || b.y+b.h<=a.y)}
     function contains(a,b){return b.x>=a.x && b.y>=a.y && b.x+b.w<=a.x+a.w && b.y+b.h<=a.y+a.h}
@@ -9819,15 +9826,16 @@
     }
     function slopedVoidFreeRectsForPlacement(p){
       if(normalizePartShape(p.shapeType) !== 'sloped' || placementRotationAngle(p) !== 0) return [];
+      const gap = sheetGap(p.sizeKey || p.sheetSizeKey);
       const side = partSideHeights(p);
       const diff = Math.abs(side.left - side.right);
       const sourceW = Math.max(0, Number(p.origW || p.width || p.w || 0));
-      if(!(sourceW > GAP * 5 && diff > GAP * 5)) return [];
-      const rectW = Math.max(0, sourceW / 2 - GAP * 2);
-      const rectH = Math.max(0, diff / 2 - GAP * 2);
-      if(!(rectW > GAP && rectH > GAP)) return [];
-      const x = side.left > side.right ? Number(p.x || 0) + sourceW - rectW - GAP : Number(p.x || 0) + GAP;
-      const y = Number(p.y || 0) + GAP;
+      if(!(sourceW > gap * 5 && diff > gap * 5)) return [];
+      const rectW = Math.max(0, sourceW / 2 - gap * 2);
+      const rectH = Math.max(0, diff / 2 - gap * 2);
+      if(!(rectW > gap && rectH > gap)) return [];
+      const x = side.left > side.right ? Number(p.x || 0) + sourceW - rectW - gap : Number(p.x || 0) + gap;
+      const y = Number(p.y || 0) + gap;
       return [{x, y, w:rectW, h:rectH, priority:0}];
     }
     function compactFreeRects(rects){
@@ -10426,13 +10434,14 @@
         if(!sheet || !reservedOffcuts.length) return [];
         const sheetIndex = Math.max(0, Math.round(Number(sheet.originalIndex ?? 0)));
         const size = SHEET_SIZES[sheet.sizeKey] || SHEET_SIZES[block.size] || SHEET_SIZES['8x4'];
+        const gap = sheetGap(sheet.sizeKey || block.size);
         return reservedOffcuts
           .filter(item=>Number(item.sheetIndex || 0) === sheetIndex)
           .map(item=>({
-            x:Math.max(0, Number(item.x || 0) - GAP),
-            y:Math.max(0, Number(item.y || 0) - GAP),
-            w:Math.max(0, Number(item.w || 0) + GAP * 2),
-            h:Math.max(0, Number(item.h || 0) + GAP * 2)
+            x:Math.max(0, Number(item.x || 0) - gap),
+            y:Math.max(0, Number(item.y || 0) - gap),
+            w:Math.max(0, Number(item.w || 0) + gap * 2),
+            h:Math.max(0, Number(item.h || 0) + gap * 2)
           }))
           .map(rect=>{
             const x1 = Math.max(0, rect.x);
@@ -10463,6 +10472,7 @@
       }
 
       function findBestPlacement(sheet, part){
+        const gap = sheetGap(sheet.sizeKey);
         const options = part.lockRotation ? [
           {w:part.packW || part.width,h:part.packH || part.height,rotated:normalizeRotationAngle(part.rotationAngle) === 90,rotationAngle:normalizeRotationAngle(part.rotationAngle)}
         ] : [
@@ -10471,23 +10481,23 @@
         ];
         const size = SHEET_SIZES[sheet.sizeKey];
         const edgeTolerance = 1;
-        const currentRight = sheet.placements.length ? Math.max(...sheet.placements.map(p=>p.x+p.w)) : GAP;
-        const currentBottom = sheet.placements.length ? Math.max(...sheet.placements.map(p=>p.y+p.h)) : GAP;
+        const currentRight = sheet.placements.length ? Math.max(...sheet.placements.map(p=>p.x+p.w)) : gap;
+        const currentBottom = sheet.placements.length ? Math.max(...sheet.placements.map(p=>p.y+p.h)) : gap;
         function projectedOffcutScore(right, bottom){
-          const verticalX = right + GAP;
-          const horizontalY = bottom + GAP;
-          const verticalArea = verticalX <= size.width - GAP ? (size.width - GAP - verticalX) * (size.height - GAP*2) : 0;
-          const horizontalArea = horizontalY <= size.height - GAP ? (size.height - GAP - horizontalY) * (size.width - GAP*2) : 0;
-          const verticalLong = verticalX <= size.width - GAP ? Math.max(size.width - GAP - verticalX, size.height - GAP*2) : 0;
-          const horizontalLong = horizontalY <= size.height - GAP ? Math.max(size.width - GAP*2, size.height - GAP - horizontalY) : 0;
+          const verticalX = right + gap;
+          const horizontalY = bottom + gap;
+          const verticalArea = verticalX <= size.width - gap ? (size.width - gap - verticalX) * (size.height - gap*2) : 0;
+          const horizontalArea = horizontalY <= size.height - gap ? (size.height - gap - horizontalY) * (size.width - gap*2) : 0;
+          const verticalLong = verticalX <= size.width - gap ? Math.max(size.width - gap - verticalX, size.height - gap*2) : 0;
+          const horizontalLong = horizontalY <= size.height - gap ? Math.max(size.width - gap*2, size.height - gap - horizontalY) : 0;
           return Math.max(verticalArea + verticalLong * 250, horizontalArea + horizontalLong * 250);
         }
         let bestCavity = null;
         let bestNormal = null;
         sheet.freeRects.forEach(fr=>{
           options.forEach(opt=>{
-            const touchesRightEdge = fr.x + fr.w >= size.width - GAP - 0.001;
-            const touchesBottomEdge = fr.y + fr.h >= size.height - GAP - 0.001;
+            const touchesRightEdge = fr.x + fr.w >= size.width - gap - 0.001;
+            const touchesBottomEdge = fr.y + fr.h >= size.height - gap - 0.001;
             const fitsW = opt.w <= fr.w || (touchesRightEdge && opt.w <= fr.w + edgeTolerance);
             const fitsH = opt.h <= fr.h || (touchesBottomEdge && opt.h <= fr.h + edgeTolerance);
             if(!fitsW || !fitsH) return;
@@ -10501,7 +10511,7 @@
             const projectedRight = Math.max(currentRight, compactX);
             const projectedBottom = Math.max(currentBottom, compactY);
             const offcutScore = projectedOffcutScore(projectedRight, projectedBottom);
-            const exactBonus = (leftoverW < GAP || leftoverH < GAP) ? -250000 : 0;
+            const exactBonus = (leftoverW < gap || leftoverH < gap) ? -250000 : 0;
             const score = exactBonus - offcutScore*2.7 + projectedBottom*1050 + projectedRight*65 + areaWaste*0.05 + shortSide*10 + longSide*1.5 + fr.y*8 + fr.x*1.2;
             const candidate = {x:fr.x,y:fr.y,w:opt.w,h:opt.h,rotated:opt.rotated,rotationAngle:normalizeRotationAngle(opt.rotationAngle),score,rect:fr};
             if((fr.priority === 0 ? 0 : (fr.priority || 1)) === 0){
@@ -10515,12 +10525,13 @@
       }
 
       function commitPlacement(sheet, part, best){
-        const used = {x:best.x, y:best.y, w:best.w+GAP, h:best.h+GAP};
+        const gap = sheetGap(sheet.sizeKey);
+        const used = {x:best.x, y:best.y, w:best.w+gap, h:best.h+gap};
         sheet.freeRects = compactFreeRects(splitRects(sheet.freeRects, used));
         const frame = Number(part.frame || block.frameSize || 50);
         const backFrame = Number(part.backFrame || block.backFrameSize || frame);
         const angle = normalizeRotationAngle(best.rotationAngle ?? (best.rotated ? 90 : 0));
-        const placed = {...best, rotationAngle:angle, id:part.id, origW:part.width, origH:part.height, shaker:part.shaker, shakerType:part.shakerType, insertKind:part.insertKind, glassBeading:!!part.glassBeading, assemblyGroup:part.assemblyGroup || '', assemblyRole:part.assemblyRole || '', assemblyPanelIndex:part.assemblyPanelIndex ?? '', assemblyPanelCount:part.assemblyPanelCount ?? '', parentBlockId:part.parentBlockId ?? '', parentPartIndex:part.parentPartIndex ?? '', beadingFrame:part.beadingFrame, beadingClearance:part.beadingClearance, beadingGuideOffset:part.beadingGuideOffset, beadingRoundCorners:beadingRoundCornersForPart(part), panels:part.panels, panelSize:part.panelSize || '', panelMode:part.panelMode || '', calcMode:part.calcMode || '', panelDirection:part.panelDirection || '', panelRows:part.panelRows ?? '', panelColumns:part.panelColumns ?? '', shakerColumnWidths:Array.isArray(part.shakerColumnWidths) ? deepCopy(part.shakerColumnWidths) : [], shakerRowHeights:Array.isArray(part.shakerRowHeights) ? deepCopy(part.shakerRowHeights) : [], panelVerticalStepFrame:part.panelVerticalStepFrame === true, panelVerticalStepHeight:part.panelVerticalStepHeight ?? '', panelVerticalStepLeft:part.panelVerticalStepLeft === true, panelVerticalStepRight:part.panelVerticalStepRight === true, panelVerticalStepInsetLeft:part.panelVerticalStepInsetLeft ?? 0, panelVerticalStepInsetRight:part.panelVerticalStepInsetRight ?? 0, panelUpperStepFrame:part.panelUpperStepFrame === true, panelUpperStepLowerHeight:part.panelUpperStepLowerHeight ?? '', panelUpperStepLeft:part.panelUpperStepLeft === true, panelUpperStepRight:part.panelUpperStepRight === true, panelUpperStepInsetLeft:part.panelUpperStepInsetLeft ?? 0, panelUpperStepInsetRight:part.panelUpperStepInsetRight ?? 0, panelUpperStepBaseOffsetLeft:part.panelUpperStepBaseOffsetLeft ?? 0, panelUpperStepBaseWidth:part.panelUpperStepBaseWidth ?? part.width, panelIrregularShape:part.panelIrregularShape || 'Yes', panelSkirtingEnabled:part.panelSkirtingEnabled || 'No', panelSkirtingHeight:part.panelSkirtingHeight ?? '', panelDoorAllowance:part.panelDoorAllowance ?? '', panelSideTop:part.panelSideTop || 'normal', panelSideRight:part.panelSideRight || 'normal', panelSideBottom:part.panelSideBottom || 'normal', panelSideLeft:part.panelSideLeft || 'normal', wallSectionIndex:part.wallSectionIndex ?? '', wallSectionCount:part.wallSectionCount ?? '', wallXStart:part.wallXStart ?? 0, wallTotalWidth:part.wallTotalWidth ?? part.width, wallDoorEnabled:part.wallDoorEnabled || 'No', wallDoorWidth:part.wallDoorWidth ?? '', wallDoorHeight:part.wallDoorHeight ?? '', wallDoorX:part.wallDoorX ?? '', wallWindowEnabled:part.wallWindowEnabled || 'No', wallWindowWidth:part.wallWindowWidth ?? '', wallWindowHeight:part.wallWindowHeight ?? '', wallWindowX:part.wallWindowX ?? '', wallWindowBottom:part.wallWindowBottom ?? '', wallOpenings:Array.isArray(part.wallOpenings) ? deepCopy(part.wallOpenings) : [], materialThicknessMm:part.materialThicknessMm || parseThicknessMm(block.thickness), shapePoints:Array.isArray(part.shapePoints) ? deepCopy(part.shapePoints) : undefined, shapeType:normalizePartShape(part.shapeType), leftHeight:part.leftHeight, rightHeight:part.rightHeight, frame, backFrame, frameTop:part.frameTop ?? '', frameRight:part.frameRight ?? '', frameBottom:part.frameBottom ?? '', frameLeft:part.frameLeft ?? '', frameMiddle:part.frameMiddle ?? '', frameEditZone:normalizeFrameZone(part.frameEditZone || 'left'), framePocket:!!part.framePocket, pocketSideMode:part.pocketSideMode || 'front', pocketRoundCorners:part.pocketRoundCorners === true || part.pocketRoundCorners === 'Yes', pocketLines:Array.isArray(part.pocketLines) ? deepCopy(part.pocketLines) : pocketLineSettingsForPart(part, block), reededDirection:normalizeReededDirection(part.reededDirection || block.reededDirection), reededSpacing:normalizeReededSpacing(part.reededSpacing || block.reededSpacing), hinges:part.hinges, hingeSide:normalizeHingeSide(part.hingeSide), hingeOffset:part.hingeOffset, hingeSpacing:part.hingeSpacing || '', sprayFinish:part.sprayFinish || 'No', spraySides:normalizeSpraySides(part.spraySides), grainDirection:partGrainDirectionValue(part, block), text:part.text||'', sourceBlockId:part.sourceBlockId, sourcePartIndex:part.sourcePartIndex, sourceInstanceIndex:part.sourceInstanceIndex};
+        const placed = {...best, sizeKey:sheet.sizeKey, sheetSizeKey:sheet.sizeKey, rotationAngle:angle, id:part.id, origW:part.width, origH:part.height, shaker:part.shaker, shakerType:part.shakerType, insertKind:part.insertKind, glassBeading:!!part.glassBeading, assemblyGroup:part.assemblyGroup || '', assemblyRole:part.assemblyRole || '', assemblyPanelIndex:part.assemblyPanelIndex ?? '', assemblyPanelCount:part.assemblyPanelCount ?? '', parentBlockId:part.parentBlockId ?? '', parentPartIndex:part.parentPartIndex ?? '', beadingFrame:part.beadingFrame, beadingClearance:part.beadingClearance, beadingGuideOffset:part.beadingGuideOffset, beadingRoundCorners:beadingRoundCornersForPart(part), panels:part.panels, panelSize:part.panelSize || '', panelMode:part.panelMode || '', calcMode:part.calcMode || '', panelDirection:part.panelDirection || '', panelRows:part.panelRows ?? '', panelColumns:part.panelColumns ?? '', shakerColumnWidths:Array.isArray(part.shakerColumnWidths) ? deepCopy(part.shakerColumnWidths) : [], shakerRowHeights:Array.isArray(part.shakerRowHeights) ? deepCopy(part.shakerRowHeights) : [], panelVerticalStepFrame:part.panelVerticalStepFrame === true, panelVerticalStepHeight:part.panelVerticalStepHeight ?? '', panelVerticalStepLeft:part.panelVerticalStepLeft === true, panelVerticalStepRight:part.panelVerticalStepRight === true, panelVerticalStepInsetLeft:part.panelVerticalStepInsetLeft ?? 0, panelVerticalStepInsetRight:part.panelVerticalStepInsetRight ?? 0, panelUpperStepFrame:part.panelUpperStepFrame === true, panelUpperStepLowerHeight:part.panelUpperStepLowerHeight ?? '', panelUpperStepLeft:part.panelUpperStepLeft === true, panelUpperStepRight:part.panelUpperStepRight === true, panelUpperStepInsetLeft:part.panelUpperStepInsetLeft ?? 0, panelUpperStepInsetRight:part.panelUpperStepInsetRight ?? 0, panelUpperStepBaseOffsetLeft:part.panelUpperStepBaseOffsetLeft ?? 0, panelUpperStepBaseWidth:part.panelUpperStepBaseWidth ?? part.width, panelIrregularShape:part.panelIrregularShape || 'Yes', panelSkirtingEnabled:part.panelSkirtingEnabled || 'No', panelSkirtingHeight:part.panelSkirtingHeight ?? '', panelDoorAllowance:part.panelDoorAllowance ?? '', panelSideTop:part.panelSideTop || 'normal', panelSideRight:part.panelSideRight || 'normal', panelSideBottom:part.panelSideBottom || 'normal', panelSideLeft:part.panelSideLeft || 'normal', wallSectionIndex:part.wallSectionIndex ?? '', wallSectionCount:part.wallSectionCount ?? '', wallXStart:part.wallXStart ?? 0, wallTotalWidth:part.wallTotalWidth ?? part.width, wallDoorEnabled:part.wallDoorEnabled || 'No', wallDoorWidth:part.wallDoorWidth ?? '', wallDoorHeight:part.wallDoorHeight ?? '', wallDoorX:part.wallDoorX ?? '', wallWindowEnabled:part.wallWindowEnabled || 'No', wallWindowWidth:part.wallWindowWidth ?? '', wallWindowHeight:part.wallWindowHeight ?? '', wallWindowX:part.wallWindowX ?? '', wallWindowBottom:part.wallWindowBottom ?? '', wallOpenings:Array.isArray(part.wallOpenings) ? deepCopy(part.wallOpenings) : [], materialThicknessMm:part.materialThicknessMm || parseThicknessMm(block.thickness), shapePoints:Array.isArray(part.shapePoints) ? deepCopy(part.shapePoints) : undefined, shapeType:normalizePartShape(part.shapeType), leftHeight:part.leftHeight, rightHeight:part.rightHeight, frame, backFrame, frameTop:part.frameTop ?? '', frameRight:part.frameRight ?? '', frameBottom:part.frameBottom ?? '', frameLeft:part.frameLeft ?? '', frameMiddle:part.frameMiddle ?? '', frameEditZone:normalizeFrameZone(part.frameEditZone || 'left'), framePocket:!!part.framePocket, pocketSideMode:part.pocketSideMode || 'front', pocketRoundCorners:part.pocketRoundCorners === true || part.pocketRoundCorners === 'Yes', pocketLines:Array.isArray(part.pocketLines) ? deepCopy(part.pocketLines) : pocketLineSettingsForPart(part, block), reededDirection:normalizeReededDirection(part.reededDirection || block.reededDirection), reededSpacing:normalizeReededSpacing(part.reededSpacing || block.reededSpacing), hinges:part.hinges, hingeSide:normalizeHingeSide(part.hingeSide), hingeOffset:part.hingeOffset, hingeSpacing:part.hingeSpacing || '', sprayFinish:part.sprayFinish || 'No', spraySides:normalizeSpraySides(part.spraySides), grainDirection:partGrainDirectionValue(part, block), text:part.text||'', sourceBlockId:part.sourceBlockId, sourcePartIndex:part.sourcePartIndex, sourceInstanceIndex:part.sourceInstanceIndex};
         sheet.placements.push(placed);
         slopedVoidFreeRectsForPlacement(placed).forEach(r=>{
           if(r.w>0 && r.h>0) sheet.freeRects.unshift(r);
@@ -10528,13 +10539,13 @@
         sheet.freeRects = compactFreeRects(sheet.freeRects);
         if(isBeadingPart(part) && normalizePartShape(part.shapeType) !== 'sloped'){
           const beadingInset = beadingFrameValue(part);
-          const r = {x:best.x + beadingInset + GAP, y:best.y + beadingInset + GAP, w:best.w - beadingInset*2 - GAP*2, h:best.h - beadingInset*2 - GAP*2, priority:0};
+          const r = {x:best.x + beadingInset + gap, y:best.y + beadingInset + gap, w:best.w - beadingInset*2 - gap*2, h:best.h - beadingInset*2 - gap*2, priority:0};
           if(r.w>0 && r.h>0) sheet.freeRects.unshift(r);
           sheet.freeRects = compactFreeRects(sheet.freeRects);
         } else if(part.shaker && !part.framePocket){
           const cavities = placementCavities(placed, frame, part.panels, part.panelSize);
           cavities.forEach(c=>{
-            const r = {x:c.x+GAP, y:c.y+GAP, w:c.w-GAP*2, h:c.h-GAP*2, priority:0};
+            const r = {x:c.x+gap, y:c.y+gap, w:c.w-gap*2, h:c.h-gap*2, priority:0};
             if(r.w>0 && r.h>0) sheet.freeRects.unshift(r);
           });
           sheet.freeRects = compactFreeRects(sheet.freeRects);
@@ -10571,14 +10582,15 @@
       }
       function manualPlacementFits(sheet, candidate){
         const size = SHEET_SIZES[sheet.sizeKey];
+        const gap = sheetGap(sheet.sizeKey);
         if(!size) return false;
-        if(candidate.x < GAP - 0.001 || candidate.y < GAP - 0.001) return false;
-        if(candidate.x + candidate.w > size.width - GAP + 0.001) return false;
-        if(candidate.y + candidate.h > size.height - GAP + 0.001) return false;
-        const inflated = {x:candidate.x - GAP / 2, y:candidate.y - GAP / 2, w:candidate.w + GAP, h:candidate.h + GAP};
+        if(candidate.x < gap - 0.001 || candidate.y < gap - 0.001) return false;
+        if(candidate.x + candidate.w > size.width - gap + 0.001) return false;
+        if(candidate.y + candidate.h > size.height - gap + 0.001) return false;
+        const inflated = {x:candidate.x - gap / 2, y:candidate.y - gap / 2, w:candidate.w + gap, h:candidate.h + gap};
         if(reservedOffcutBlockersForSheet(sheet).some(blocker=>overlap(inflated, blocker))) return false;
         return !(sheet.placements || []).some(existing=>{
-          const placed = {x:existing.x - GAP / 2, y:existing.y - GAP / 2, w:existing.w + GAP, h:existing.h + GAP};
+          const placed = {x:existing.x - gap / 2, y:existing.y - gap / 2, w:existing.w + gap, h:existing.h + gap};
           return overlap(inflated, placed);
         });
       }
@@ -10587,13 +10599,14 @@
       }
       function snapManualPlacement(sheet, part, manual){
         const size = SHEET_SIZES[sheet.sizeKey];
+        const gap = sheetGap(sheet.sizeKey);
         if(!size) return null;
         const dims = manualPlacementDims(part, manual);
         if(!(dims.w > 0 && dims.h > 0)) return null;
-        const minX = GAP;
-        const minY = GAP;
-        const maxX = size.width - GAP - dims.w;
-        const maxY = size.height - GAP - dims.h;
+        const minX = gap;
+        const minY = gap;
+        const maxX = size.width - gap - dims.w;
+        const maxY = size.height - gap - dims.h;
         if(maxX < minX - 0.001 || maxY < minY - 0.001) return null;
         const clamp = (value, min, max)=>Math.max(min, Math.min(max, Number(value || 0)));
         const desiredX = clamp(manual.x, minX, maxX);
@@ -10601,8 +10614,8 @@
         const xs = [desiredX, minX, maxX];
         const ys = [desiredY, minY, maxY];
         (sheet.placements || []).forEach(existing=>{
-          xs.push(existing.x, existing.x + existing.w + GAP, existing.x - dims.w - GAP, existing.x + existing.w - dims.w);
-          ys.push(existing.y, existing.y + existing.h + GAP, existing.y - dims.h - GAP, existing.y + existing.h - dims.h);
+          xs.push(existing.x, existing.x + existing.w + gap, existing.x - dims.w - gap, existing.x + existing.w - dims.w);
+          ys.push(existing.y, existing.y + existing.h + gap, existing.y - dims.h - gap, existing.y + existing.h - dims.h);
         });
         let best = null;
         uniqueSortedNumbers(xs.map(x=>clamp(x, minX, maxX))).forEach(x=>{
@@ -10698,33 +10711,35 @@
       }
       function placementFitsOnSheet(sheet, target, x, y, others){
         const size = SHEET_SIZES[sheet.sizeKey];
+        const gap = sheetGap(sheet.sizeKey);
         if(!size) return false;
-        if(x < GAP - 0.001 || y < GAP - 0.001) return false;
-        if(x + target.w > size.width - GAP + 0.001) return false;
-        if(y + target.h > size.height - GAP + 0.001) return false;
-        const guarded = {x:x - GAP / 2, y:y - GAP / 2, w:target.w + GAP, h:target.h + GAP};
+        if(x < gap - 0.001 || y < gap - 0.001) return false;
+        if(x + target.w > size.width - gap + 0.001) return false;
+        if(y + target.h > size.height - gap + 0.001) return false;
+        const guarded = {x:x - gap / 2, y:y - gap / 2, w:target.w + gap, h:target.h + gap};
         return !(others || []).some(other=>{
-          const otherGuard = {x:other.x - GAP / 2, y:other.y - GAP / 2, w:other.w + GAP, h:other.h + GAP};
+          const otherGuard = {x:other.x - gap / 2, y:other.y - gap / 2, w:other.w + gap, h:other.h + gap};
           return overlap(guarded, otherGuard);
         });
       }
       function tightenSheetPlacements(sheet){
         const placements = sheet?.placements || [];
         if(!placements.length) return;
+        const gap = sheetGap(sheet.sizeKey);
         const locked = placements.filter(p=>p.manualLocked);
         const movable = placements.filter(p=>!p.manualLocked).sort((a,b)=>a.y-b.y || a.x-b.x || b.h-a.h || b.w-a.w);
         const fixed = locked.map(p=>({...p}));
         movable.forEach(target=>{
           const others = fixed.concat(movable.filter(p=>p !== target && !fixed.includes(p)));
-          const xs = [target.x, GAP];
-          const ys = [target.y, GAP];
+          const xs = [target.x, gap];
+          const ys = [target.y, gap];
           others.forEach(other=>{
-            xs.push(other.x + other.w + GAP, other.x - target.w - GAP, other.x);
-            ys.push(other.y + other.h + GAP, other.y - target.h - GAP, other.y);
+            xs.push(other.x + other.w + gap, other.x - target.w - gap, other.x);
+            ys.push(other.y + other.h + gap, other.y - target.h - gap, other.y);
           });
           const size = SHEET_SIZES[sheet.sizeKey] || SHEET_SIZES['8x4'];
-          xs.push(Math.max(GAP, size.width - GAP - target.w));
-          ys.push(Math.max(GAP, size.height - GAP - target.h));
+          xs.push(Math.max(gap, size.width - gap - target.w));
+          ys.push(Math.max(gap, size.height - gap - target.h));
           const xVals = uniqueSortedNumbers(xs).sort((a,b)=>a-b);
           const yVals = uniqueSortedNumbers(ys).sort((a,b)=>a-b);
           let best = {x:target.x, y:target.y, score:target.y * size.width + target.x};
@@ -11727,6 +11742,7 @@
       return base + customOffcutTemplates.map(template=>'<option value="'+escapeHtml(template.id)+'"'+(String(template.id) === String(selected) ? ' selected' : '')+'>'+escapeHtml(template.name)+'</option>').join('');
     }
     function offcutTemplateAreasForSheet(sheet, sizeKey){
+      const gap = sheetGap(sizeKey);
       const areas = offcutRectsFromSheet(sheet, sizeKey).map(area=>({...area, source:'offcut'}));
       (sheet.placements || []).forEach((p, index)=>{
         const frame = Math.max(0, Number(p.frame || 50));
@@ -11734,7 +11750,7 @@
           ? panelCellCavities(p)
           : (p.shaker || p.framePocket || p.glassBeading ? placementCavities(p, frame, p.panels, p.panelSize) : []);
         cavities.forEach((cavity, cavityIndex)=>{
-          if(!(cavity.w > GAP * 2 && cavity.h > GAP * 2)) return;
+          if(!(cavity.w > gap * 2 && cavity.h > gap * 2)) return;
           areas.push({
             x:cavity.x,
             y:cavity.y,
@@ -11749,20 +11765,20 @@
           });
         });
       });
-      return areas.filter(area=>area.w > GAP * 2 + 10 && area.h > GAP * 2 + 10);
+      return areas.filter(area=>area.w > gap * 2 + 10 && area.h > gap * 2 + 10);
     }
-    function fitOffcutTemplateIntoArea(template, area, point=null){
-      const usableW = Math.max(0, area.w - GAP * 2);
-      const usableH = Math.max(0, area.h - GAP * 2);
+    function fitOffcutTemplateIntoArea(template, area, point=null, gap=GAP){
+      const usableW = Math.max(0, area.w - gap * 2);
+      const usableH = Math.max(0, area.h - gap * 2);
       const fitScale = Math.min(usableW / Math.max(1, template.bounds.width), usableH / Math.max(1, template.bounds.height));
       if(fitScale < 0.8) return null;
       const usedScale = Math.min(1, fitScale);
       const w = template.bounds.width * usedScale;
       const h = template.bounds.height * usedScale;
-      const minX = area.x + GAP;
-      const minY = area.y + GAP;
-      const maxX = area.x + area.w - GAP - w;
-      const maxY = area.y + area.h - GAP - h;
+      const minX = area.x + gap;
+      const minY = area.y + gap;
+      const maxX = area.x + area.w - gap - w;
+      const maxY = area.y + area.h - gap - h;
       const clamp = (value, min, max)=>Math.max(min, Math.min(max, value));
       const centerX = point ? point.x : area.x + area.w / 2;
       const centerY = point ? point.y : area.y + area.h / 2;
@@ -11797,16 +11813,17 @@
     }
     function offcutPlacementRespectsClearance(sheet, sizeKey, dest, existing=[], allowedArea=null){
       const size = SHEET_SIZES[sizeKey] || SHEET_SIZES['8x4'];
+      const gap = sheetGap(sizeKey);
       if(!dest || !(dest.w > 0 && dest.h > 0)) return false;
-      if(dest.x < GAP - 0.001 || dest.y < GAP - 0.001 || dest.x + dest.w > size.width - GAP + 0.001 || dest.y + dest.h > size.height - GAP + 0.001) return false;
+      if(dest.x < gap - 0.001 || dest.y < gap - 0.001 || dest.x + dest.w > size.width - gap + 0.001 || dest.y + dest.h > size.height - gap + 0.001) return false;
       if(allowedArea){
-        const minX = Number(allowedArea.x || 0) + GAP;
-        const minY = Number(allowedArea.y || 0) + GAP;
-        const maxX = Number(allowedArea.x || 0) + Number(allowedArea.w || 0) - GAP;
-        const maxY = Number(allowedArea.y || 0) + Number(allowedArea.h || 0) - GAP;
+        const minX = Number(allowedArea.x || 0) + gap;
+        const minY = Number(allowedArea.y || 0) + gap;
+        const maxX = Number(allowedArea.x || 0) + Number(allowedArea.w || 0) - gap;
+        const maxY = Number(allowedArea.y || 0) + Number(allowedArea.h || 0) - gap;
         if(dest.x < minX - 0.001 || dest.y < minY - 0.001 || dest.x + dest.w > maxX + 0.001 || dest.y + dest.h > maxY + 0.001) return false;
       }
-      const guarded = expandedRect(dest, GAP);
+      const guarded = expandedRect(dest, gap);
       const overlapsPart = (sheet.placements || []).some((p, index)=>{
         if(allowedArea && allowedArea.source === 'frame' && Number(allowedArea.placementIndex) === index) return false;
         return rectsOverlap(guarded, {x:Number(p.x || 0), y:Number(p.y || 0), w:Number(p.w || 0), h:Number(p.h || 0)});
@@ -11846,12 +11863,13 @@
     function fittedOffcutTemplatePlacement(sheet, sizeKey, templateId, point=null){
       const template = findCustomOffcutTemplate(templateId);
       if(!template) return null;
+      const gap = sheetGap(sizeKey);
       let areas = offcutTemplateAreasForSheet(sheet, sizeKey);
       if(point){
         areas = areas.filter(area=>point.x >= area.x && point.x <= area.x + area.w && point.y >= area.y && point.y <= area.y + area.h);
       }
       if(!areas.length) return null;
-      const fitted = areas.map(area=>fitOffcutTemplateIntoArea(template, area, point)).filter(Boolean).sort((a,b)=>b.area-a.area)[0];
+      const fitted = areas.map(area=>fitOffcutTemplateIntoArea(template, area, point, gap)).filter(Boolean).sort((a,b)=>b.area-a.area)[0];
       return fitted || null;
     }
     function renderOffcutTemplatePlacements(placements, scale){
@@ -12292,7 +12310,7 @@
           : [];
         const validExisting = validOffcutPlacementsForSheet(sheet, point.sizeKey, existing);
         if(!fitted || !offcutPlacementRespectsClearance(sheet, point.sizeKey, fitted.dest, validExisting, fitted.offcut)){
-          showMessage('This offcut template does not fit here with 7mm clearance.','error');
+          showMessage('This offcut template does not fit here with '+sheetGap(point.sizeKey)+'mm clearance.','error');
           return true;
         }
         recordHistory('placed offcut template');
@@ -12445,12 +12463,13 @@
         const size = SHEET_SIZES[targetPoint.sizeKey] || SHEET_SIZES['8x4'];
         const proposed = {x,y,w:Math.max(1, Number(dims.width || dims.w || part.width || 0)), h:Math.max(1, Number(dims.height || dims.h || part.height || 0))};
         const targetSheetIndex = Math.max(0, Math.round(Number(targetVisual.dataset.sheetIndex || 0)));
+        const gap = sheetGap(targetPoint.sizeKey);
         const existingOffcuts = Array.isArray(block.offcutPlacements) ? block.offcutPlacements.filter(item=>Number(item.sheetIndex || 0) === targetSheetIndex) : [];
         if(proposed.x + proposed.w > size.width + 0.001 || proposed.y + proposed.h > size.height + 0.001){
           showMessage('This move would leave the sheet. Move cancelled.', 'error');
           return false;
         }
-        const touchedOffcuts = existingOffcuts.filter(item=>rectsOverlap(expandedRect(proposed, GAP), {x:Number(item.x || 0), y:Number(item.y || 0), w:Number(item.w || 0), h:Number(item.h || 0)}));
+        const touchedOffcuts = existingOffcuts.filter(item=>rectsOverlap(expandedRect(proposed, gap), {x:Number(item.x || 0), y:Number(item.y || 0), w:Number(item.w || 0), h:Number(item.h || 0)}));
         recordHistory('moved part on sheet');
         if(touchedOffcuts.length && Array.isArray(block.offcutPlacements)){
           block.offcutPlacements = block.offcutPlacements.filter(item=>
@@ -13260,7 +13279,7 @@
           html += '<div class="nesting-toggle-row"><button type="button" class="pocket-title-toggle tiny-toggle roomNestingToggle'+(nestingOpen ? '' : ' off')+'">'+(nestingOpen ? 'Hide nesting' : 'Nesting')+'</button><span class="nesting-toggle-note">'+res.sheets.length+' sheet'+(res.sheets.length===1?'':'s')+'</span></div>';
         }
         if(nestingOpen){
-          html += '<div class="sheet-help-note">Sheets use 7mm outer margin and 7mm spacing. Select a sheet piece, then use 9 / 0 to rotate 90°.</div>';
+          html += '<div class="sheet-help-note">Sheets use 7mm outer margin and 7mm spacing; Jumbo uses 13mm. Select a sheet piece, then use 9 / 0 to rotate 90°.</div>';
           html += '<div class="room-nesting-sheets">';
           res.sheets.forEach((sheet, i)=>{
             sheet.sheetNumber = i+1;
