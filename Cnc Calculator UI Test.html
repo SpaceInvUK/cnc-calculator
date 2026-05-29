@@ -406,10 +406,15 @@
     .modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(17,24,39,.55);padding:18px;z-index:9999}
     .modal-backdrop.show{display:flex}
     .modal-card{width:min(720px,100%);max-height:min(88vh,860px);overflow:auto;background:#fff;border:1.5px solid var(--border);border-radius:8px;box-shadow:var(--shadow);padding:18px}
+    .dxf-template-modal-card{width:min(980px,100%)}
     .modal-title{font-size:18px;font-weight:900;color:#111}
     .modal-copy{margin-top:8px;font-size:13px;line-height:1.5;color:var(--muted)}
     .modal-list{margin-top:14px;padding:12px;border:1.5px solid var(--border);border-radius:8px;background:#f8fafc;display:grid;gap:6px}
     .modal-line{font-size:12px;line-height:1.45;color:#111}
+    .dxf-template-view-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+    .dxf-template-view-card{border:1px solid #dbe5f0;border-radius:8px;background:#fff;padding:10px;display:grid;gap:8px}
+    .dxf-template-view-card svg{width:100%;height:120px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc}
+    .dxf-template-view-meta{font-size:11px;line-height:1.35;color:#475569;font-weight:800}
     .modal-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
     @media (max-width:680px){.template-actions{grid-template-columns:1fr}}
     .btn-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:18px}
@@ -506,6 +511,9 @@
     .selected-editor-subgrid.tight{grid-template-columns:repeat(2,minmax(0,1fr))}
     .selectedFrameZoneControl.segmented{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));height:auto;gap:4px;border:0;background:transparent;padding:0}
     .selectedFrameZoneControl.segmented button{min-height:28px;padding:5px 6px;border:1px solid var(--border);border-radius:7px;white-space:normal;line-height:1.1;font-size:10px}
+    .door-frame-section .door-frame-editor-layout{display:grid;grid-template-columns:minmax(74px,.38fr) minmax(140px,1fr);gap:8px;align-items:stretch}
+    .door-frame-section .selectedFrameZoneControl.segmented{grid-template-columns:1fr;align-content:start}
+    .door-frame-section .selectedFrameZoneControl.segmented button{min-height:24px;font-size:9px;padding:4px 5px}
     .selected-hinge-options,.selected-pocket-options,.selected-panel-options{display:none}
     .selected-hinge-options.show,.selected-pocket-options.show,.selected-panel-options.show{display:grid}
     .selected-pocket-lines{margin-top:6px}
@@ -603,6 +611,8 @@
     .material-editor{display:grid;grid-template-columns:minmax(0,.92fr) minmax(360px,1.08fr);gap:12px;padding:12px;background:var(--block-tint,#fff)}
     .material-block[data-calc-mode="panel"] .material-editor{grid-template-columns:1fr}
     .material-block[data-calc-mode="panel"] .material-editor>.editor-section{grid-column:1/-1}
+    body.panel-mode .material-block[data-calc-mode="panel"] .takeoff-section{display:none}
+    body.panel-mode .material-block[data-calc-mode="panel"]:not(:first-of-type) .material-pricing-section{display:none}
     .material-block[data-calc-mode="panel"] .editor-section-grid{gap:9px}
     .material-block[data-calc-mode="panel"] .editor-section-grid>.field:has(.size){grid-column:auto}
     .material-block[data-calc-mode="panel"] .panel-wrap-row{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));align-items:end}
@@ -610,6 +620,10 @@
     .material-block[data-calc-mode="panel"] .panel-shaker-note,
     .material-block[data-calc-mode="panel"] .frameHint{grid-column:1/-1}
     .material-block[data-calc-mode="panel"] .panel-setup-grid{display:grid;grid-template-columns:max-content max-content minmax(150px,max-content) 1fr;align-items:end}
+    .material-block[data-calc-mode="panel"] .panel-setup-grid>.panel-side-grid.panel-only{display:none!important}
+    .panel-rule-size-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,minmax(92px,1fr));gap:8px;align-items:end}
+    .panel-rule-size-grid .field label{font-size:9.5px}
+    .panel-rule-size-grid input{min-width:0}
     .material-block[data-calc-mode="panel"] .wall-setup-grid{grid-template-columns:minmax(95px,.6fr) minmax(140px,.8fr) minmax(120px,.75fr) minmax(120px,.75fr) 1fr}
     .material-block[data-calc-mode="panel"] .wall-setup-title{grid-column:1/-1}
     .material-block[data-calc-mode="panel"] .walls-list{grid-column:1/-1}
@@ -751,6 +765,7 @@
                 <div class="command-menu-panel">
                   <button type="button" id="toolbarUndoBtn">Undo Ctrl+Z</button>
                   <button type="button" id="toolbarRedoBtn">Redo Ctrl+Y</button>
+                  <button type="button" id="editMaterialPricingBtn">Material Pricing</button>
                 </div>
               </details>
               <details class="command-menu">
@@ -759,12 +774,14 @@
                   <button class="command-hide-values" id="hideValuesBtn" type="button" aria-pressed="false">Hide Values</button>
                   <button class="active" id="showBackPocketingBtn" type="button" aria-pressed="true">Back Side Pocketing</button>
                   <button type="button" id="showLabelsSettingsBtn">Label Settings</button>
+                  <button type="button" id="viewDxfTemplatesBtn">DXF Templates</button>
                 </div>
               </details>
               <details class="command-menu">
                 <summary>Print</summary>
                 <div class="command-menu-panel">
                   <button type="button" data-command-click="printBtn">Print / Save PDF</button>
+                  <button type="button" id="printPanelsBtn">Print Panels Only</button>
                   <button type="button" data-command-click="printLabelsBtn">Print CNC Labels</button>
                   <button type="button" data-command-click="printSprayLabelsBtn">Print Spray Labels</button>
                   <button type="button" data-command-click="printLabelTestBtn">Print Label Test</button>
@@ -797,7 +814,7 @@
               <div class="form-grid">
                 <div class="field"><label for="templateName">New Door Type Name</label><input id="templateName" type="text" placeholder="Example: Slim Shaker"></div>
                 <div class="field"><label for="templateFile">Template DXF</label><input id="templateFile" type="file" accept=".dxf,application/dxf,text/plain"></div>
-                <div class="field"><label for="templateConstruction">Template Build Rule</label><select id="templateConstruction"><option value="single">Single DXF Piece</option><option value="flushback-insert">Frame + Insert (same rule as Flushback)</option></select></div>
+                <div class="field"><label for="templateConstruction">Template Build Rule</label><select id="templateConstruction"><option value="profile">Profile Section</option><option value="single">Single DXF Piece</option><option value="flushback-insert">Frame + Insert (same rule as Flushback)</option></select></div>
               </div>
               <div class="template-actions">
                 <button class="btn-secondary" id="addTemplateBtn" type="button">Add Door Type</button>
@@ -1136,6 +1153,16 @@
       </div>
     </div>
   </div>
+  <div id="dxfTemplatesModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card dxf-template-modal-card" role="dialog" aria-modal="true" aria-labelledby="dxfTemplatesTitle">
+      <div class="modal-title" id="dxfTemplatesTitle">DXF Templates</div>
+      <div class="modal-copy">Installed door profiles and offcut templates.</div>
+      <div id="dxfTemplatesViewList" class="modal-list dxf-template-view-list"></div>
+      <div class="modal-actions">
+        <button class="btn-outline" id="closeDxfTemplatesViewBtn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
 
   <template id="materialTemplate">
     <div class="material-block">
@@ -1151,7 +1178,7 @@
       </div>
 
       <div class="block-editor material-editor">
-        <div class="editor-section wide">
+        <div class="editor-section wide takeoff-section">
           <div class="editor-section-head"><div class="editor-section-title">Takeoff</div></div>
           <div class="smart-import-box">
             <div class="smart-import-head">
@@ -1169,7 +1196,7 @@
           </div>
         </div>
 
-        <div class="editor-section">
+        <div class="editor-section material-pricing-section">
           <div class="editor-section-head"><div class="editor-section-title">Material & Pricing</div></div>
           <div class="editor-section-grid">
             <div class="field"><label>Material</label><select class="material"></select></div>
@@ -1214,6 +1241,14 @@
               <div class="field inline-control"><button class="pocket-title-toggle panelSideRulesControl off" type="button" aria-pressed="false">Side Rules</button></div>
               <div class="field inline-control panel-skirting-options"><label>Skirting Height</label><input class="panelSkirtingHeight" type="number" min="0" step="1" value="225"></div>
               <div class="panel-shaker-note">Shaker count is controlled per wall or per panel. Auto starts around 350mm and keeps main shakers equal; edge shakers beside wall, door, window, object, corner, or column may adjust.</div>
+              <div class="panel-rule-size-grid">
+                <div class="field"><label>Normal</label><input class="panelRuleNormalSize" type="number" min="0" step="1"></div>
+                <div class="field"><label>Joint</label><input class="panelRuleJointSize" type="number" min="0" step="1"></div>
+                <div class="field"><label>Vertical Joint</label><input class="panelRuleVerticalJointSize" type="number" min="0" step="1"></div>
+                <div class="field"><label>Door</label><input class="panelRuleDoorSize" type="number" min="0" step="1"></div>
+                <div class="field"><label>Corner</label><input class="panelRuleCornerSize" type="number" min="0" step="1"></div>
+                <div class="field"><label>Column</label><input class="panelRuleColumnSize" type="number" min="0" step="1"></div>
+              </div>
               <div class="panel-side-grid panel-only">
                 <div class="panel-side-title">Side Rules</div>
                 <div class="field"><label>Top Side</label><select class="panelSideTop"><option value="normal">Normal</option><option value="joint">Joint</option><option value="jointVertical">Vertical Joint</option><option value="door">Door</option><option value="corner">Corner</option><option value="column">Column</option></select></div>
@@ -1365,6 +1400,7 @@
     const CUSTOM_DOOR_PREFIX = 'custom:';
     const TEMPLATE_STORAGE_KEY = 'fastCncDoorTemplatesV1';
     const OFFCUT_TEMPLATE_STORAGE_KEY = 'fastCncOffcutTemplatesV1';
+    const MATERIAL_PRICE_STORAGE_KEY = 'fastCncMaterialPricesV1';
     const QUOTE_FILE_VERSION = 1;
     const VAT_RATE = 20;
     const POCKET_LINE_CONFIGS = [
@@ -1393,6 +1429,7 @@
     ];
     let customDoorTemplates = loadCustomDoorTemplates();
     let customOffcutTemplates = loadCustomOffcutTemplates();
+    let materialPriceOverrides = loadMaterialPriceOverrides();
 
     function deepCopy(value){
       return JSON.parse(JSON.stringify(value));
@@ -1593,6 +1630,7 @@
         const saved = JSON.parse(safeLocalStorageGet(TEMPLATE_STORAGE_KEY, '[]') || '[]');
         return Array.isArray(saved) ? saved.filter(t=>t && t.id && t.name && t.bounds && Array.isArray(t.entities)).map(t=>({
           ...t,
+          profileRule:t.profileRule || inferProfileRuleFromTemplate(t),
           construction:t.construction || 'single'
         })) : [];
       } catch(_){
@@ -1613,6 +1651,23 @@
     function saveCustomOffcutTemplates(){
       safeLocalStorageSet(OFFCUT_TEMPLATE_STORAGE_KEY, JSON.stringify(customOffcutTemplates));
     }
+    function materialPriceKey(material, thickness, size){
+      return [material || '', thickness || '', size || ''].map(value=>String(value).trim()).join('||');
+    }
+    function loadMaterialPriceOverrides(){
+      try{
+        const saved = JSON.parse(safeLocalStorageGet(MATERIAL_PRICE_STORAGE_KEY, '{}') || '{}');
+        return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+      }catch(_){
+        return {};
+      }
+    }
+    function saveMaterialPriceOverride(material, thickness, size, value){
+      const amount = Number(value);
+      if(!Number.isFinite(amount) || amount < 0) return;
+      materialPriceOverrides[materialPriceKey(material, thickness, size)] = amount;
+      safeLocalStorageSet(MATERIAL_PRICE_STORAGE_KEY, JSON.stringify(materialPriceOverrides));
+    }
     function sanitizeTemplateName(value){
       return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 42);
     }
@@ -1632,6 +1687,108 @@
     function findCustomDoorTemplate(type){
       const id = isCustomDoorType(type) ? customTemplateIdFromValue(type) : type;
       return customDoorTemplates.find(t=>t.id === id) || null;
+    }
+    function isProfileDoorTemplate(type){
+      const template = findCustomDoorTemplate(type);
+      return !!template && (template.construction === 'profile' || template.profileRule?.type === 'profile');
+    }
+    function profileTemplateRule(type){
+      const template = findCustomDoorTemplate(type);
+      return template?.profileRule || null;
+    }
+    function inferProfileRuleFromTemplate(template){
+      if(!template || !Array.isArray(template.entities)) return null;
+      const rects = template.entities.map(entity=>dxfEntityRect(entity, 0.35)).filter(Boolean);
+      const main = rects
+        .filter(rect=>rect.w > 0 && rect.h > 0)
+        .sort((a,b)=>(b.w*b.h)-(a.w*a.h))[0];
+      if(!main) return null;
+      const verticals = rects.filter(rect=>rect.w < 0.5 && rect.h > 0).map(rect=>rect.h);
+      const offsets = rects.filter(rect=>rect.w > 0 && rect.h > 0 && rect !== main).map(rect=>Math.max(rect.w, rect.h)).filter(v=>v > 0);
+      const width = Math.round(main.w * 100) / 100;
+      const thickness = Math.round(main.h * 100) / 100;
+      const offset = offsets.includes(7) ? 7 : (verticals.includes(7) ? 7 : 7);
+      return {
+        type:'profile',
+        frame:width || 70,
+        backFrame:width || 70,
+        materialThickness:thickness || 22,
+        innerOffset:offset,
+        layer:(template.layers && template.layers[0]) || 'CNC-TOP_SECTION_FOR_STANDA'
+      };
+    }
+    function profileTemplateMeta(template){
+      const rule = template?.profileRule || inferProfileRuleFromTemplate(template);
+      if(!rule) return '';
+      return 'Profile ' + formatMm(rule.frame) + 'mm frame, ' + formatMm(rule.materialThickness) + 'mm material, ' + formatMm(rule.innerOffset) + 'mm inner offset';
+    }
+    function applyProfileTemplateDefaults(block, type){
+      const rule = profileTemplateRule(type);
+      if(!block || !rule) return false;
+      let changed = false;
+      const set = (key, value)=>{
+        if(String(block[key]) !== String(value)){
+          block[key] = value;
+          changed = true;
+        }
+      };
+      set('thickness', Math.round(Number(rule.materialThickness || 22)) + 'mm');
+      set('frameSize', Math.max(1, Number(rule.frame || 70)));
+      set('backFrameSize', Math.max(1, Number(rule.backFrame || rule.frame || 70)));
+      set('backFrameManualOverride', false);
+      set('pocketingEnabled', 'Yes');
+      set('pocketSideMode', 'front-back');
+      set('pocketLinePocketEnabled', 'Yes');
+      set('pocketLinePocketOffset', Math.max(0, Number(rule.innerOffset || 7)));
+      set('pocketLine6Enabled', 'No');
+      set('pocketLine2Enabled', 'No');
+      const cost = suggestedCost(block.material, block.thickness, block.size);
+      if(String(block.materialCost) !== String(cost)){
+        block.materialCost = cost;
+        changed = true;
+      }
+      if(changed) lastCalculation = null;
+      return changed;
+    }
+    function syncPanelMaterialPricing(source){
+      if(!source || !isPanelBlock(source)) return;
+      blocks.filter(block=>isPanelBlock(block) && block !== source).forEach(block=>{
+        block.material = source.material;
+        block.thickness = source.thickness;
+        block.size = source.size;
+        block.materialCost = source.materialCost;
+        block.cncServiceCost = source.cncServiceCost;
+        block.quantityDiscountPct = source.quantityDiscountPct;
+        block.sheetPriceOverrides = deepCopy(source.sheetPriceOverrides || []);
+        block.sheetChargeOverrides = deepCopy(source.sheetChargeOverrides || []);
+        block.sheetCncOverrides = deepCopy(source.sheetCncOverrides || []);
+      });
+      lastCalculation = null;
+    }
+    const PANEL_RULE_SIZE_KEYS = {
+      normal:'panelRuleNormalSize',
+      joint:'panelRuleJointSize',
+      jointVertical:'panelRuleVerticalJointSize',
+      door:'panelRuleDoorSize',
+      corner:'panelRuleCornerSize',
+      column:'panelRuleColumnSize'
+    };
+    function defaultPanelRuleSize(rule, frame, thickness, doorAllowance){
+      const base = Math.max(0, Number(frame || 0));
+      const normalized = normalizePanelSideRule(rule);
+      if(normalized === 'joint') return base / 2;
+      if(normalized === 'jointVertical') return 0;
+      if(normalized === 'door') return Math.max(0, Number(doorAllowance || 0));
+      if(normalized === 'corner' || normalized === 'column') return base + Math.max(0, Number(thickness || 0));
+      return base;
+    }
+    function panelRuleSizeOverride(rule, frame, thickness, doorAllowance){
+      const normalized = normalizePanelSideRule(rule);
+      const key = PANEL_RULE_SIZE_KEYS[normalized];
+      const panelBlock = blocks.find(block=>isPanelBlock(block));
+      const value = key && panelBlock ? panelBlock[key] : '';
+      if(value !== '' && value != null && Number.isFinite(Number(value))) return Math.max(0, Number(value));
+      return defaultPanelRuleSize(normalized, frame, thickness, doorAllowance);
     }
     function populateDoorTypeSelect(select, value){
       if(!select) return;
@@ -1704,7 +1861,7 @@
         const item = document.createElement('div');
         item.className = 'template-item';
         const layers = (template.layers || []).join(', ') || '0';
-        const buildRule = template.construction === 'flushback-insert' ? 'Frame + insert' : 'Single piece';
+        const buildRule = template.construction === 'profile' ? (profileTemplateMeta(template) || 'Profile section') : (template.construction === 'flushback-insert' ? 'Frame + insert' : 'Single piece');
         item.innerHTML = '<div><div class="template-name">'+escapeHtml(template.name)+'</div><div class="template-meta">'+template.entities.length+' entities &bull; Layers: '+escapeHtml(layers)+' &bull; '+escapeHtml(buildRule)+'</div></div><button class="template-remove" type="button" aria-label="Remove '+escapeHtml(template.name)+'">&times;</button>';
         item.querySelector('button').addEventListener('click', ()=>{
           if(!window.confirm('Remove "'+template.name+'" from Door Type templates?')) return;
@@ -1946,11 +2103,12 @@
       try {
         const parsed = parseDxfDoorTemplate(await file.text());
         const id = 'tpl_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
-        customDoorTemplates.push({id, name, createdAt:new Date().toISOString(), construction:constructionSelect.value || 'single', ...parsed});
+        const construction = constructionSelect.value || 'profile';
+        customDoorTemplates.push({id, name, createdAt:new Date().toISOString(), construction, ...parsed, profileRule:construction === 'profile' ? inferProfileRuleFromTemplate(parsed) : null});
         saveCustomDoorTemplates();
         nameInput.value = '';
         fileInput.value = '';
-        constructionSelect.value = 'single';
+        constructionSelect.value = 'profile';
         renderTemplateList();
         lastCalculation = null;
         requestRender();
@@ -2032,6 +2190,12 @@
         panelSideRight:'normal',
         panelSideBottom:'normal',
         panelSideLeft:'normal',
+        panelRuleNormalSize:'',
+        panelRuleJointSize:'',
+        panelRuleVerticalJointSize:'',
+        panelRuleDoorSize:'',
+        panelRuleCornerSize:'',
+        panelRuleColumnSize:'',
         reededDirection:'vertical',
         reededSpacing:12.5,
         bidingEnabled:'No',
@@ -3055,6 +3219,14 @@
           roundCorners:String(roundValue) === 'Yes'
         };
       });
+    }
+    function profilePocketLineSettings(rule){
+      return POCKET_LINE_CONFIGS.map(config=>({
+        ...config,
+        enabled:config.key === 'pocketLinePocket',
+        offset:config.key === 'pocketLinePocket' ? Math.max(0, Number(rule?.innerOffset || 7)) : 0,
+        roundCorners:false
+      }));
     }
     function normalizeReededDirection(value){
       return String(value || 'vertical') === 'horizontal' ? 'horizontal' : 'vertical';
@@ -6101,6 +6273,8 @@
       return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/,'');
     }
     function suggestedCost(material, thickness, size){
+      const override = materialPriceOverrides[materialPriceKey(material, thickness, size)];
+      if(Number.isFinite(Number(override))) return formatPriceValue(override);
       const baseSize = SHEET_SIZES['8x4'];
       const referenceSize = SHEET_SIZES['10x4'];
       const chosenSize = SHEET_SIZES[size] || baseSize;
@@ -6155,6 +6329,50 @@
       const size = SHEET_SIZES[block?.size] || SHEET_SIZES['8x4'];
       const usable = Math.max(1, size.width - sheetGap(block?.size) * 2);
       return Math.max(1, Math.ceil(Math.max(0, Number(width || 0)) / usable));
+    }
+    function templatePreviewSvg(template){
+      if(!template) return '';
+      const pad = 10;
+      const w = Math.max(1, Number(template.bounds?.width || 1));
+      const h = Math.max(1, Number(template.bounds?.height || 1));
+      const scale = Math.min(210 / w, 100 / h);
+      const dest = {x:pad / scale, y:pad / scale, w, h};
+      const vbW = w + pad * 2 / scale;
+      const vbH = h + pad * 2 / scale;
+      return '<svg viewBox="0 0 '+vbW+' '+vbH+'" xmlns="http://www.w3.org/2000/svg">'+renderCustomTemplateSvg(template, dest, 1)+'</svg>';
+    }
+    function showDxfTemplatesView(){
+      const modal = document.getElementById('dxfTemplatesModal');
+      const list = document.getElementById('dxfTemplatesViewList');
+      if(!modal || !list) return;
+      const cards = [];
+      customDoorTemplates.forEach(template=>{
+        const meta = template.construction === 'profile' ? (profileTemplateMeta(template) || 'Profile section') : (template.construction === 'flushback-insert' ? 'Frame + insert' : 'Single piece');
+        cards.push('<div class="dxf-template-view-card"><div class="template-name">'+escapeHtml(template.name)+'</div>'+templatePreviewSvg(template)+'<div class="dxf-template-view-meta">'+escapeHtml(meta)+'<br>Layers: '+escapeHtml((template.layers || []).join(', ') || '0')+'</div></div>');
+      });
+      customOffcutTemplates.forEach(template=>{
+        cards.push('<div class="dxf-template-view-card"><div class="template-name">'+escapeHtml(template.name)+'</div>'+templatePreviewSvg(template)+'<div class="dxf-template-view-meta">Offcut template<br>'+Math.round(template.bounds.width)+' x '+Math.round(template.bounds.height)+'mm</div></div>');
+      });
+      list.innerHTML = cards.join('') || '<div class="modal-line">No DXF templates installed.</div>';
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+    function closeDxfTemplatesView(){
+      const modal = document.getElementById('dxfTemplatesModal');
+      if(!modal) return;
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    function focusMaterialPricing(){
+      if(activeCalculatorMode === 'panel') showTopPanel('panel');
+      const block = blocks.find(b=>calcModeForBlock(b) === activeCalculatorMode);
+      if(block) setOpenMaterialBlock(block);
+      requestRender();
+      setTimeout(()=>{
+        const target = document.querySelector('.material-block[data-calc-mode="'+activeCalculatorMode+'"] .material-pricing-section');
+        target?.scrollIntoView({block:'center', behavior:'smooth'});
+        target?.querySelector('.materialCost')?.focus({preventScroll:true});
+      }, 60);
     }
     function wallSectionCountForPart(block, part){
       const local = part?.wallSections === '' || part?.wallSections == null ? '' : Number(part.wallSections);
@@ -7855,15 +8073,16 @@
           }
           const beadingPart = isBeadingPart(p) || block.sourceRole === 'biding';
           const doorType = effectivePartDoorType(p, block);
+          const profileRule = profileTemplateRule(doorType);
           const usesPartDoorFrame = doorType !== 'no';
           const glassBeading = !beadingPart && usesPartDoorFrame && (block.bidingEnabled === 'Yes' || textTriggersBiding(p.text));
           const beadingFrame = Math.max(0.5, Number(p.beadingFrame || p.frame || block.bidingSize || defaultBidingSize()));
           const beadingClearance = Math.max(0, Number(p.beadingClearance ?? block.bidingClearance ?? 0.15));
           const beadingGuideOffset = Math.max(beadingFrame, Number(p.beadingGuideOffset ?? (beadingFrame + beadingClearance)));
           const beadingRoundCorners = bidingRoundCornersValue(p.beadingRoundCorners ?? block.bidingRoundCorners ?? 'Yes') === 'Yes';
-          const frontFrame = partPocketFrameForFace(p, block, 'front');
-          const backFrame = partPocketFrameForFace(p, block, 'back');
-          const partPocketOn = partPocketingValue(p, block) === 'Yes';
+          const frontFrame = profileRule ? Math.max(1, Number(profileRule.frame || 70)) : partPocketFrameForFace(p, block, 'front');
+          const backFrame = profileRule ? Math.max(1, Number(profileRule.backFrame || profileRule.frame || 70)) : partPocketFrameForFace(p, block, 'back');
+          const partPocketOn = profileRule ? true : partPocketingValue(p, block) === 'Yes';
           const pocketFrame = partPocketOn && doorType === 'no';
           const usesDoorFrame = usesPartDoorFrame || pocketFrame;
           const assemblyGroup = p.assemblyGroup || ('B' + (p.parentBlockId || block.id) + '-P' + (p.parentPartIndex ?? sourcePartIndex) + '-I' + i);
@@ -7891,9 +8110,9 @@
             frameMiddle:p.frameMiddle ?? '',
             frameEditZone:normalizeFrameZone(p.frameEditZone || 'left'),
             framePocket:beadingPart ? false : (partPocketOn && doorType === 'no'),
-            pocketSideMode:partPocketSideMode(p, block),
+            pocketSideMode:profileRule ? 'front-back' : partPocketSideMode(p, block),
             pocketRoundCorners:partPocketRoundCornersValue(p, block) === 'Yes',
-            pocketLines:beadingPart ? [] : pocketLineSettingsForPart(p, block),
+            pocketLines:beadingPart ? [] : (profileRule ? profilePocketLineSettings(profileRule) : pocketLineSettingsForPart(p, block)),
             beadingFrame:(beadingPart || glassBeading) ? beadingFrame : undefined,
             beadingClearance:(beadingPart || glassBeading) ? beadingClearance : undefined,
             beadingGuideOffset:(beadingPart || glassBeading) ? beadingGuideOffset : undefined,
@@ -7902,6 +8121,8 @@
             shapeType:normalizePartShape(p.shapeType),
             leftHeight:p.leftHeight === '' || p.leftHeight == null ? '' : Math.max(0, Number(p.leftHeight || 0)),
             rightHeight:p.rightHeight === '' || p.rightHeight == null ? '' : Math.max(0, Number(p.rightHeight || 0)),
+            profileRule:profileRule ? deepCopy(profileRule) : null,
+            materialThicknessMm:profileRule ? Math.max(1, Number(profileRule.materialThickness || 22)) : parseThicknessMm(block.thickness),
             reededDirection:normalizeReededDirection(block.reededDirection),
             reededSpacing:normalizeReededSpacing(block.reededSpacing),
             panels:Math.max(1, Number(p.panels||1)),
@@ -8732,6 +8953,7 @@
         bindSegmentedControl(node.querySelector('.globalShakerControl'), block.globalShakerType, value=>{
           doorTypeSelect.value = value;
           setBlockValue(block, 'globalShakerType', value);
+          applyProfileTemplateDefaults(block, value);
           block.parts.forEach(p=>p.shaker = block.globalShakerType==='no' ? 'No' : 'Yes');
           syncReededControls();
           requestRender();
@@ -8805,6 +9027,18 @@
           wallWindowBottomInput.value = block.wallWindowBottom === '' || block.wallWindowBottom == null ? '' : Number(block.wallWindowBottom || 0);
           panelDoorAllowanceInput.value = Number(block.panelDoorAllowance || 175);
           if(panelWindowSillHeightInput) panelWindowSillHeightInput.value = Number(block.panelWindowSillHeight ?? 22);
+          const ruleThickness = parseThicknessMm(block.thickness);
+          [
+            ['panelRuleNormalSize','normal'],
+            ['panelRuleJointSize','joint'],
+            ['panelRuleVerticalJointSize','jointVertical'],
+            ['panelRuleDoorSize','door'],
+            ['panelRuleCornerSize','corner'],
+            ['panelRuleColumnSize','column']
+          ].forEach(([key, rule])=>{
+            const input = node.querySelector('.' + key);
+            if(input) input.value = block[key] === '' || block[key] == null ? formatMm(defaultPanelRuleSize(rule, block.frameSize, ruleThickness, block.panelDoorAllowance)) : block[key];
+          });
           Object.entries(panelSideSelects).forEach(([side, select])=>{
             const key = 'panelSide' + side.charAt(0).toUpperCase() + side.slice(1);
             select.value = normalizePanelSideRule(block[key]);
@@ -9018,6 +9252,12 @@
           });
         }
         if(panelMode){
+          ['panelRuleNormalSize','panelRuleJointSize','panelRuleVerticalJointSize','panelRuleDoorSize','panelRuleCornerSize','panelRuleColumnSize'].forEach(key=>{
+            node.querySelector('.' + key)?.addEventListener('input', e=>{
+              setBlockValue(block, key, e.target.value === '' ? '' : Math.max(0, Number(e.target.value || 0)));
+              requestRender();
+            });
+          });
           bindToggleButton(panelSideRulesControl, block.panelSideRulesOpen || 'No', value=>{
             setBlockValue(block, 'panelSideRulesOpen', value);
             syncPanelControls();
@@ -9549,8 +9789,10 @@
             });
           } else {
             row.querySelector('.partDoorType').addEventListener('change', e=>{
-              setPartValue(block, pIdx, 'doorType', normalizeDoorTypeValue(e.target.value, block.globalShakerType));
+              const nextType = normalizeDoorTypeValue(e.target.value, block.globalShakerType);
+              setPartValue(block, pIdx, 'doorType', nextType);
               setPartValue(block, pIdx, 'shaker', e.target.value === 'no' ? 'No' : 'Yes');
+              applyProfileTemplateDefaults(block, nextType);
               requestRender();
             });
           }
@@ -9668,6 +9910,7 @@
           block.sheetChargeOverrides = [];
           block.sheetCncOverrides = [];
           block.cncServiceCost=suggestedCncServiceCost(block);
+          syncPanelMaterialPricing(block);
           requestRender();
         });
         thicknessSel.addEventListener('change', e=>{
@@ -9677,6 +9920,7 @@
           block.sheetChargeOverrides = [];
           block.sheetCncOverrides = [];
           block.cncServiceCost=suggestedCncServiceCost(block);
+          syncPanelMaterialPricing(block);
           requestRender();
         });
         node.querySelector('.size').addEventListener('change', e=>{
@@ -9687,25 +9931,31 @@
           block.sheetCncOverrides = [];
           materialCostInput.value = block.materialCost;
           materialCostInput.classList.remove('check-price');
+          syncPanelMaterialPricing(block);
           updatePreview();
         });
         materialCostInput.addEventListener('input', e=>{
           setBlockValue(block, 'materialCost', e.target.value);
+          saveMaterialPriceOverride(block.material, block.thickness, block.size, e.target.value);
           block.sheetPriceOverrides = [];
           e.target.classList.remove('check-price');
+          syncPanelMaterialPricing(block);
           updateSheetPriceEditor();
         });
         cncServiceInput.addEventListener('input', e=>{
           setBlockValue(block, 'cncServiceCost', e.target.value);
           block.sheetCncOverrides = [];
+          syncPanelMaterialPricing(block);
           updateSheetPriceEditor();
         });
         quantityDiscountInput?.addEventListener('input', e=>{
           const value = Math.min(100, Math.max(0, Number(e.target.value || 0)));
           setBlockValue(block, 'quantityDiscountPct', value);
+          syncPanelMaterialPricing(block);
         });
         doorTypeSelect.addEventListener('change', e=>{
           setBlockValue(block, 'globalShakerType', e.target.value);
+          applyProfileTemplateDefaults(block, e.target.value);
           block.parts.forEach(p=>p.shaker = block.globalShakerType==='no' ? 'No' : 'Yes');
           setBlockValue(block, 'flatFrameToggle', block.globalShakerType === 'no' && block.pocketingEnabled === 'Yes' ? 'Yes' : 'No');
           flatFrameSelect.value = block.flatFrameToggle;
@@ -10010,13 +10260,7 @@
       return String(p?.panelMode || p?.calcMode || '') === 'panel';
     }
     function panelSideFrameValue(rule, frame, thickness, doorAllowance){
-      const normalized = normalizePanelSideRule(rule);
-      const base = Math.max(0, Number(frame || 0));
-      if(normalized === 'joint') return base / 2;
-      if(normalized === 'jointVertical') return 0;
-      if(normalized === 'door') return Math.max(0, Number(doorAllowance || 175));
-      if(normalized === 'corner' || normalized === 'column') return base + Math.max(0, Number(thickness || 0));
-      return base;
+      return panelRuleSizeOverride(rule, frame, thickness, doorAllowance);
     }
     function panelSettingsForPlacement(p){
       const frame = Math.max(0, Number(p?.frame || 80));
@@ -10531,7 +10775,7 @@
         const frame = Number(part.frame || block.frameSize || 50);
         const backFrame = Number(part.backFrame || block.backFrameSize || frame);
         const angle = normalizeRotationAngle(best.rotationAngle ?? (best.rotated ? 90 : 0));
-        const placed = {...best, sizeKey:sheet.sizeKey, sheetSizeKey:sheet.sizeKey, rotationAngle:angle, id:part.id, origW:part.width, origH:part.height, shaker:part.shaker, shakerType:part.shakerType, insertKind:part.insertKind, glassBeading:!!part.glassBeading, assemblyGroup:part.assemblyGroup || '', assemblyRole:part.assemblyRole || '', assemblyPanelIndex:part.assemblyPanelIndex ?? '', assemblyPanelCount:part.assemblyPanelCount ?? '', parentBlockId:part.parentBlockId ?? '', parentPartIndex:part.parentPartIndex ?? '', beadingFrame:part.beadingFrame, beadingClearance:part.beadingClearance, beadingGuideOffset:part.beadingGuideOffset, beadingRoundCorners:beadingRoundCornersForPart(part), panels:part.panels, panelSize:part.panelSize || '', panelMode:part.panelMode || '', calcMode:part.calcMode || '', panelDirection:part.panelDirection || '', panelRows:part.panelRows ?? '', panelColumns:part.panelColumns ?? '', shakerColumnWidths:Array.isArray(part.shakerColumnWidths) ? deepCopy(part.shakerColumnWidths) : [], shakerRowHeights:Array.isArray(part.shakerRowHeights) ? deepCopy(part.shakerRowHeights) : [], panelVerticalStepFrame:part.panelVerticalStepFrame === true, panelVerticalStepHeight:part.panelVerticalStepHeight ?? '', panelVerticalStepLeft:part.panelVerticalStepLeft === true, panelVerticalStepRight:part.panelVerticalStepRight === true, panelVerticalStepInsetLeft:part.panelVerticalStepInsetLeft ?? 0, panelVerticalStepInsetRight:part.panelVerticalStepInsetRight ?? 0, panelUpperStepFrame:part.panelUpperStepFrame === true, panelUpperStepLowerHeight:part.panelUpperStepLowerHeight ?? '', panelUpperStepLeft:part.panelUpperStepLeft === true, panelUpperStepRight:part.panelUpperStepRight === true, panelUpperStepInsetLeft:part.panelUpperStepInsetLeft ?? 0, panelUpperStepInsetRight:part.panelUpperStepInsetRight ?? 0, panelUpperStepBaseOffsetLeft:part.panelUpperStepBaseOffsetLeft ?? 0, panelUpperStepBaseWidth:part.panelUpperStepBaseWidth ?? part.width, panelIrregularShape:part.panelIrregularShape || 'Yes', panelSkirtingEnabled:part.panelSkirtingEnabled || 'No', panelSkirtingHeight:part.panelSkirtingHeight ?? '', panelDoorAllowance:part.panelDoorAllowance ?? '', panelSideTop:part.panelSideTop || 'normal', panelSideRight:part.panelSideRight || 'normal', panelSideBottom:part.panelSideBottom || 'normal', panelSideLeft:part.panelSideLeft || 'normal', wallSectionIndex:part.wallSectionIndex ?? '', wallSectionCount:part.wallSectionCount ?? '', wallXStart:part.wallXStart ?? 0, wallTotalWidth:part.wallTotalWidth ?? part.width, wallDoorEnabled:part.wallDoorEnabled || 'No', wallDoorWidth:part.wallDoorWidth ?? '', wallDoorHeight:part.wallDoorHeight ?? '', wallDoorX:part.wallDoorX ?? '', wallWindowEnabled:part.wallWindowEnabled || 'No', wallWindowWidth:part.wallWindowWidth ?? '', wallWindowHeight:part.wallWindowHeight ?? '', wallWindowX:part.wallWindowX ?? '', wallWindowBottom:part.wallWindowBottom ?? '', wallOpenings:Array.isArray(part.wallOpenings) ? deepCopy(part.wallOpenings) : [], materialThicknessMm:part.materialThicknessMm || parseThicknessMm(block.thickness), shapePoints:Array.isArray(part.shapePoints) ? deepCopy(part.shapePoints) : undefined, shapeType:normalizePartShape(part.shapeType), leftHeight:part.leftHeight, rightHeight:part.rightHeight, frame, backFrame, frameTop:part.frameTop ?? '', frameRight:part.frameRight ?? '', frameBottom:part.frameBottom ?? '', frameLeft:part.frameLeft ?? '', frameMiddle:part.frameMiddle ?? '', frameEditZone:normalizeFrameZone(part.frameEditZone || 'left'), framePocket:!!part.framePocket, pocketSideMode:part.pocketSideMode || 'front', pocketRoundCorners:part.pocketRoundCorners === true || part.pocketRoundCorners === 'Yes', pocketLines:Array.isArray(part.pocketLines) ? deepCopy(part.pocketLines) : pocketLineSettingsForPart(part, block), reededDirection:normalizeReededDirection(part.reededDirection || block.reededDirection), reededSpacing:normalizeReededSpacing(part.reededSpacing || block.reededSpacing), hinges:part.hinges, hingeSide:normalizeHingeSide(part.hingeSide), hingeOffset:part.hingeOffset, hingeSpacing:part.hingeSpacing || '', sprayFinish:part.sprayFinish || 'No', spraySides:normalizeSpraySides(part.spraySides), grainDirection:partGrainDirectionValue(part, block), text:part.text||'', sourceBlockId:part.sourceBlockId, sourcePartIndex:part.sourcePartIndex, sourceInstanceIndex:part.sourceInstanceIndex};
+        const placed = {...best, sizeKey:sheet.sizeKey, sheetSizeKey:sheet.sizeKey, rotationAngle:angle, id:part.id, origW:part.width, origH:part.height, shaker:part.shaker, shakerType:part.shakerType, insertKind:part.insertKind, glassBeading:!!part.glassBeading, assemblyGroup:part.assemblyGroup || '', assemblyRole:part.assemblyRole || '', assemblyPanelIndex:part.assemblyPanelIndex ?? '', assemblyPanelCount:part.assemblyPanelCount ?? '', parentBlockId:part.parentBlockId ?? '', parentPartIndex:part.parentPartIndex ?? '', beadingFrame:part.beadingFrame, beadingClearance:part.beadingClearance, beadingGuideOffset:part.beadingGuideOffset, beadingRoundCorners:beadingRoundCornersForPart(part), panels:part.panels, panelSize:part.panelSize || '', panelMode:part.panelMode || '', calcMode:part.calcMode || '', panelDirection:part.panelDirection || '', panelRows:part.panelRows ?? '', panelColumns:part.panelColumns ?? '', shakerColumnWidths:Array.isArray(part.shakerColumnWidths) ? deepCopy(part.shakerColumnWidths) : [], shakerRowHeights:Array.isArray(part.shakerRowHeights) ? deepCopy(part.shakerRowHeights) : [], panelVerticalStepFrame:part.panelVerticalStepFrame === true, panelVerticalStepHeight:part.panelVerticalStepHeight ?? '', panelVerticalStepLeft:part.panelVerticalStepLeft === true, panelVerticalStepRight:part.panelVerticalStepRight === true, panelVerticalStepInsetLeft:part.panelVerticalStepInsetLeft ?? 0, panelVerticalStepInsetRight:part.panelVerticalStepInsetRight ?? 0, panelUpperStepFrame:part.panelUpperStepFrame === true, panelUpperStepLowerHeight:part.panelUpperStepLowerHeight ?? '', panelUpperStepLeft:part.panelUpperStepLeft === true, panelUpperStepRight:part.panelUpperStepRight === true, panelUpperStepInsetLeft:part.panelUpperStepInsetLeft ?? 0, panelUpperStepInsetRight:part.panelUpperStepInsetRight ?? 0, panelUpperStepBaseOffsetLeft:part.panelUpperStepBaseOffsetLeft ?? 0, panelUpperStepBaseWidth:part.panelUpperStepBaseWidth ?? part.width, panelIrregularShape:part.panelIrregularShape || 'Yes', panelSkirtingEnabled:part.panelSkirtingEnabled || 'No', panelSkirtingHeight:part.panelSkirtingHeight ?? '', panelDoorAllowance:part.panelDoorAllowance ?? '', panelSideTop:part.panelSideTop || 'normal', panelSideRight:part.panelSideRight || 'normal', panelSideBottom:part.panelSideBottom || 'normal', panelSideLeft:part.panelSideLeft || 'normal', wallSectionIndex:part.wallSectionIndex ?? '', wallSectionCount:part.wallSectionCount ?? '', wallXStart:part.wallXStart ?? 0, wallTotalWidth:part.wallTotalWidth ?? part.width, wallDoorEnabled:part.wallDoorEnabled || 'No', wallDoorWidth:part.wallDoorWidth ?? '', wallDoorHeight:part.wallDoorHeight ?? '', wallDoorX:part.wallDoorX ?? '', wallWindowEnabled:part.wallWindowEnabled || 'No', wallWindowWidth:part.wallWindowWidth ?? '', wallWindowHeight:part.wallWindowHeight ?? '', wallWindowX:part.wallWindowX ?? '', wallWindowBottom:part.wallWindowBottom ?? '', wallOpenings:Array.isArray(part.wallOpenings) ? deepCopy(part.wallOpenings) : [], profileRule:part.profileRule ? deepCopy(part.profileRule) : null, materialThicknessMm:part.materialThicknessMm || parseThicknessMm(block.thickness), shapePoints:Array.isArray(part.shapePoints) ? deepCopy(part.shapePoints) : undefined, shapeType:normalizePartShape(part.shapeType), leftHeight:part.leftHeight, rightHeight:part.rightHeight, frame, backFrame, frameTop:part.frameTop ?? '', frameRight:part.frameRight ?? '', frameBottom:part.frameBottom ?? '', frameLeft:part.frameLeft ?? '', frameMiddle:part.frameMiddle ?? '', frameEditZone:normalizeFrameZone(part.frameEditZone || 'left'), framePocket:!!part.framePocket, pocketSideMode:part.pocketSideMode || 'front', pocketRoundCorners:part.pocketRoundCorners === true || part.pocketRoundCorners === 'Yes', pocketLines:Array.isArray(part.pocketLines) ? deepCopy(part.pocketLines) : pocketLineSettingsForPart(part, block), reededDirection:normalizeReededDirection(part.reededDirection || block.reededDirection), reededSpacing:normalizeReededSpacing(part.reededSpacing || block.reededSpacing), hinges:part.hinges, hingeSide:normalizeHingeSide(part.hingeSide), hingeOffset:part.hingeOffset, hingeSpacing:part.hingeSpacing || '', sprayFinish:part.sprayFinish || 'No', spraySides:normalizeSpraySides(part.spraySides), grainDirection:partGrainDirectionValue(part, block), text:part.text||'', sourceBlockId:part.sourceBlockId, sourcePartIndex:part.sourcePartIndex, sourceInstanceIndex:part.sourceInstanceIndex};
         sheet.placements.push(placed);
         slopedVoidFreeRectsForPlacement(placed).forEach(r=>{
           if(r.w>0 && r.h>0) sheet.freeRects.unshift(r);
@@ -10974,6 +11218,9 @@
       block.panelSkirtingHeight = Math.max(0, Number(data.panelSkirtingHeight ?? PANEL_SKIRTING_DEFAULT_HEIGHT));
       if(block.panelSkirtingHeight === 305) block.panelSkirtingHeight = PANEL_SKIRTING_DEFAULT_HEIGHT;
       block.panelDoorAllowance = Math.max(0, Number(data.panelDoorAllowance ?? 175));
+      ['panelRuleNormalSize','panelRuleJointSize','panelRuleVerticalJointSize','panelRuleDoorSize','panelRuleCornerSize','panelRuleColumnSize'].forEach(key=>{
+        block[key] = data[key] === '' || data[key] == null ? '' : Math.max(0, Number(data[key] || 0));
+      });
       block.panelSideTop = normalizePanelSideRule(data.panelSideTop);
       block.panelSideRight = normalizePanelSideRule(data.panelSideRight);
       block.panelSideBottom = normalizePanelSideRule(data.panelSideBottom);
@@ -11070,6 +11317,7 @@
         activeCalculatorMode,
         customDoorTemplates:deepCopy(customDoorTemplates),
         customOffcutTemplates:deepCopy(customOffcutTemplates),
+        materialPriceOverrides:deepCopy(materialPriceOverrides),
         client:{
           name:document.getElementById('clientName').value,
           contact:document.getElementById('clientContact').value
@@ -11110,9 +11358,12 @@
         }
         customDoorTemplates = Array.isArray(payload.customDoorTemplates) ? payload.customDoorTemplates.map(template=>({
           ...template,
-          construction:template.construction || 'single'
+          construction:template.construction || 'single',
+          profileRule:template.profileRule || inferProfileRuleFromTemplate(template)
         })) : [];
         customOffcutTemplates = Array.isArray(payload.customOffcutTemplates) ? payload.customOffcutTemplates.filter(template=>template && template.id && template.name && template.bounds && Array.isArray(template.entities)) : [];
+        materialPriceOverrides = payload.materialPriceOverrides && typeof payload.materialPriceOverrides === 'object' && !Array.isArray(payload.materialPriceOverrides) ? payload.materialPriceOverrides : materialPriceOverrides;
+        safeLocalStorageSet(MATERIAL_PRICE_STORAGE_KEY, JSON.stringify(materialPriceOverrides));
         saveCustomDoorTemplates();
         saveCustomOffcutTemplates();
         document.getElementById('clientName').value = payload.client?.name || '';
@@ -11179,6 +11430,12 @@
         panelSkirtingEnabled:String(block.panelSkirtingEnabled ?? 'No'),
         panelSkirtingHeight:String(block.panelSkirtingHeight ?? PANEL_SKIRTING_DEFAULT_HEIGHT),
         panelDoorAllowance:String(block.panelDoorAllowance ?? 175),
+        panelRuleNormalSize:String(block.panelRuleNormalSize ?? ''),
+        panelRuleJointSize:String(block.panelRuleJointSize ?? ''),
+        panelRuleVerticalJointSize:String(block.panelRuleVerticalJointSize ?? ''),
+        panelRuleDoorSize:String(block.panelRuleDoorSize ?? ''),
+        panelRuleCornerSize:String(block.panelRuleCornerSize ?? ''),
+        panelRuleColumnSize:String(block.panelRuleColumnSize ?? ''),
         panelSideTop:String(block.panelSideTop ?? 'normal'),
         panelSideRight:String(block.panelSideRight ?? 'normal'),
         panelSideBottom:String(block.panelSideBottom ?? 'normal'),
@@ -12119,6 +12376,7 @@
           <div class="sheet-part-editor-grid">
             <div class="field selected-shape-field"><label>Shape</label><select class="selectedPartShape"><option value="rectangle"${shape==='rectangle'?' selected':''}>Rectangle</option><option value="sloped"${shape==='sloped'?' selected':''}>Sloped / Loft</option></select></div>
             <div class="field door-edit-only"><label>Door type</label><select class="selectedPartDoorType">${doorTypeOptionsHtml(found.block, effectivePartDoorType(part, found.block))}</select></div>
+            ${panelEditor ? '' : `<div class="selected-editor-section door-edit-only"><div class="selected-editor-section-title"><span>Grain</span><button class="pocket-title-toggle tiny-toggle selectedPartGrainDirection ${grainOn ? '' : 'off'}" type="button" aria-pressed="${grainOn ? 'true' : 'false'}">Grain</button></div></div>`}
             <div class="field selected-height-field"><label>Left height</label><input class="selectedPartLeftHeight" type="number" min="0" step="1" value="${escapeHtml(shape === 'sloped' ? side.left : height)}"></div>
             <div class="field selected-height-field"><label>Right height</label><input class="selectedPartRightHeight" type="number" min="0" step="1" value="${escapeHtml(shape === 'sloped' ? side.right : height)}"></div>
             ${panelEditor ? `
@@ -12158,9 +12416,9 @@
               </div>
             </div>` : `
             <div class="selected-editor-section door-edit-only door-frame-section wide">
-              <div class="selected-editor-section-title"><span>Frame</span><div class="selected-editor-actions"><button class="pocket-title-toggle tiny-toggle selectedPartGrainDirection ${grainOn ? '' : 'off'}" type="button" aria-pressed="${grainOn ? 'true' : 'false'}">Grain</button></div></div>
-              <div class="selected-editor-subgrid tight selected-panel-options show">
-                <div class="field inline-control"><label>Zone</label><div class="segmented selectedFrameZoneControl">${selectedFrameZoneButtons}</div></div>
+              <div class="selected-editor-section-title"><span>Frame</span></div>
+              <div class="door-frame-editor-layout selected-panel-options show">
+                <div class="segmented selectedFrameZoneControl" aria-label="Frame zone">${selectedFrameZoneButtons}</div>
                 <div class="field"><label>${escapeHtml(frameZoneLabel(selectedFrameZone))} frame</label><input class="selectedPartFrameZoneSize" type="number" min="1" step="1" value="${escapeHtml(selectedFrameZoneValue)}"></div>
               </div>
             </div>
@@ -12754,6 +13012,7 @@
         const value = normalizeDoorTypeValue(e.target.value, block.globalShakerType);
         setPartValue(block, partIndex, 'doorType', value);
         setPartValue(block, partIndex, 'shaker', value === 'no' ? 'No' : 'Yes');
+        applyProfileTemplateDefaults(block, value);
         requestRender();
       });
       bindHeightDraft(leftInput, 'leftHeight');
@@ -13535,7 +13794,16 @@
         } else if(p.shaker && isCustomDoorType(p.shakerType)){
           svg += partShape();
           const template = findCustomDoorTemplate(p.shakerType);
-          if(template){
+          if(template && template.construction === 'profile'){
+            const rule = p.profileRule || template.profileRule || inferProfileRuleFromTemplate(template);
+            const cavities = placementCavities(p, renderFrame, p.panels, p.panelSize);
+            cavities.forEach(c=>{
+              const inner = cavityPoints(c);
+              const offset = offsetPolygonPoints(inner, Math.max(0, Number(rule?.innerOffset || 7)));
+              drawLinePoints(inner, '#111', '0.35');
+              if(offset) drawLinePoints(offset, templateLayerColor(rule?.layer || template.layers?.[0] || 'CNC-TOP_SECTION_FOR_STANDA'), '0.32');
+            });
+          } else if(template){
             svg += renderCustomTemplateSvg(template, {x:p.x, y:p.y, w:p.w, h:p.h}, scale);
           }
           const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
@@ -14186,6 +14454,16 @@
         const template = findCustomDoorTemplate(p.shakerType);
         placementOutline('OUT', p, ox, oy);
         if(!template) return;
+        if(template.construction === 'profile'){
+          const rule = p.profileRule || template.profileRule || inferProfileRuleFromTemplate(template);
+          const layer = rule?.layer || template.layers?.[0] || 'CNC-TOP_SECTION_FOR_STANDA';
+          placementCavities(p, Number(p.frame || rule?.frame || 70), p.panels, p.panelSize).forEach(c=>{
+            writePolyline('OUT', cavityPoints(c), true);
+            const offset = offsetPolygonPoints(cavityPoints(c), Math.max(0, Number(rule?.innerOffset || 7)));
+            if(offset) writePolyline(layer, offset, true);
+          });
+          return;
+        }
         const dest = {x:ox+p.x, y:oy+p.y, w:p.w, h:p.h};
         template.entities.forEach(entity=>drawTemplateEntityDxf(template, dest, entity, '0'));
       }
@@ -14557,6 +14835,43 @@
       } catch (error) {
         console.error(error);
         showMessage('Unable to prepare the PDF. Please check the entered dimensions and try again.', 'error');
+      }
+    }
+    async function printPanelsOnly(){
+      try {
+        const previousMode = activeCalculatorMode;
+        activeCalculatorMode = 'panel';
+        if(await calculateAll() === false){ activeCalculatorMode = previousMode; return; }
+        activeCalculatorMode = previousMode;
+        const panelBlocks = blocks.filter(block=>isPanelBlock(block));
+        if(!panelBlocks.length){showMessage('No Panneling rooms to print.','error'); return;}
+        const sections = panelBlocks.map(block=>{
+          const preview = renderPanelWallPreview(block);
+          const wrap = document.createElement('div');
+          wrap.innerHTML = preview;
+          const panorama = wrap.querySelector('.panel-wall-panorama');
+          const html = panorama ? panorama.outerHTML : wrap.innerHTML;
+          return '<section class="panel-print-room">'+html+'</section>';
+        }).join('');
+        const win = window.open('', '_blank');
+        if(!win){showMessage('Allow pop-ups to print panels.','error'); return;}
+        win.document.write('<!doctype html><html><head><title>FAST CNC Panels</title><style>'+
+          'body{font-family:Arial,Helvetica,sans-serif;margin:18px;color:#111;background:#fff}'+
+          '.print-toolbar{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid #ddd;padding:8px;display:flex;gap:8px}'+
+          '.print-toolbar button{font:900 12px Arial;padding:8px 11px;border:1px solid #111;border-radius:6px;background:#111;color:#fff}'+
+          '.print-toolbar .secondary{background:#fff;color:#111}'+
+          '.panel-print-room{break-after:page;margin-bottom:22px}'+
+          '.panel-wall-preview,.panel-wall-panorama{border:1px solid #cbd5e1;border-radius:8px;padding:10px;margin:0 0 14px;background:#fff}'+
+          '.panel-wall-preview-head,.panel-wall-panorama-head{display:flex;justify-content:space-between;font-size:12px;font-weight:900;margin-bottom:8px}'+
+          'svg{max-width:100%;height:auto;background:#fff}'+
+          '@media print{.print-toolbar{display:none}.panel-print-room{break-after:page}}'+
+          '</style></head><body><div class="print-toolbar"><button onclick="window.print()">Print</button><button class="secondary" onclick="window.close()">Close</button></div>'+sections+'</body></html>');
+        win.document.close();
+        setTimeout(()=>win.print(), 350);
+        showMessage('Panel print view ready.', 'success');
+      } catch(error) {
+        console.error(error);
+        showMessage('Unable to prepare panel print view.', 'error');
       }
     }
     function labelSourceBlock(item, placement){
@@ -15301,6 +15616,7 @@
     });
     document.getElementById('toolbarUndoBtn')?.addEventListener('click', ()=>{ undoHistory(); closeCommandMenus(); });
     document.getElementById('toolbarRedoBtn')?.addEventListener('click', ()=>{ redoHistory(); closeCommandMenus(); });
+    document.getElementById('editMaterialPricingBtn')?.addEventListener('click', ()=>{ focusMaterialPricing(); closeCommandMenus(); });
     document.getElementById('hideValuesBtn')?.addEventListener('click', ()=>{ setHideValuesMode(!hideValuesMode); closeCommandMenus(); });
     document.getElementById('showBackPocketingBtn')?.addEventListener('click', ()=>{
       setShowBackSidePocketingMode(!showBackSidePocketingMode);
@@ -15317,6 +15633,12 @@
       }
       closeCommandMenus();
     });
+    document.getElementById('viewDxfTemplatesBtn')?.addEventListener('click', ()=>{
+      showDxfTemplatesView();
+      closeCommandMenus();
+    });
+    document.getElementById('closeDxfTemplatesViewBtn')?.addEventListener('click', closeDxfTemplatesView);
+    document.getElementById('dxfTemplatesModal')?.addEventListener('click', e=>{ if(e.target.id === 'dxfTemplatesModal') closeDxfTemplatesView(); });
     document.querySelectorAll('.command-menu').forEach(menu=>{
       menu.addEventListener('toggle', ()=>{ if(menu.open) closeCommandMenus(menu); });
     });
@@ -15329,6 +15651,7 @@
     });
     document.getElementById('downloadDxfBtn').addEventListener('click', generateDxfForLastCalculation);
     document.getElementById('printBtn').addEventListener('click', ()=>{ printQuote(); });
+    document.getElementById('printPanelsBtn')?.addEventListener('click', ()=>{ printPanelsOnly(); closeCommandMenus(); });
     document.getElementById('labelsToggleBtn').addEventListener('click', ()=>{ setLabelsEnabled(!labelsEnabled); });
     document.getElementById('printLabelsBtn').addEventListener('click', ()=>{ printLabels(); });
     document.getElementById('printSprayLabelsBtn').addEventListener('click', ()=>{ printLabels('spray'); });
