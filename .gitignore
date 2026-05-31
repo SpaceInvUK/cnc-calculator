@@ -18,3 +18,7 @@ build/
 Thumbs.db
 *.tmp
 *.bak
+
+# Local Claude config (machine-specific paths, not for the repo)
+.claude/settings.local.json
+.claude/launch.json
