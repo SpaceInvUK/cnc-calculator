@@ -40,6 +40,7 @@
     .command-menu-panel button{height:30px;text-align:left;padding:0 9px;border-radius:6px;background:#fff;color:#111;font-size:11px;font-weight:800}
     .command-menu-panel button:hover{background:#eff6ff}
     .command-menu-panel button.active{background:#111;color:#fff}
+    @media (min-width:621px){.command-menu-strip > .command-menu:nth-last-child(-n+2) .command-menu-panel{left:auto;right:0}}
     .command-qr-status{min-width:160px;max-width:280px;padding:6px 8px;border:1px dashed #cbd5e1;border-radius:7px;background:#f8fafc;color:#475569;font-size:10px;font-weight:800;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .card-body{padding:18px}
     .material-block{border:1.5px solid var(--border);border-radius:8px;background:#fff;margin-bottom:12px;padding:14px}
@@ -80,9 +81,9 @@
     .info-dot::after{content:attr(data-tip);top:calc(100% + 8px);transform:translateY(4px);width:min(240px,calc(100vw - 32px));padding:8px 10px;border-radius:8px;background:#111;color:#fff;font-size:11px;font-weight:700;line-height:1.4;white-space:normal;text-align:left;box-shadow:0 10px 24px rgba(17,24,39,.18)}
     .info-dot:hover::before,.info-dot:hover::after,.info-dot:focus::before,.info-dot:focus::after{opacity:1;transform:translateY(0)}
     .field input,.field select{width:100%;padding:10px 12px;border:1.5px solid var(--border-strong);border-radius:10px;background:#fff;color:#111;font-size:13px;font-weight:600;outline:none}
-    .field.inline-control{display:grid;grid-template-columns:minmax(96px,1fr) auto;align-items:center;gap:8px}
-    .field.inline-control label{margin:0}
-    .field.inline-control input,.field.inline-control select{width:auto;min-width:88px;max-width:150px}
+    .field.inline-control{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;min-width:0}
+    .field.inline-control label{margin:0;min-width:0;overflow-wrap:anywhere}
+    .field.inline-control input,.field.inline-control select{width:auto;min-width:72px;max-width:150px}
     .field.inline-control .wide-control{min-width:116px}
     .field.inline-control .digits-2{min-width:0;width:6ch;max-width:6ch;text-align:center;padding-left:6px;padding-right:6px}
     .field.inline-control .readonly-mini{background:#f8fafc;color:#111}
@@ -95,8 +96,6 @@
     .control-row .field.inline-control .door-type-select{width:132px;max-width:132px;text-align:left}
     .control-row .field.inline-control .frameSize{width:7ch;max-width:7ch}
     .control-row .field.inline-control .backFrameSize{width:7ch;max-width:7ch}
-    .back-frame-field{border:1.5px solid #fecaca;background:#fff7f7;border-radius:10px;padding:6px 8px}
-    .back-frame-field label{color:#991b1b}
     .control-row .field.inline-control .reededSpacing{width:7ch;max-width:7ch}
     .control-row .field.inline-control .pocketingMinutes{width:7ch;max-width:7ch}
     .control-row .field.inline-control .pocketSideControl{min-width:116px}
@@ -164,7 +163,7 @@
     .wall-setup-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:9px;border:1.5px solid #bbf7d0;border-radius:10px;background:#f0fdf4}
     .wall-setup-grid .field input{width:100%}
     .wall-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .walls-list{grid-column:1/-1;display:grid;gap:8px}
+    .walls-list{grid-column:1/-1;display:grid;gap:8px;overflow-x:auto}
     .wall-config-row{display:grid;grid-template-columns:minmax(58px,.55fr) repeat(8,minmax(68px,1fr)) 32px;gap:6px;align-items:end;padding:7px;border:1.5px solid #d1fae5;border-radius:8px;background:#fff}
     .wall-config-row .field{margin:0}
     .wall-config-row .field label{font-size:10px}
@@ -400,9 +399,11 @@
     .tp-viewer-card.fullscreen{position:fixed;inset:14px;z-index:10000;background:#fff;grid-template-rows:auto 1fr auto auto auto}
     .tp-viewer-card.fullscreen #tpViewer{height:calc(100vh - 190px)}
     .tp-hidden-grid{display:none}
-    @media (max-width:1120px){.toolpath-workbench{grid-template-columns:1fr}.toolpath-template-grid{grid-template-columns:1fr 1fr}.toolpath-template-grid .field:last-child{grid-column:1 / -1}.toolpath-summary{grid-template-columns:1fr 1fr}#tpViewer{height:280px}}
+    @media (max-width:960px){.toolpath-workbench{grid-template-columns:1fr}}
+    @media (max-width:1120px){.toolpath-template-grid{grid-template-columns:1fr 1fr}.toolpath-template-grid .field:last-child{grid-column:1 / -1}.toolpath-summary{grid-template-columns:1fr 1fr}#tpViewer{height:280px}}
     @media (max-width:720px){.toolpath-op-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.toolpath-op-head{grid-template-columns:1fr}}
     @media (max-width:560px){.toolpath-template-grid,.toolpath-mini-grid,.toolpath-mini-grid.three,.toolpath-summary,.tp-actions,.tp-player,.toolpath-reference-grid,.toolpath-operation-card{grid-template-columns:1fr}.toolpath-op-grid{grid-template-columns:1fr}.toolpath-op-head{grid-template-columns:1fr}}
+    @media (max-width:400px){.panel-rule-size-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(17,24,39,.55);padding:18px;z-index:9999}
     .modal-backdrop.show{display:flex}
     .modal-card{width:min(720px,100%);max-height:min(88vh,860px);overflow:auto;background:#fff;border:1.5px solid var(--border);border-radius:8px;box-shadow:var(--shadow);padding:18px}
@@ -415,6 +416,17 @@
     .dxf-template-view-card{border:1px solid #dbe5f0;border-radius:8px;background:#fff;padding:10px;display:grid;gap:8px}
     .dxf-template-view-card svg{width:100%;height:120px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc}
     .dxf-template-view-meta{font-size:11px;line-height:1.35;color:#475569;font-weight:800}
+    .material-price-modal-card{width:min(720px,100%)}
+    .material-price-search{width:100%;height:36px;margin-top:12px;padding:8px 10px;border:1.5px solid var(--border-strong);border-radius:8px;font-size:13px;font-weight:600}
+    .material-price-list{max-height:min(56vh,520px);overflow:auto;display:grid;gap:10px}
+    .material-price-group{border:1px solid #e2e8f0;border-radius:8px;background:#fff;padding:10px}
+    .material-price-group-title{font-size:12px;font-weight:900;color:#111;margin-bottom:8px}
+    .material-price-row{display:grid;grid-template-columns:minmax(56px,.7fr) minmax(96px,1fr) minmax(96px,1fr);gap:10px;align-items:center;padding:5px 6px;border-radius:7px}
+    .material-price-row.edited{background:#eff6ff}
+    .material-price-th{font-size:12px;font-weight:800;color:#334155}
+    .material-price-input{height:34px;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:800;text-align:right;width:100%;min-width:0}
+    .material-price-row.edited .material-price-input{border-color:#3b82f6}
+    .material-price-default{font-size:11px;font-weight:700;color:#64748b}
     .modal-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
     @media (max-width:680px){.template-actions{grid-template-columns:1fr}}
     .btn-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:18px}
@@ -507,12 +519,14 @@
     .selected-editor-section.wide{grid-column:span 2}
     .selected-editor-section-title{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-bottom:5px;font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#1f2937}
     .selected-editor-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-    .selected-editor-subgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-items:end}
-    .selected-editor-subgrid.tight{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .selectedFrameZoneControl.segmented{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));height:auto;gap:4px;border:0;background:transparent;padding:0}
+    .selected-editor-subgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-items:end;min-width:0}
+    .selected-editor-subgrid > *{min-width:0}
+    .selected-editor-section .selectedPartPocketSideControl.segmented{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+    .selectedFrameZoneControl.segmented{display:grid;grid-auto-flow:row;grid-template-columns:repeat(3,minmax(0,1fr));height:auto;gap:4px;border:0;background:transparent;padding:0}
     .selectedFrameZoneControl.segmented button{min-height:28px;padding:5px 6px;border:1px solid var(--border);border-radius:7px;white-space:normal;line-height:1.1;font-size:10px}
-    .door-frame-section .door-frame-editor-layout{display:grid;grid-template-columns:minmax(74px,.38fr) minmax(140px,1fr);gap:8px;align-items:stretch}
-    .door-frame-section .selectedFrameZoneControl.segmented{grid-template-columns:1fr;align-content:start}
+    .door-frame-section .door-frame-editor-layout{display:grid;grid-template-columns:minmax(74px,.38fr) minmax(140px,1fr);gap:8px;align-items:start;min-width:0}
+    .door-frame-section .door-frame-editor-layout > *{min-width:0}
+    .door-frame-section .selectedFrameZoneControl.segmented{grid-auto-flow:row;grid-template-columns:1fr;align-content:start}
     .door-frame-section .selectedFrameZoneControl.segmented button{min-height:24px;font-size:9px;padding:4px 5px}
     .selected-hinge-options,.selected-pocket-options,.selected-panel-options{display:none}
     .selected-hinge-options.show,.selected-pocket-options.show,.selected-panel-options.show{display:grid}
@@ -561,7 +575,7 @@
     @media (max-width:760px){.sheet-visual{display:block;width:100%;max-width:none;margin-right:0}.sheet-part-editor-grid,.selected-editor-subgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .print-note{margin-top:10px;font-size:11px;color:var(--muted);line-height:1.4}
     /* UI test layout */
-    body.ui-test{background:#f6f7f8;padding-top:var(--command-bar-offset,56px)}
+    body.ui-test{background:#f6f7f8;padding-top:var(--command-bar-offset,84px)}
     .ui-test .wrap{max-width:1720px;padding:24px 18px 46px}
     .ui-test .hero{display:grid;place-items:center;text-align:center;margin-bottom:14px;min-height:74px}
     .ui-test .hero::after{display:none}
@@ -624,6 +638,16 @@
     .panel-rule-size-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,minmax(92px,1fr));gap:8px;align-items:end}
     .panel-rule-size-grid .field label{font-size:9.5px}
     .panel-rule-size-grid input{min-width:0}
+    /* Side Rule Sizes shown as a vertical editable list, gated by the Side Rules toggle */
+    .panel-rule-size-options{display:none}
+    .panel-rule-size-options.show{display:grid;grid-template-columns:1fr;gap:6px;padding:10px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff}
+    .panel-rule-size-options.show .panel-rule-size-title{grid-column:1/-1;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#334155;margin-bottom:2px}
+    .panel-rule-size-options.show .field.inline-control{display:grid;grid-template-columns:minmax(110px,1fr) minmax(0,150px);align-items:center;gap:10px;justify-content:start}
+    .panel-rule-size-options.show .field.inline-control label{font-size:12px;font-weight:800}
+    .panel-rule-size-options.show .field.inline-control input{width:100%;max-width:150px;text-align:center}
+    .panel-rule-size-options.show .hint{grid-column:1/-1}
+    /* Legacy per-side selectors are edited per-piece now, not in panel setup */
+    .panel-side-grid-legacy{display:none!important}
     .material-block[data-calc-mode="panel"] .wall-setup-grid{grid-template-columns:minmax(95px,.6fr) minmax(140px,.8fr) minmax(120px,.75fr) minmax(120px,.75fr) 1fr}
     .material-block[data-calc-mode="panel"] .wall-setup-title{grid-column:1/-1}
     .material-block[data-calc-mode="panel"] .walls-list{grid-column:1/-1}
@@ -693,9 +717,12 @@
     .sheet-part-editor{position:relative}
     .sheet-part-editor-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
     .sheet-part-editor .field{min-width:0}
+    .sheet-part-editor-grid > *{min-width:0}
+    @media (max-width:1100px){.sheet-part-editor-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media (max-width:780px){.sheet-part-editor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.selected-editor-section.wide{grid-column:1/-1}}
     @media (min-width:1180px){
       .ui-test .grid{grid-template-columns:minmax(760px,1.2fr) minmax(390px,.68fr)}
-      .ui-test #quoteArea{position:sticky;top:50px}
+      .ui-test #quoteArea{position:sticky;top:var(--command-bar-offset,84px)}
     }
     @media (max-width:980px){
       .material-editor{grid-template-columns:1fr}
@@ -722,6 +749,7 @@
       .command-qr-status{width:100%;max-width:none}
       .command-menu-panel{position:fixed;left:8px;right:8px;top:calc(var(--command-bar-offset,96px) - 2px)}
       .editor-section-grid,.editor-section-grid.three{grid-template-columns:1fr}
+      .panel-rule-size-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
       .ui-test .dimension-head,.ui-test .dimension-item{min-width:760px}
       .ui-test .btn-row{grid-template-columns:1fr}
       .quote-total-hero{display:block}
@@ -1163,6 +1191,18 @@
       </div>
     </div>
   </div>
+  <div id="materialPriceModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card material-price-modal-card" role="dialog" aria-modal="true" aria-labelledby="materialPriceTitle">
+      <div class="modal-title" id="materialPriceTitle">Material Pricing</div>
+      <div class="modal-copy">Edit the default sheet price for each material and thickness. Saved prices are stored on this device and become the starting price for every new quote; other sheet sizes scale automatically. Leave a box empty to fall back to the built-in default.</div>
+      <input id="materialPriceSearch" type="text" class="material-price-search" placeholder="Search material (e.g. MDF, Birch, Oak)...">
+      <div id="materialPriceList" class="modal-list material-price-list"></div>
+      <div class="modal-actions">
+        <button class="btn-outline" id="resetMaterialPriceBtn" type="button">Reset all to defaults</button>
+        <button class="btn-primary" id="closeMaterialPriceBtn" type="button">Done</button>
+      </div>
+    </div>
+  </div>
 
   <template id="materialTemplate">
     <div class="material-block">
@@ -1241,21 +1281,22 @@
               <div class="field inline-control"><button class="pocket-title-toggle panelSideRulesControl off" type="button" aria-pressed="false">Side Rules</button></div>
               <div class="field inline-control panel-skirting-options"><label>Skirting Height</label><input class="panelSkirtingHeight" type="number" min="0" step="1" value="225"></div>
               <div class="panel-shaker-note">Shaker count is controlled per wall or per panel. Auto starts around 350mm and keeps main shakers equal; edge shakers beside wall, door, window, object, corner, or column may adjust.</div>
-              <div class="panel-rule-size-grid">
-                <div class="field"><label>Normal</label><input class="panelRuleNormalSize" type="number" min="0" step="1"></div>
-                <div class="field"><label>Joint</label><input class="panelRuleJointSize" type="number" min="0" step="1"></div>
-                <div class="field"><label>Vertical Joint</label><input class="panelRuleVerticalJointSize" type="number" min="0" step="1"></div>
-                <div class="field"><label>Door</label><input class="panelRuleDoorSize" type="number" min="0" step="1"></div>
-                <div class="field"><label>Corner</label><input class="panelRuleCornerSize" type="number" min="0" step="1"></div>
-                <div class="field"><label>Column</label><input class="panelRuleColumnSize" type="number" min="0" step="1"></div>
+              <div class="panel-rule-size-grid panel-rule-size-options">
+                <div class="panel-rule-size-title">Side Rule Sizes (mm)</div>
+                <div class="field inline-control"><label>Normal</label><input class="panelRuleNormalSize" type="number" min="0" step="1" placeholder="Auto"></div>
+                <div class="field inline-control"><label>Joint</label><input class="panelRuleJointSize" type="number" min="0" step="1" placeholder="Auto"></div>
+                <div class="field inline-control"><label>Vertical Joint</label><input class="panelRuleVerticalJointSize" type="number" min="0" step="1" placeholder="Auto"></div>
+                <div class="field inline-control"><label>Door</label><input class="panelRuleDoorSize" type="number" min="0" step="1" placeholder="Auto"></div>
+                <div class="field inline-control"><label>Corner</label><input class="panelRuleCornerSize" type="number" min="0" step="1" placeholder="Auto"></div>
+                <div class="field inline-control"><label>Column</label><input class="panelRuleColumnSize" type="number" min="0" step="1" placeholder="Auto"></div>
+                <div class="hint">Normal uses the frame size. Joint uses half of the frame. Vertical Joint uses zero. Door uses Door Side. Corner and Column add the material thickness. These sizes apply across the whole job. The per-piece Top/Right/Bottom/Left side rules are set when you click a panel piece on the sheet.</div>
               </div>
-              <div class="panel-side-grid panel-only">
+              <div class="panel-side-grid panel-only panel-side-grid-legacy">
                 <div class="panel-side-title">Side Rules</div>
                 <div class="field"><label>Top Side</label><select class="panelSideTop"><option value="normal">Normal</option><option value="joint">Joint</option><option value="jointVertical">Vertical Joint</option><option value="door">Door</option><option value="corner">Corner</option><option value="column">Column</option></select></div>
                 <div class="field"><label>Right Side</label><select class="panelSideRight"><option value="normal">Normal</option><option value="joint">Joint</option><option value="jointVertical">Vertical Joint</option><option value="door">Door</option><option value="corner">Corner</option><option value="column">Column</option></select></div>
                 <div class="field"><label>Bottom Side</label><select class="panelSideBottom"><option value="normal">Normal</option><option value="joint">Joint</option><option value="jointVertical">Vertical Joint</option><option value="door">Door</option><option value="corner">Corner</option><option value="column">Column</option></select></div>
                 <div class="field"><label>Left Side</label><select class="panelSideLeft"><option value="normal">Normal</option><option value="joint">Joint</option><option value="jointVertical">Vertical Joint</option><option value="door">Door</option><option value="corner">Corner</option><option value="column">Column</option></select></div>
-                <div class="hint">Normal uses the frame size. Joint uses half of the frame. Vertical Joint uses zero. Door uses Door Side. Corner and Column add the material thickness.</div>
               </div>
             </div>
             <div class="wall-setup-grid panel-only">
@@ -1401,6 +1442,7 @@
     const TEMPLATE_STORAGE_KEY = 'fastCncDoorTemplatesV1';
     const OFFCUT_TEMPLATE_STORAGE_KEY = 'fastCncOffcutTemplatesV1';
     const MATERIAL_PRICE_STORAGE_KEY = 'fastCncMaterialPricesV1';
+    const MATERIAL_BASE_PRICE_STORAGE_KEY = 'fastCncMaterialBasePricesV1';
     const QUOTE_FILE_VERSION = 1;
     const VAT_RATE = 20;
     const POCKET_LINE_CONFIGS = [
@@ -1430,6 +1472,7 @@
     let customDoorTemplates = loadCustomDoorTemplates();
     let customOffcutTemplates = loadCustomOffcutTemplates();
     let materialPriceOverrides = loadMaterialPriceOverrides();
+    let materialBasePriceOverrides = loadMaterialBasePriceOverrides();
 
     function deepCopy(value){
       return JSON.parse(JSON.stringify(value));
@@ -1668,6 +1711,34 @@
       materialPriceOverrides[materialPriceKey(material, thickness, size)] = amount;
       safeLocalStorageSet(MATERIAL_PRICE_STORAGE_KEY, JSON.stringify(materialPriceOverrides));
     }
+    function loadMaterialBasePriceOverrides(){
+      try{
+        const saved = JSON.parse(safeLocalStorageGet(MATERIAL_BASE_PRICE_STORAGE_KEY, '{}') || '{}');
+        return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+      }catch(_){
+        return {};
+      }
+    }
+    // Editable price-book default (size-agnostic base/8x4 price) per material+thickness.
+    // suggestedCost() scales this to every sheet size, so editing it here updates all quotes.
+    function setMaterialBasePriceOverride(material, thickness, value){
+      if(!material || !thickness) return;
+      const raw = String(value == null ? '' : value).trim();
+      const amount = Number(raw);
+      if(!materialBasePriceOverrides[material]) materialBasePriceOverrides[material] = {};
+      if(raw === '' || !Number.isFinite(amount) || amount < 0){
+        delete materialBasePriceOverrides[material][thickness];
+        if(!Object.keys(materialBasePriceOverrides[material]).length) delete materialBasePriceOverrides[material];
+      } else {
+        materialBasePriceOverrides[material][thickness] = amount;
+      }
+      safeLocalStorageSet(MATERIAL_BASE_PRICE_STORAGE_KEY, JSON.stringify(materialBasePriceOverrides));
+    }
+    function materialBasePriceOverrideValue(material, thickness){
+      const group = materialBasePriceOverrides[material];
+      const value = group ? group[thickness] : undefined;
+      return Number.isFinite(Number(value)) ? Number(value) : null;
+    }
     function sanitizeTemplateName(value){
       return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 42);
     }
@@ -1696,25 +1767,78 @@
       const template = findCustomDoorTemplate(type);
       return template?.profileRule || null;
     }
+    function profileSegmentsFromTemplate(template){
+      const segs = [];
+      (template?.entities || []).forEach(entity=>{
+        if(entity.kind === 'line'){
+          segs.push({x1:entity.x1, y1:entity.y1, x2:entity.x2, y2:entity.y2});
+        } else if(entity.kind === 'polyline'){
+          const pts = entity.points || [];
+          for(let i=0;i<pts.length-1;i++) segs.push({x1:pts[i].x, y1:pts[i].y, x2:pts[i+1].x, y2:pts[i+1].y});
+          if(entity.closed && pts.length > 2){
+            segs.push({x1:pts[pts.length-1].x, y1:pts[pts.length-1].y, x2:pts[0].x, y2:pts[0].y});
+          }
+        }
+      });
+      return segs.filter(s=>Number.isFinite(s.x1)&&Number.isFinite(s.y1)&&Number.isFinite(s.x2)&&Number.isFinite(s.y2));
+    }
+    // Reads a "profile section" DXF (frame cross-section drawn lying down).
+    // Works for closed-rectangle templates AND open-polyline profiles like Rivington:
+    //   frame  = length of the full-thickness solid block (long side)
+    //   thickness = vertical extent of that solid block
+    //   innerOffset = horizontal run of the chamfer at the inner frame edge
     function inferProfileRuleFromTemplate(template){
       if(!template || !Array.isArray(template.entities)) return null;
-      const rects = template.entities.map(entity=>dxfEntityRect(entity, 0.35)).filter(Boolean);
-      const main = rects
-        .filter(rect=>rect.w > 0 && rect.h > 0)
-        .sort((a,b)=>(b.w*b.h)-(a.w*a.h))[0];
-      if(!main) return null;
-      const verticals = rects.filter(rect=>rect.w < 0.5 && rect.h > 0).map(rect=>rect.h);
-      const offsets = rects.filter(rect=>rect.w > 0 && rect.h > 0 && rect !== main).map(rect=>Math.max(rect.w, rect.h)).filter(v=>v > 0);
-      const width = Math.round(main.w * 100) / 100;
-      const thickness = Math.round(main.h * 100) / 100;
-      const offset = offsets.includes(7) ? 7 : (verticals.includes(7) ? 7 : 7);
+      const bounds = template.bounds || computeTemplateBounds(template.entities);
+      if(!bounds) return null;
+      const tol = 0.5;
+      const round2 = v=>Math.round(v * 100) / 100;
+      const layer = (template.layers && template.layers.find(l=>l && l !== '0'))
+        || (template.layers && template.layers[0])
+        || 'CNC-TOP_SECTION_FOR_STANDA';
+      const segs = profileSegmentsFromTemplate(template);
+
+      // Closed-rectangle hint (older single-rect templates).
+      const rects = template.entities.map(entity=>dxfEntityRect(entity, 0.35)).filter(Boolean).filter(r=>r.w > 0 && r.h > 0);
+      const mainRect = rects.sort((a,b)=>(b.w*b.h)-(a.w*a.h))[0] || null;
+
+      // Thickness = vertical extent of the solid block (whole drawing lies down).
+      let thickness = round2(bounds.height);
+
+      // Inner offset = horizontal run of the chamfer (a diagonal segment).
+      let offset = 0;
+      segs.forEach(s=>{
+        const dx = Math.abs(s.x2 - s.x1);
+        const dy = Math.abs(s.y2 - s.y1);
+        if(dx > tol && dy > tol) offset = Math.max(offset, round2(dx));
+      });
+
+      // Frame = distance from the full-height outer edge to the inner (chamfer) corner.
+      const isVert = s=>Math.abs(s.x2 - s.x1) <= tol && Math.abs(s.y2 - s.y1) > tol;
+      const nearFull = s=>Math.abs(Math.abs(s.y2 - s.y1) - bounds.height) <= Math.max(1, bounds.height * 0.2);
+      const verts = segs.filter(isVert);
+      const rightEdge = verts.some(s=>Math.abs(((s.x1 + s.x2) / 2) - bounds.maxX) <= tol && nearFull(s));
+      const leftEdge = verts.some(s=>Math.abs(((s.x1 + s.x2) / 2) - bounds.minX) <= tol && nearFull(s));
+      const topXs = [];
+      segs.forEach(s=>{
+        [{x:s.x1, y:s.y1}, {x:s.x2, y:s.y2}].forEach(p=>{ if(Math.abs(p.y - bounds.maxY) <= tol) topXs.push(p.x); });
+      });
+      let frame = 0;
+      if(rightEdge && topXs.length) frame = round2(bounds.maxX - Math.min(...topXs));
+      else if(leftEdge && topXs.length) frame = round2(Math.max(...topXs) - bounds.minX);
+
+      // Fallbacks so a malformed profile never breaks the app.
+      if(!(frame > 0)) frame = mainRect ? round2(Math.max(mainRect.w, mainRect.h)) : 70;
+      if(!(thickness > 0)) thickness = mainRect ? round2(Math.min(mainRect.w, mainRect.h)) : 22;
+      if(!(offset > 0)) offset = 7;
+
       return {
         type:'profile',
-        frame:width || 70,
-        backFrame:width || 70,
+        frame:frame || 70,
+        backFrame:frame || 70,
         materialThickness:thickness || 22,
-        innerOffset:offset,
-        layer:(template.layers && template.layers[0]) || 'CNC-TOP_SECTION_FOR_STANDA'
+        innerOffset:offset || 7,
+        layer
       };
     }
     function profileTemplateMeta(template){
@@ -6261,6 +6385,8 @@
       }
     }
     function baseSheetPrice(material, thickness){
+      const override = materialBasePriceOverrideValue(material, thickness);
+      if(override != null) return override;
       const raw = basePrices[material] && basePrices[material][thickness] !== undefined ? Number(basePrices[material][thickness]) : 0;
       return Number.isFinite(raw) ? raw : 0;
     }
@@ -6278,6 +6404,13 @@
       const baseSize = SHEET_SIZES['8x4'];
       const referenceSize = SHEET_SIZES['10x4'];
       const chosenSize = SHEET_SIZES[size] || baseSize;
+      // A price-book base override is authoritative: it scales by sheet area to every size.
+      const baseOverride = materialBasePriceOverrideValue(material, thickness);
+      if(baseOverride != null){
+        if(size === '8x4') return formatPriceValue(baseOverride);
+        const ratio = (chosenSize.width * chosenSize.height) / Math.max(1, baseSize.width * baseSize.height);
+        return formatPriceValue(baseOverride * ratio);
+      }
       const tablePrice = baseSheetPrice(material, thickness);
       const exact = exactSheetPrice(material, thickness, size);
       if(exact != null) return formatPriceValue(exact);
@@ -6341,14 +6474,52 @@
       const vbH = h + pad * 2 / scale;
       return '<svg viewBox="0 0 '+vbW+' '+vbH+'" xmlns="http://www.w3.org/2000/svg">'+renderCustomTemplateSvg(template, dest, 1)+'</svg>';
     }
+    // Clean dimensioned profile (frame / thickness / inner offset) for the View popup.
+    function profileSchematicSvg(rule){
+      if(!rule) return '';
+      const frame = Math.max(1, Number(rule.frame || 70));
+      const thick = Math.max(1, Number(rule.materialThickness || 22));
+      const offset = Math.max(0, Number(rule.innerOffset || 0));
+      const M = Math.max(16, thick * 1.1);
+      const Lx = M, Rx = M + frame, Ty = M, By = M + thick;
+      const vbW = Rx + M, vbH = By + M;
+      const off = Math.min(offset, frame * 0.6);
+      const fs = Math.max(5, M * 0.34);
+      const stroke = '#1f3a8a', dim = '#475569';
+      const tick = M * 0.18;
+      const dimH = (x1, x2, y, label)=>(
+        '<line x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'" stroke="'+dim+'" stroke-width="0.4"/>'+
+        '<line x1="'+x1+'" y1="'+(y-tick)+'" x2="'+x1+'" y2="'+(y+tick)+'" stroke="'+dim+'" stroke-width="0.4"/>'+
+        '<line x1="'+x2+'" y1="'+(y-tick)+'" x2="'+x2+'" y2="'+(y+tick)+'" stroke="'+dim+'" stroke-width="0.4"/>'+
+        '<text x="'+((x1+x2)/2)+'" y="'+(y-tick*1.2)+'" text-anchor="middle" font-size="'+fs+'" fill="'+dim+'" font-weight="700">'+escapeHtml(formatMm(label))+'</text>'
+      );
+      const dimV = (y1, y2, x, label)=>(
+        '<line x1="'+x+'" y1="'+y1+'" x2="'+x+'" y2="'+y2+'" stroke="'+dim+'" stroke-width="0.4"/>'+
+        '<line x1="'+(x-tick)+'" y1="'+y1+'" x2="'+(x+tick)+'" y2="'+y1+'" stroke="'+dim+'" stroke-width="0.4"/>'+
+        '<line x1="'+(x-tick)+'" y1="'+y2+'" x2="'+(x+tick)+'" y2="'+y2+'" stroke="'+dim+'" stroke-width="0.4"/>'+
+        '<text x="'+(x+tick*1.4)+'" y="'+((y1+y2)/2+fs*0.35)+'" font-size="'+fs+'" fill="'+dim+'" font-weight="700">'+escapeHtml(formatMm(label))+'</text>'
+      );
+      let s = '<svg viewBox="0 0 '+vbW+' '+vbH+'" xmlns="http://www.w3.org/2000/svg" font-family="Arial">';
+      s += '<path d="M '+(Lx+off)+' '+Ty+' L '+Rx+' '+Ty+' L '+Rx+' '+By+' L '+Lx+' '+By+' L '+Lx+' '+(Ty+off)+' Z" fill="#eef2ff" stroke="'+stroke+'" stroke-width="0.8"/>';
+      if(off > 0) s += '<line x1="'+(Lx+off)+'" y1="'+Ty+'" x2="'+Lx+'" y2="'+(Ty+off)+'" stroke="'+stroke+'" stroke-width="0.8"/>';
+      if(off > 0) s += '<line x1="'+(Lx+off)+'" y1="'+Ty+'" x2="'+(Lx+off)+'" y2="'+By+'" stroke="#b91c1c" stroke-width="0.5" stroke-dasharray="2 1.5"/>';
+      s += dimH(Lx, Rx, Ty - M * 0.5, frame);
+      s += dimV(Ty, By, Rx + M * 0.5, thick);
+      if(off > 0) s += dimH(Lx, Lx + off, By + M * 0.42, offset);
+      s += '</svg>';
+      return s;
+    }
     function showDxfTemplatesView(){
       const modal = document.getElementById('dxfTemplatesModal');
       const list = document.getElementById('dxfTemplatesViewList');
       if(!modal || !list) return;
       const cards = [];
       customDoorTemplates.forEach(template=>{
-        const meta = template.construction === 'profile' ? (profileTemplateMeta(template) || 'Profile section') : (template.construction === 'flushback-insert' ? 'Frame + insert' : 'Single piece');
-        cards.push('<div class="dxf-template-view-card"><div class="template-name">'+escapeHtml(template.name)+'</div>'+templatePreviewSvg(template)+'<div class="dxf-template-view-meta">'+escapeHtml(meta)+'<br>Layers: '+escapeHtml((template.layers || []).join(', ') || '0')+'</div></div>');
+        const isProfile = template.construction === 'profile';
+        const meta = isProfile ? (profileTemplateMeta(template) || 'Profile section') : (template.construction === 'flushback-insert' ? 'Frame + insert' : 'Single piece');
+        const rule = isProfile ? (template.profileRule || inferProfileRuleFromTemplate(template)) : null;
+        const preview = rule ? profileSchematicSvg(rule) : templatePreviewSvg(template);
+        cards.push('<div class="dxf-template-view-card"><div class="template-name">'+escapeHtml(template.name)+'</div>'+preview+'<div class="dxf-template-view-meta">'+escapeHtml(meta)+'<br>Layers: '+escapeHtml((template.layers || []).join(', ') || '0')+'</div></div>');
       });
       customOffcutTemplates.forEach(template=>{
         cards.push('<div class="dxf-template-view-card"><div class="template-name">'+escapeHtml(template.name)+'</div>'+templatePreviewSvg(template)+'<div class="dxf-template-view-meta">Offcut template<br>'+Math.round(template.bounds.width)+' x '+Math.round(template.bounds.height)+'mm</div></div>');
@@ -6359,6 +6530,52 @@
     }
     function closeDxfTemplatesView(){
       const modal = document.getElementById('dxfTemplatesModal');
+      if(!modal) return;
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    function renderMaterialPriceList(filter){
+      const list = document.getElementById('materialPriceList');
+      if(!list) return;
+      const q = String(filter || '').trim().toLowerCase();
+      const groups = [];
+      materialOptions.forEach(material=>{
+        const table = basePrices[material];
+        if(!table) return;
+        if(q && !material.toLowerCase().includes(q)) return;
+        const rows = Object.keys(table).map(th=>{
+          const def = Number(table[th] || 0);
+          const override = materialBasePriceOverrideValue(material, th);
+          const value = override != null ? override : def;
+          const edited = override != null ? ' edited' : '';
+          return '<div class="material-price-row'+edited+'">'
+            + '<span class="material-price-th">'+escapeHtml(th)+'</span>'
+            + '<input class="material-price-input" type="number" min="0" step="1" value="'+escapeHtml(value)+'" data-material="'+escapeHtml(material)+'" data-thickness="'+escapeHtml(th)+'" aria-label="'+escapeHtml(material+' '+th+' price')+'">'
+            + '<span class="material-price-default">default &pound;'+escapeHtml(formatPriceValue(def))+'</span>'
+            + '</div>';
+        }).join('');
+        groups.push('<div class="material-price-group"><div class="material-price-group-title">'+escapeHtml(material)+'</div>'+rows+'</div>');
+      });
+      list.innerHTML = groups.join('') || '<div class="modal-line">No materials match that search.</div>';
+    }
+    function repriceBlocksFromBasePrices(){
+      blocks.forEach(block=>{
+        block.materialCost = suggestedCost(block.material, block.thickness, block.size);
+      });
+      lastCalculation = null;
+    }
+    function showMaterialPriceModal(){
+      const modal = document.getElementById('materialPriceModal');
+      if(!modal) return;
+      const search = document.getElementById('materialPriceSearch');
+      if(search) search.value = '';
+      renderMaterialPriceList('');
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+      if(search) setTimeout(()=>search.focus({preventScroll:true}), 30);
+    }
+    function closeMaterialPriceModal(){
+      const modal = document.getElementById('materialPriceModal');
       if(!modal) return;
       modal.classList.remove('show');
       modal.setAttribute('aria-hidden', 'true');
@@ -8354,7 +8571,18 @@
           .filter(fitsBackPlacement)
           .sort((a,b)=>a.score-b.score)[0] || fallbackBackPlacement(part);
         if(!best){
-          return {...part, x:0, y:size.height + placedRects.length * Math.max(1, part.h)};
+          const fallbackOriginal = {x:Number(original.x || 0), y:Number(original.y || 0), w:part.w, h:part.h};
+          if(fitsBackPlacement(fallbackOriginal)){
+            placedRects.push(fallbackOriginal);
+            freeRects = compactFreeRects(splitRects(freeRects, fallbackOriginal));
+            return {...part, x:fallbackOriginal.x, y:fallbackOriginal.y};
+          }
+          const clampedX = Math.max(0, Math.min(size.width - part.w, Number(original.x || 0)));
+          const clampedY = Math.max(0, Math.min(size.height - part.h, Number(original.y || 0)));
+          const visible = {x:clampedX, y:clampedY, w:part.w, h:part.h};
+          placedRects.push(visible);
+          freeRects = compactFreeRects(splitRects(freeRects, visible));
+          return {...part, x:clampedX, y:clampedY};
         }
         const placed = {...part, x:best.x, y:best.y};
         placedRects.push({x:placed.x, y:placed.y, w:placed.w, h:placed.h});
@@ -8784,6 +9012,7 @@
         };
         const panelSideRulesControl = node.querySelector('.panelSideRulesControl');
         const panelSideGrid = node.querySelector('.panel-side-grid.panel-only');
+        const panelRuleSizeOptions = node.querySelector('.panel-rule-size-options');
         const addWallControl = node.querySelector('.addWallControl');
         const wallsList = node.querySelector('.walls-list');
         const roomNameInput = node.querySelector('.roomName');
@@ -8988,6 +9217,7 @@
           setToggleButtonValue(wallWindowControl, wallWindowEnabled ? 'Yes' : 'No');
           setToggleButtonValue(panelSideRulesControl, sideRulesOpen ? 'Yes' : 'No');
           if(panelSideGrid) panelSideGrid.classList.toggle('show', sideRulesOpen);
+          if(panelRuleSizeOptions) panelRuleSizeOptions.classList.toggle('show', sideRulesOpen);
           node.querySelectorAll('.wall-options').forEach(el=>el.classList.toggle('show', wallEnabled));
           node.querySelectorAll('.panel-skirting-options').forEach(el=>el.classList.toggle('show', skirtingEnabled));
           node.querySelectorAll('.wall-door-options').forEach(el=>el.classList.toggle('show', wallEnabled && wallDoorEnabled));
@@ -15603,6 +15833,13 @@
     window.addEventListener('resize', updateCommandBarOffset);
     document.getElementById('addMaterialBtn').addEventListener('click', ()=>{recordHistory(activeCalculatorMode === 'panel' ? 'added room' : 'added material block'); addManualBlock();});
     document.getElementById('addTemplateBtn').addEventListener('click', addDoorTemplateFromFile);
+    document.getElementById('templateFile')?.addEventListener('change', e=>{
+      const file = e.target.files && e.target.files[0];
+      const nameInput = document.getElementById('templateName');
+      if(file && nameInput && !nameInput.value.trim()){
+        nameInput.value = sanitizeTemplateName(file.name.replace(/\.[^.]+$/, ''));
+      }
+    });
     document.getElementById('addOffcutTemplateBtn').addEventListener('click', addOffcutTemplateFromFile);
     document.getElementById('downloadTemplateExampleBtn').addEventListener('click', downloadExampleTemplate);
     document.getElementById('calculateBtn').addEventListener('click', ()=>{ calculateAll(); });
@@ -15616,7 +15853,7 @@
     });
     document.getElementById('toolbarUndoBtn')?.addEventListener('click', ()=>{ undoHistory(); closeCommandMenus(); });
     document.getElementById('toolbarRedoBtn')?.addEventListener('click', ()=>{ redoHistory(); closeCommandMenus(); });
-    document.getElementById('editMaterialPricingBtn')?.addEventListener('click', ()=>{ focusMaterialPricing(); closeCommandMenus(); });
+    document.getElementById('editMaterialPricingBtn')?.addEventListener('click', ()=>{ showMaterialPriceModal(); closeCommandMenus(); });
     document.getElementById('hideValuesBtn')?.addEventListener('click', ()=>{ setHideValuesMode(!hideValuesMode); closeCommandMenus(); });
     document.getElementById('showBackPocketingBtn')?.addEventListener('click', ()=>{
       setShowBackSidePocketingMode(!showBackSidePocketingMode);
@@ -15639,6 +15876,27 @@
     });
     document.getElementById('closeDxfTemplatesViewBtn')?.addEventListener('click', closeDxfTemplatesView);
     document.getElementById('dxfTemplatesModal')?.addEventListener('click', e=>{ if(e.target.id === 'dxfTemplatesModal') closeDxfTemplatesView(); });
+    document.getElementById('closeMaterialPriceBtn')?.addEventListener('click', closeMaterialPriceModal);
+    document.getElementById('materialPriceModal')?.addEventListener('click', e=>{ if(e.target.id === 'materialPriceModal') closeMaterialPriceModal(); });
+    document.getElementById('materialPriceSearch')?.addEventListener('input', e=>renderMaterialPriceList(e.target.value));
+    document.getElementById('materialPriceList')?.addEventListener('input', e=>{
+      const input = e.target.closest('.material-price-input');
+      if(!input) return;
+      setMaterialBasePriceOverride(input.dataset.material, input.dataset.thickness, input.value);
+      const row = input.closest('.material-price-row');
+      if(row) row.classList.toggle('edited', materialBasePriceOverrideValue(input.dataset.material, input.dataset.thickness) != null);
+      repriceBlocksFromBasePrices();
+      requestRender();
+    });
+    document.getElementById('resetMaterialPriceBtn')?.addEventListener('click', ()=>{
+      if(!Object.keys(materialBasePriceOverrides).length) return;
+      if(!confirm('Reset all material prices back to the built-in defaults?')) return;
+      materialBasePriceOverrides = {};
+      safeLocalStorageSet(MATERIAL_BASE_PRICE_STORAGE_KEY, JSON.stringify(materialBasePriceOverrides));
+      renderMaterialPriceList(document.getElementById('materialPriceSearch')?.value || '');
+      repriceBlocksFromBasePrices();
+      requestRender();
+    });
     document.querySelectorAll('.command-menu').forEach(menu=>{
       menu.addEventListener('toggle', ()=>{ if(menu.open) closeCommandMenus(menu); });
     });
