@@ -415,6 +415,21 @@
     .dxf-template-view-card{border:1px solid #dbe5f0;border-radius:8px;background:#fff;padding:10px;display:grid;gap:8px}
     .dxf-template-view-card svg{width:100%;height:150px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc}
     .dxf-template-view-meta{font-size:11px;line-height:1.35;color:#475569;font-weight:800}
+    .profile-view-card{grid-column:1/-1;gap:10px}
+    .profile-view-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .profile-view-badge{font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:999px;padding:3px 9px;white-space:nowrap}
+    .profile-view-body{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(230px,.85fr);gap:14px;align-items:start}
+    @media (max-width:700px){.profile-view-body{grid-template-columns:1fr}}
+    .profile-view-draw svg{width:100%;height:170px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc}
+    .profile-view-specs{display:grid;gap:6px;align-content:start;min-width:0}
+    .profile-spec-row{display:grid;grid-template-columns:minmax(108px,auto) 1fr;gap:10px;align-items:center;padding:7px 10px;border:1px solid #e7edf4;border-radius:8px;background:#fbfdff}
+    .profile-spec-k{font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#64748b}
+    .profile-spec-v{font-size:12.5px;font-weight:800;color:#0f172a;text-align:right;word-break:break-word}
+    .profile-spec-lines{grid-template-columns:1fr}
+    .profile-spec-lines .profile-spec-k{margin-bottom:5px}
+    .profile-line-chips{display:flex;flex-wrap:wrap;gap:6px}
+    .profile-line-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:#0f172a;background:#fff;border:1px solid #d8e2ee;border-radius:7px;padding:3px 8px}
+    .profile-line-dot{width:9px;height:9px;border-radius:2px;border:1px solid rgba(15,23,42,.25)}
     .modal-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
     @media (max-width:680px){.template-actions{grid-template-columns:1fr}}
     .btn-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-top:18px}
@@ -1770,6 +1785,18 @@
       }
       offsets = cut.length ? cut : [0];
 
+      // Back frame: only when the bottom (back) face is NOT a single full-width flat
+      // line. A fully flat bottom means no back rebate -> no back frame -> front-only.
+      const bottomXs = [];
+      template.entities.forEach(entity=>{
+        const pts = entity.kind === 'polyline' ? (entity.points || [])
+          : entity.kind === 'line' ? [{x:entity.x1, y:entity.y1}, {x:entity.x2, y:entity.y2}] : [];
+        pts.forEach(p=>{ if(Math.abs(p.y - bounds.minY) <= tol) bottomXs.push(p.x); });
+      });
+      const bottomMin = bottomXs.length ? Math.min(...bottomXs) : bounds.minX;
+      const bottomMax = bottomXs.length ? Math.max(...bottomXs) : bounds.maxX;
+      const hasBackFace = (bottomMin > bounds.minX + tol) || (bottomMax < bounds.maxX - tol);
+
       return {
         type:'profile',
         frame:frame || 70,
@@ -1777,14 +1804,18 @@
         materialThickness:thickness || 22,
         innerOffset:offsets[offsets.length - 1] || 0,
         pocketOffsets:offsets,
-        hasBackFace:true
+        frameSide:rightFrame ? 'right' : 'left',
+        hasBackFace
       };
     }
     function profileTemplateMeta(template){
       const rule = template?.profileRule || inferProfileRuleFromTemplate(template);
       if(!rule) return '';
       const steps = Array.isArray(rule.pocketOffsets) && rule.pocketOffsets.length ? rule.pocketOffsets : [Number(rule.innerOffset) || 0];
-      return 'Profile ' + formatMm(rule.frame) + 'mm frame, ' + formatMm(rule.materialThickness) + 'mm material, pocket lines at ' + steps.map(formatMm).join(' / ') + 'mm';
+      const frameTxt = rule.hasBackFace === false
+        ? formatMm(rule.frame) + 'mm front only'
+        : formatMm(rule.frame) + 'mm front ' + formatMm(rule.backFrame || rule.frame) + 'mm back';
+      return 'Profile ' + frameTxt + ', ' + formatMm(rule.materialThickness) + 'mm material, Offset lines at ' + steps.map(formatMm).join(' / ') + 'mm';
     }
     function applyProfileTemplateDefaults(block, type, options={}){
       const rule = profileTemplateRule(type);
@@ -1804,7 +1835,7 @@
       set('backFrameManualOverride', false);
       set('pocketMaterialManualOverride', false);
       set('pocketingEnabled', 'Yes');
-      set('pocketSideMode', 'front-back');
+      set('pocketSideMode', rule.hasBackFace === false ? 'front' : 'front-back');
       // Map measured step offsets to the pocket lines, in their listed order:
       // Pocket -> offset[0] (0, frame edge), 6mm -> offset[1], 2mm -> offset[2], ...
       // Enable exactly as many lines as there are steps; turn the rest off.
@@ -6411,7 +6442,7 @@
       const thickness = formatMm(rule.materialThickness || 22);
       const stepList = Array.isArray(rule.pocketOffsets) && rule.pocketOffsets.length ? rule.pocketOffsets : [Number(rule.innerOffset) || 0];
       const offset = stepList.map(formatMm).join('/');
-      const frontBack = rule.hasBackFace === false ? 'Front' : 'Front + Back';
+      const frontBack = rule.hasBackFace === false ? 'Front only' : 'Front + Back';
       const b = template?.bounds || {width:1, height:1};
       const scale = Math.min(210 / Math.max(1, b.width), 70 / Math.max(1, b.height));
       const drawW = Math.max(1, b.width) * scale;
@@ -6437,9 +6468,7 @@
           <line x1="${x1 + 4}" y1="${y1}" x2="${Math.min(302, x1 + 12)}" y2="${y1}" stroke="#94a3b8" stroke-width="1"/>
           <text x="336" y="${Math.max(64, midY - 3)}" text-anchor="end" font-size="9.5" font-weight="800" fill="#334155">Thickness</text>
           <text x="336" y="${Math.max(76, midY + 9)}" text-anchor="end" font-size="10.5" font-weight="900" fill="#334155">${escapeHtml(thickness)}mm</text>
-          <line x1="${x0}" y1="112" x2="${Math.min(x1, x0 + 36)}" y2="112" stroke="#64748b" stroke-width="1" marker-start="url(#dxfArrowStart)" marker-end="url(#dxfArrowEnd)"/>
-          <text x="${x0 + 18}" y="126" text-anchor="start" font-size="10" font-weight="800" fill="#334155">Pocket lines ${escapeHtml(offset)}mm</text>
-          <text x="48" y="142" font-size="11" font-weight="800" fill="#334155">Material: MDF Hidrofugo Plus • ${escapeHtml(frontBack)}</text>
+          <text x="48" y="142" font-size="10" font-weight="800" fill="#64748b">${escapeHtml(frontBack)} section &bull; full DXF profile preserved</text>
         </svg>`;
     }
     function templatePreviewSvg(template){
@@ -6454,14 +6483,49 @@
       const vbH = h + pad * 2 / scale;
       return '<svg viewBox="0 0 '+vbW+' '+vbH+'" xmlns="http://www.w3.org/2000/svg">'+renderCustomTemplateSvg(template, dest, 1)+'</svg>';
     }
+    function profileTemplateViewCard(template){
+      const rule = template?.profileRule || inferProfileRuleFromTemplate(template) || {};
+      const steps = Array.isArray(rule.pocketOffsets) && rule.pocketOffsets.length ? rule.pocketOffsets : [Number(rule.innerOffset) || 0];
+      const frontOnly = rule.hasBackFace === false;
+      const frameVal = formatMm(rule.frame || 70);
+      const frameTxt = frontOnly ? frameVal + ' mm front only' : frameVal + ' mm front · ' + formatMm(rule.backFrame || rule.frame || 70) + ' mm back';
+      const sideTxt = (rule.frameSide === 'left' ? 'Left' : 'Right') + ' edge';
+      const b = template.bounds || {width:0, height:0};
+      const offsetRows = steps.map((s, i)=>{
+        const label = (POCKET_LINE_CONFIGS[i] && POCKET_LINE_CONFIGS[i].label) || ('Line ' + (i + 1));
+        const color = (POCKET_LINE_CONFIGS[i] && POCKET_LINE_CONFIGS[i].color) || '#64748b';
+        return '<span class="profile-line-chip"><span class="profile-line-dot" style="background:'+color+'"></span>'+escapeHtml(label)+' @ '+escapeHtml(formatMm(s))+'mm</span>';
+      }).join('');
+      const specs = [
+        ['Frame width', frameTxt],
+        ['Material thickness', formatMm(rule.materialThickness || 22) + ' mm'],
+        ['Pocketing', frontOnly ? 'Front only' : 'Front + Back'],
+        ['Frame edge', sideTxt],
+        ['Section size', Math.round(b.width) + ' × ' + Math.round(b.height) + ' mm'],
+        ['DXF layer', (template.layers || []).join(', ') || '0']
+      ].map(([k, v])=>'<div class="profile-spec-row"><span class="profile-spec-k">'+escapeHtml(k)+'</span><span class="profile-spec-v">'+escapeHtml(v)+'</span></div>').join('');
+      return '<div class="dxf-template-view-card profile-view-card">'
+        + '<div class="profile-view-head"><span class="template-name">'+escapeHtml(template.name)+'</span><span class="profile-view-badge">'+(frontOnly ? 'Front only' : 'Front + Back')+'</span></div>'
+        + '<div class="profile-view-body">'
+        +   '<div class="profile-view-draw">'+profileTemplatePreviewSvg(template)+'</div>'
+        +   '<div class="profile-view-specs">'+specs
+        +     '<div class="profile-spec-row profile-spec-lines"><span class="profile-spec-k">Offset lines</span><span class="profile-line-chips">'+(offsetRows || '<span class="profile-spec-v">none</span>')+'</span></div>'
+        +   '</div>'
+        + '</div>'
+        + '</div>';
+    }
     function showDxfTemplatesView(){
       const modal = document.getElementById('dxfTemplatesModal');
       const list = document.getElementById('dxfTemplatesViewList');
       if(!modal || !list) return;
       const cards = [];
       customDoorTemplates.forEach(template=>{
-        const meta = template.construction === 'profile' ? (profileTemplateMeta(template) || 'Profile section') : (template.construction === 'flushback-insert' ? 'Frame + insert' : 'Single piece');
-        const metaHtml = template.construction === 'profile' ? '' : '<div class="dxf-template-view-meta">'+escapeHtml(meta)+'</div>';
+        if(template.construction === 'profile'){
+          cards.push(profileTemplateViewCard(template));
+          return;
+        }
+        const meta = template.construction === 'flushback-insert' ? 'Frame + insert' : 'Single piece';
+        const metaHtml = '<div class="dxf-template-view-meta">'+escapeHtml(meta)+'</div>';
         cards.push('<div class="dxf-template-view-card"><div class="template-name">'+escapeHtml(template.name)+'</div>'+templatePreviewSvg(template)+metaHtml+'</div>');
       });
       customOffcutTemplates.forEach(template=>{
