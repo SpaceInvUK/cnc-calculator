@@ -13916,7 +13916,19 @@
         } else if(p.shaker && isCustomDoorType(p.shakerType)){
           svg += partShape();
           const template = findCustomDoorTemplate(p.shakerType);
-          if(template){
+          if(template && template.construction === 'profile'){
+            // A profile template only defines door SETTINGS (frame / thickness /
+            // pocket offsets) - draw a normal pocketed door, not the literal section.
+            placementCavities(p, renderFrame, p.panels, p.panelSize).forEach(c=>{
+              if(isBackVariant){
+                const d = p.pocketRoundCorners ? roundedSvgPath(cavityPoints(c), scale, 2.5) : pointsSvgPath(cavityPoints(c), scale);
+                if(d) svg += '<path d="'+d+'" fill="none" stroke="#b91c1c" stroke-width="0.35"/>';
+              } else {
+                drawPocketInnerFrameSvg(c, p);
+                drawPocketLineRectsSvg(c, p);
+              }
+            });
+          } else if(template){
             svg += renderCustomTemplateSvg(template, {x:p.x, y:p.y, w:p.w, h:p.h}, scale);
           }
           const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
@@ -14677,7 +14689,7 @@
         }
         if(p.glassBeading && p.shaker){
           drawGlassFrameDxf(p, 0, 0, renderFrame);
-        } else if(p.framePocket){
+        } else if(p.framePocket || (p.shaker && isProfileDoorTemplate(p.shakerType))){
           drawFlatPocketFrame(p, 0, 0, renderFrame, face);
         } else if(p.shaker && isCustomDoorType(p.shakerType)){
           drawCustomDoorTemplate(p, 0, 0);
