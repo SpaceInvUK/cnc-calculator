@@ -6483,14 +6483,59 @@
       const vbH = h + pad * 2 / scale;
       return '<svg viewBox="0 0 '+vbW+' '+vbH+'" xmlns="http://www.w3.org/2000/svg">'+renderCustomTemplateSvg(template, dest, 1)+'</svg>';
     }
+    // Clean schematic of just the frame edge: frame block + stepped/filleted edge down
+    // to a short recess stub (the long recessed panel is irrelevant, so it is cut off).
+    function profileSchematicSvg(rule){
+      rule = rule || {};
+      const frame = Math.max(1, Number(rule.frame || 70));
+      const thickness = Math.max(1, Number(rule.materialThickness || 22));
+      const steps = (Array.isArray(rule.pocketOffsets) && rule.pocketOffsets.length ? rule.pocketOffsets : [0])
+        .map(v=>Math.max(0, Number(v) || 0)).sort((a, b)=>a - b);
+      const maxOff = Math.max(...steps, 0);
+      const W = 340, H = 168, mL = 18, mR = 48, mT = 32, mB = 24;
+      const recessStub = Math.max(12, maxOff * 0.7 + 9);
+      const S = Math.min((W - mL - mR) / (frame + maxOff + recessStub), (H - mT - mB) / thickness);
+      const Rx = W - mR, Lx = Rx - frame * S;
+      const recessLeft = Lx - (maxOff + recessStub) * S;
+      const Ty = mT, By = Ty + thickness * S;
+      const floorY = Ty + thickness * S * 0.58;
+      const pocketWallX = Lx - maxOff * S;
+      const dim = '#475569', stroke = '#1f3a8a', fillCol = '#eef3ff';
+      const fmt = v=>escapeHtml(formatMm(v));
+      let s = '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" class="profile-schematic" font-family="Arial">';
+      s += '<defs><marker id="psA" markerWidth="7" markerHeight="7" refX="1" refY="3.5" orient="auto"><path d="M7 0 L0 3.5 L7 7" fill="none" stroke="'+dim+'" stroke-width="1.1"/></marker><marker id="psB" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="'+dim+'" stroke-width="1.1"/></marker></defs>';
+      // solid material: frame block (full thickness) + recess (below the panel floor), edge ramped between them
+      s += '<path d="M '+recessLeft+' '+By+' L '+Rx+' '+By+' L '+Rx+' '+Ty+' L '+Lx+' '+Ty+' L '+pocketWallX+' '+floorY+' L '+recessLeft+' '+floorY+' Z" fill="'+fillCol+'" stroke="'+stroke+'" stroke-width="1.5" stroke-linejoin="round"/>';
+      // break line at the cut-off recess
+      let zz = 'M '+recessLeft+' '+(floorY - 2);
+      for(let yy = floorY; yy < By; yy += 8) zz += ' L '+(recessLeft + 4)+' '+(yy + 2)+' L '+(recessLeft - 4)+' '+(yy + 6);
+      s += '<path d="'+zz+'" fill="none" stroke="#94a3b8" stroke-width="1"/>';
+      // pocket / offset lines: colour-coded guides at each offset inward from the frame inner edge
+      steps.forEach((off, i)=>{
+        const x = Lx - off * S;
+        const color = (POCKET_LINE_CONFIGS[i] && POCKET_LINE_CONFIGS[i].color) || '#b45309';
+        s += '<line x1="'+x+'" y1="'+(Ty + 2)+'" x2="'+x+'" y2="'+(By + 4)+'" stroke="'+color+'" stroke-width="1.6" stroke-dasharray="3 2"/>';
+      });
+      // frame width dimension — across the block only
+      s += '<line x1="'+Lx+'" y1="'+(Ty - 14)+'" x2="'+Rx+'" y2="'+(Ty - 14)+'" stroke="'+dim+'" stroke-width="1" marker-start="url(#psA)" marker-end="url(#psB)"/>';
+      s += '<line x1="'+Lx+'" y1="'+(Ty - 18)+'" x2="'+Lx+'" y2="'+(Ty - 2)+'" stroke="#cbd5e1" stroke-width="1"/>';
+      s += '<line x1="'+Rx+'" y1="'+(Ty - 18)+'" x2="'+Rx+'" y2="'+(Ty - 2)+'" stroke="#cbd5e1" stroke-width="1"/>';
+      s += '<text x="'+((Lx + Rx) / 2)+'" y="'+(Ty - 18)+'" text-anchor="middle" font-size="11" font-weight="900" fill="#334155">Frame '+fmt(frame)+'mm</text>';
+      // thickness dimension — right side
+      const tx = Rx + 18;
+      s += '<line x1="'+tx+'" y1="'+Ty+'" x2="'+tx+'" y2="'+By+'" stroke="'+dim+'" stroke-width="1" marker-start="url(#psA)" marker-end="url(#psB)"/>';
+      s += '<line x1="'+(Rx + 2)+'" y1="'+Ty+'" x2="'+(tx + 4)+'" y2="'+Ty+'" stroke="#cbd5e1" stroke-width="1"/>';
+      s += '<line x1="'+(Rx + 2)+'" y1="'+By+'" x2="'+(tx + 4)+'" y2="'+By+'" stroke="#cbd5e1" stroke-width="1"/>';
+      s += '<text x="'+(tx + 5)+'" y="'+((Ty + By) / 2 + 3.5)+'" font-size="10.5" font-weight="900" fill="#334155">'+fmt(thickness)+'mm</text>';
+      s += '</svg>';
+      return s;
+    }
     function profileTemplateViewCard(template){
       const rule = template?.profileRule || inferProfileRuleFromTemplate(template) || {};
       const steps = Array.isArray(rule.pocketOffsets) && rule.pocketOffsets.length ? rule.pocketOffsets : [Number(rule.innerOffset) || 0];
       const frontOnly = rule.hasBackFace === false;
       const frameVal = formatMm(rule.frame || 70);
       const frameTxt = frontOnly ? frameVal + ' mm front only' : frameVal + ' mm front · ' + formatMm(rule.backFrame || rule.frame || 70) + ' mm back';
-      const sideTxt = (rule.frameSide === 'left' ? 'Left' : 'Right') + ' edge';
-      const b = template.bounds || {width:0, height:0};
       const offsetRows = steps.map((s, i)=>{
         const label = (POCKET_LINE_CONFIGS[i] && POCKET_LINE_CONFIGS[i].label) || ('Line ' + (i + 1));
         const color = (POCKET_LINE_CONFIGS[i] && POCKET_LINE_CONFIGS[i].color) || '#64748b';
@@ -6499,15 +6544,12 @@
       const specs = [
         ['Frame width', frameTxt],
         ['Material thickness', formatMm(rule.materialThickness || 22) + ' mm'],
-        ['Pocketing', frontOnly ? 'Front only' : 'Front + Back'],
-        ['Frame edge', sideTxt],
-        ['Section size', Math.round(b.width) + ' × ' + Math.round(b.height) + ' mm'],
-        ['DXF layer', (template.layers || []).join(', ') || '0']
+        ['Pocketing', frontOnly ? 'Front only' : 'Front + Back']
       ].map(([k, v])=>'<div class="profile-spec-row"><span class="profile-spec-k">'+escapeHtml(k)+'</span><span class="profile-spec-v">'+escapeHtml(v)+'</span></div>').join('');
       return '<div class="dxf-template-view-card profile-view-card">'
         + '<div class="profile-view-head"><span class="template-name">'+escapeHtml(template.name)+'</span><span class="profile-view-badge">'+(frontOnly ? 'Front only' : 'Front + Back')+'</span></div>'
         + '<div class="profile-view-body">'
-        +   '<div class="profile-view-draw">'+profileTemplatePreviewSvg(template)+'</div>'
+        +   '<div class="profile-view-draw">'+profileSchematicSvg(rule)+'</div>'
         +   '<div class="profile-view-specs">'+specs
         +     '<div class="profile-spec-row profile-spec-lines"><span class="profile-spec-k">Offset lines</span><span class="profile-line-chips">'+(offsetRows || '<span class="profile-spec-v">none</span>')+'</span></div>'
         +   '</div>'
