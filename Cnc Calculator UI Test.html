@@ -1408,6 +1408,7 @@
     const TEMPLATE_STORAGE_KEY = 'fastCncDoorTemplatesV1';
     const OFFCUT_TEMPLATE_STORAGE_KEY = 'fastCncOffcutTemplatesV1';
     const MATERIAL_PRICE_STORAGE_KEY = 'fastCncMaterialPricesV1';
+    const PROFILE_DEFAULTS_VERSION = 2;
     const QUOTE_FILE_VERSION = 1;
     const VAT_RATE = 20;
     const POCKET_LINE_CONFIGS = [
@@ -1637,7 +1638,7 @@
         const saved = JSON.parse(safeLocalStorageGet(TEMPLATE_STORAGE_KEY, '[]') || '[]');
         return Array.isArray(saved) ? saved.filter(t=>t && t.id && t.name && t.bounds && Array.isArray(t.entities)).map(t=>({
           ...t,
-          profileRule:t.profileRule || inferProfileRuleFromTemplate(t),
+          profileRule:t.construction === 'profile' ? {...(t.profileRule || {}), ...(inferProfileRuleFromTemplate(t) || {})} : (t.profileRule || null),
           construction:t.construction || 'single'
         })) : [];
       } catch(_){
@@ -1706,14 +1707,19 @@
     function inferProfileRuleFromTemplate(template){
       if(!template || !Array.isArray(template.entities)) return null;
       const rects = template.entities.map(entity=>dxfEntityRect(entity, 0.35)).filter(Boolean);
-      const main = rects
+      const profileRects = rects.filter(rect=>rect.w >= 35 && rect.w <= 130 && rect.h >= 10 && rect.h <= 40);
+      const main = (profileRects.length ? profileRects : rects)
         .filter(rect=>rect.w > 0 && rect.h > 0)
         .sort((a,b)=>(b.w*b.h)-(a.w*a.h))[0];
-      if(!main) return null;
+      const b = template.bounds || {};
+      if(!main && !(b.width > 0 && b.height > 0)) return null;
       const verticals = rects.filter(rect=>rect.w < 0.5 && rect.h > 0).map(rect=>rect.h);
       const offsets = rects.filter(rect=>rect.w > 0 && rect.h > 0 && rect !== main).map(rect=>Math.max(rect.w, rect.h)).filter(v=>v > 0);
-      const width = Math.round(main.w * 100) / 100;
-      const thickness = Math.round(main.h * 100) / 100;
+      const thicknessCandidates = rects.map(rect=>Math.min(rect.w, rect.h)).filter(value=>value >= 10 && value <= 40);
+      const widthRaw = Number(main?.w || 70);
+      const thicknessRaw = Number(thicknessCandidates[0] || main?.h || b.height || 22);
+      const width = Math.round((widthRaw >= 35 && widthRaw <= 130 ? widthRaw : 70) * 100) / 100;
+      const thickness = Math.round((thicknessRaw >= 10 && thicknessRaw <= 40 ? thicknessRaw : 22) * 100) / 100;
       const offset = offsets.includes(7) ? 7 : (verticals.includes(7) ? 7 : 7);
       return {
         type:'profile',
@@ -1760,6 +1766,7 @@
         changed = true;
       }
       block.profileTemplateAppliedType = type;
+      block.profileDefaultsVersion = PROFILE_DEFAULTS_VERSION;
       if(changed) lastCalculation = null;
       return changed;
     }
@@ -6348,28 +6355,34 @@
       const thickness = formatMm(rule.materialThickness || 22);
       const offset = formatMm(rule.innerOffset || 7);
       const frontBack = rule.hasBackFace === false ? 'Front' : 'Front + Back';
+      const b = template?.bounds || {width:1, height:1};
+      const scale = Math.min(210 / Math.max(1, b.width), 70 / Math.max(1, b.height));
+      const drawW = Math.max(1, b.width) * scale;
+      const drawH = Math.max(1, b.height) * scale;
+      const dest = {x:44 / scale, y:58 / scale, w:b.width, h:b.height};
+      const drawing = renderCustomTemplateSvg(template, dest, scale);
+      const x0 = 44, y0 = 58, x1 = x0 + drawW, y1 = y0 + drawH;
+      const midX = x0 + drawW / 2;
+      const midY = y0 + drawH / 2;
       return `
         <svg viewBox="0 0 340 150" xmlns="http://www.w3.org/2000/svg" class="profile-template-preview" aria-label="${escapeHtml(template.name)} measurements">
           <defs>
             <marker id="dxfArrowStart" markerWidth="7" markerHeight="7" refX="1" refY="3.5" orient="auto"><path d="M7 0 L0 3.5 L7 7" fill="none" stroke="#64748b" stroke-width="1.2"/></marker>
             <marker id="dxfArrowEnd" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#64748b" stroke-width="1.2"/></marker>
           </defs>
-          <path d="M48 75 H184 L192 63 H288 V95 H192 L184 83 H48" fill="none" stroke="#2f6f56" stroke-width="1.8"/>
-          <path d="M192 63 H288 V95 H192" fill="none" stroke="#111827" stroke-width="1"/>
-          <line x1="192" y1="38" x2="288" y2="38" stroke="#64748b" stroke-width="1" marker-start="url(#dxfArrowStart)" marker-end="url(#dxfArrowEnd)"/>
-          <line x1="192" y1="42" x2="192" y2="58" stroke="#94a3b8" stroke-width="1"/>
-          <line x1="288" y1="42" x2="288" y2="58" stroke="#94a3b8" stroke-width="1"/>
-          <text x="240" y="31" text-anchor="middle" font-size="11" font-weight="800" fill="#334155">Frame ${escapeHtml(frame)}mm</text>
-          <line x1="306" y1="63" x2="306" y2="95" stroke="#64748b" stroke-width="1" marker-start="url(#dxfArrowStart)" marker-end="url(#dxfArrowEnd)"/>
-          <line x1="292" y1="63" x2="302" y2="63" stroke="#94a3b8" stroke-width="1"/>
-          <line x1="292" y1="95" x2="302" y2="95" stroke="#94a3b8" stroke-width="1"/>
-          <text x="336" y="76" text-anchor="end" font-size="9.5" font-weight="800" fill="#334155">Thickness</text>
-          <text x="336" y="88" text-anchor="end" font-size="10.5" font-weight="900" fill="#334155">${escapeHtml(thickness)}mm</text>
-          <line x1="184" y1="54" x2="192" y2="54" stroke="#64748b" stroke-width="1" marker-start="url(#dxfArrowStart)" marker-end="url(#dxfArrowEnd)"/>
-          <line x1="184" y1="58" x2="184" y2="72" stroke="#94a3b8" stroke-width="1"/>
-          <line x1="192" y1="58" x2="192" y2="63" stroke="#94a3b8" stroke-width="1"/>
-          <text x="188" y="48" text-anchor="middle" font-size="10" font-weight="800" fill="#334155">Offset ${escapeHtml(offset)}mm</text>
-          <text x="48" y="124" font-size="11" font-weight="800" fill="#334155">Material: MDF Hidrofugo Plus • ${escapeHtml(frontBack)}</text>
+          ${drawing}
+          <line x1="${x0}" y1="34" x2="${x1}" y2="34" stroke="#64748b" stroke-width="1" marker-start="url(#dxfArrowStart)" marker-end="url(#dxfArrowEnd)"/>
+          <line x1="${x0}" y1="38" x2="${x0}" y2="${Math.max(44, y0 - 4)}" stroke="#94a3b8" stroke-width="1"/>
+          <line x1="${x1}" y1="38" x2="${x1}" y2="${Math.max(44, y0 - 4)}" stroke="#94a3b8" stroke-width="1"/>
+          <text x="${midX}" y="27" text-anchor="middle" font-size="11" font-weight="800" fill="#334155">Frame ${escapeHtml(frame)}mm</text>
+          <line x1="${Math.min(306, x1 + 16)}" y1="${y0}" x2="${Math.min(306, x1 + 16)}" y2="${y1}" stroke="#64748b" stroke-width="1" marker-start="url(#dxfArrowStart)" marker-end="url(#dxfArrowEnd)"/>
+          <line x1="${x1 + 4}" y1="${y0}" x2="${Math.min(302, x1 + 12)}" y2="${y0}" stroke="#94a3b8" stroke-width="1"/>
+          <line x1="${x1 + 4}" y1="${y1}" x2="${Math.min(302, x1 + 12)}" y2="${y1}" stroke="#94a3b8" stroke-width="1"/>
+          <text x="336" y="${Math.max(64, midY - 3)}" text-anchor="end" font-size="9.5" font-weight="800" fill="#334155">Thickness</text>
+          <text x="336" y="${Math.max(76, midY + 9)}" text-anchor="end" font-size="10.5" font-weight="900" fill="#334155">${escapeHtml(thickness)}mm</text>
+          <line x1="${x0}" y1="112" x2="${Math.min(x1, x0 + 36)}" y2="112" stroke="#64748b" stroke-width="1" marker-start="url(#dxfArrowStart)" marker-end="url(#dxfArrowEnd)"/>
+          <text x="${x0 + 18}" y="126" text-anchor="middle" font-size="10" font-weight="800" fill="#334155">Offset ${escapeHtml(offset)}mm</text>
+          <text x="48" y="142" font-size="11" font-weight="800" fill="#334155">Material: MDF Hidrofugo Plus • ${escapeHtml(frontBack)}</text>
         </svg>`;
     }
     function templatePreviewSvg(template){
@@ -8750,10 +8763,11 @@
         if(block.autoGenerated) node.querySelector('.remove-btn').style.display = 'none';
         if(block.autoGenerated && node.querySelector('.biding-row')) node.querySelector('.biding-row').style.display = 'none';
         bindSmartImportControls(node, block);
-        if(!panelMode && isProfileDoorTemplate(block.globalShakerType)){
+        if(!panelMode && isProfileDoorTemplate(block.globalShakerType) && (block.profileTemplateAppliedType !== block.globalShakerType || block.profileDefaultsVersion !== PROFILE_DEFAULTS_VERSION)){
           applyProfileTemplateDefaults(block, block.globalShakerType);
         } else if(!isProfileDoorTemplate(block.globalShakerType)){
           block.profileTemplateAppliedType = '';
+          block.profileDefaultsVersion = 0;
         }
 
         const materialSel = node.querySelector('.material');
@@ -13845,16 +13859,7 @@
         } else if(p.shaker && isCustomDoorType(p.shakerType)){
           svg += partShape();
           const template = findCustomDoorTemplate(p.shakerType);
-          if(template && template.construction === 'profile'){
-            const rule = p.profileRule || template.profileRule || inferProfileRuleFromTemplate(template);
-            const cavities = placementCavities(p, renderFrame, p.panels, p.panelSize);
-            cavities.forEach(c=>{
-              const inner = cavityPoints(c);
-              const offset = offsetPolygonPoints(inner, Math.max(0, Number(rule?.innerOffset || 7)));
-              drawLinePoints(inner, '#111', '0.35');
-              if(offset) drawLinePoints(offset, '#dc2626', '0.32');
-            });
-          } else if(template){
+          if(template){
             svg += renderCustomTemplateSvg(template, {x:p.x, y:p.y, w:p.w, h:p.h}, scale);
           }
           const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
@@ -14474,6 +14479,16 @@
           line('REEDED', seg.x1, seg.y1, seg.x2, seg.y2);
         });
       }
+      function profileTemplateDxfLayer(entity, fallbackLayer='POCKET_10MM'){
+        const upper = String(entity?.layer || '').toUpperCase();
+        if(upper.includes('OUT')) return 'OUT';
+        if(upper.includes('6')) return 'POCKET_6MM';
+        if(upper.includes('2')) return 'POCKET_2MM';
+        if(upper.includes('CHAMFER')) return 'CHAMFER';
+        if(upper.includes('PROFILE')) return 'PROFILE_TOOL';
+        if(upper.includes('POCKET') || upper.includes('POKET') || upper.includes('SECTION')) return fallbackLayer;
+        return fallbackLayer;
+      }
       function drawTemplateEntityDxf(template, dest, entity, fallbackLayer='OFFCUT'){
         const layer = entity.layer || fallbackLayer;
         if(entity.kind === 'circle'){
@@ -14506,12 +14521,8 @@
         placementOutline('OUT', p, ox, oy);
         if(!template) return;
         if(template.construction === 'profile'){
-          const rule = p.profileRule || template.profileRule || inferProfileRuleFromTemplate(template);
-          const lines = profilePocketLineSettings(rule);
-          placementCavities(p, Number(p.frame || rule?.frame || 70), p.panels, p.panelSize).forEach(c=>{
-            writePolyline('OUT', cavityPoints(c), true);
-            drawPocketGuideLayers(c, lines, false);
-          });
+          const dest = {x:ox+p.x, y:oy+p.y, w:p.w, h:p.h};
+          template.entities.forEach(entity=>drawTemplateEntityDxf(template, dest, {...entity, layer:profileTemplateDxfLayer(entity)}, 'POCKET_10MM'));
           return;
         }
         const dest = {x:ox+p.x, y:oy+p.y, w:p.w, h:p.h};
