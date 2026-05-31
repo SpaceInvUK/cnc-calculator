@@ -3297,8 +3297,12 @@
       return partPocketingValue(part, block) === 'Yes' && partPocketSideMode(part, block) === 'front-back';
     }
     function placementNeedsBackFaceSheet(placement, sourceBlock){
-      if(placement && placement.framePocket && placement.pocketSideMode === 'front-back') return true;
-      if(placement && placement.sourcePartIndex != null && sourceBlock && Array.isArray(sourceBlock.parts)){
+      if(!placement) return false;
+      // A profile part carries its own per-part front/back decision (from its door type),
+      // so each placement decides individually whether it appears on the back sheet.
+      if(placement.profileRule) return placement.pocketSideMode === 'front-back';
+      if(placement.framePocket && placement.pocketSideMode === 'front-back') return true;
+      if(placement.sourcePartIndex != null && sourceBlock && Array.isArray(sourceBlock.parts)){
         const sourcePart = sourceBlock.parts[Number(placement.sourcePartIndex)];
         if(sourcePart) return partNeedsBackFaceSheet(sourcePart, sourceBlock);
       }
@@ -8370,7 +8374,7 @@
             frameMiddle:p.frameMiddle ?? '',
             frameEditZone:normalizeFrameZone(p.frameEditZone || 'left'),
             framePocket:beadingPart ? false : (partPocketOn && doorType === 'no'),
-            pocketSideMode:profileRule ? 'front-back' : partPocketSideMode(p, block),
+            pocketSideMode:profileRule ? (profileRule.hasBackFace === false ? 'front' : 'front-back') : partPocketSideMode(p, block),
             pocketRoundCorners:partPocketRoundCornersValue(p, block) === 'Yes',
             pocketLines:beadingPart ? [] : (profileRule ? profilePocketLineSettings(profileRule) : pocketLineSettingsForPart(p, block)),
             beadingFrame:(beadingPart || glassBeading) ? beadingFrame : undefined,
@@ -15028,7 +15032,6 @@
         html += '<div class="row"><div class="label">Sheet price</div><div class="value">'+money(displayedSheetPrice)+'</div></div>';
         html += '<div class="row"><div class="label">Sheets</div><div class="value">'+price.sheetQuantity+'</div></div>';
         html += '<div class="row"><div class="label">Material subtotal</div><div class="value">'+money(price.materialLineTotal)+'</div></div>';
-        if((block.doorTypeSummary || block.globalShakerType) !== 'no') html += '<div class="row"><div class="label">Door Type</div><div class="value"><span class="pill">'+doorTypeLabel(block.doorTypeSummary || block.globalShakerType)+'</span></div></div>';
         html += '</div>';
         html += '<div class="pricing-panel service"><div class="pricing-panel-title">CNC Service Breakdown</div>';
         html += '<div class="row"><div class="label">Base CNC service</div><div class="value">'+money(price.cncPrice)+'</div></div>';
