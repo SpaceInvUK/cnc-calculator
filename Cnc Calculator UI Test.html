@@ -6530,6 +6530,46 @@
       s += '</svg>';
       return s;
     }
+    // The REAL DXF profile, zoomed to the frame edge (the long recessed panel is cropped
+    // out by the viewBox). Frame dimension measures only the frame block.
+    function profileFrameDetailSvg(template, rule){
+      const b = template && template.bounds;
+      if(!b || !(b.width > 0 && b.height > 0)) return profileSchematicSvg(rule);
+      const frame = Math.max(1, Number(rule.frame || 70));
+      const thickness = Math.max(1, Number(rule.materialThickness || 22));
+      const offs = (Array.isArray(rule.pocketOffsets) && rule.pocketOffsets.length ? rule.pocketOffsets : [0]).map(v=>Math.max(0, Number(v) || 0));
+      const maxOff = Math.max(...offs, 0);
+      const rightFrame = rule.frameSide !== 'left';
+      const stub = Math.max(10, maxOff * 0.8 + 8);
+      const detailW = Math.min(b.width, frame + maxOff + stub);
+      const P = 200 / detailW;
+      const dest = {x:0, y:0, w:b.width, h:b.height};
+      const fullW = b.width * P, fullH = b.height * P;
+      const innerScreenX = rightFrame ? (b.width - frame) * P : frame * P;
+      const outerScreenX = rightFrame ? fullW : 0;
+      const cropStart = rightFrame ? (b.width - detailW) * P : 0;
+      const padL = 12, padR = 48, padT = 26, padB = 16;
+      const vbX = cropStart - padL, vbY = -padT, vbW = detailW * P + padL + padR, vbH = fullH + padT + padB;
+      const sw = Math.max(0.7, vbW / 230);
+      const drawing = renderCustomTemplateSvg(template, dest, P).replace(/stroke-width="0\.42"/g, 'stroke-width="' + sw.toFixed(2) + '"');
+      const uid = 'pfd' + Math.random().toString(36).slice(2, 7);
+      const dim = '#475569';
+      const fmt = v=>escapeHtml(formatMm(v));
+      const fx1 = Math.min(innerScreenX, outerScreenX), fx2 = Math.max(innerScreenX, outerScreenX);
+      const fy = -12;
+      const tx = rightFrame ? outerScreenX + 14 : outerScreenX - 14;
+      let s = '<svg viewBox="'+vbX.toFixed(1)+' '+vbY.toFixed(1)+' '+vbW.toFixed(1)+' '+vbH.toFixed(1)+'" xmlns="http://www.w3.org/2000/svg" class="profile-schematic" font-family="Arial">';
+      s += '<defs><marker id="'+uid+'A" markerWidth="7" markerHeight="7" refX="1" refY="3.5" orient="auto"><path d="M7 0 L0 3.5 L7 7" fill="none" stroke="'+dim+'" stroke-width="1.1"/></marker><marker id="'+uid+'B" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="'+dim+'" stroke-width="1.1"/></marker></defs>';
+      s += drawing;
+      s += '<line x1="'+fx1.toFixed(1)+'" y1="'+fy+'" x2="'+fx2.toFixed(1)+'" y2="'+fy+'" stroke="'+dim+'" stroke-width="1" marker-start="url(#'+uid+'A)" marker-end="url(#'+uid+'B)"/>';
+      s += '<line x1="'+fx1.toFixed(1)+'" y1="'+(fy - 4)+'" x2="'+fx1.toFixed(1)+'" y2="4" stroke="#cbd5e1" stroke-width="1"/>';
+      s += '<line x1="'+fx2.toFixed(1)+'" y1="'+(fy - 4)+'" x2="'+fx2.toFixed(1)+'" y2="4" stroke="#cbd5e1" stroke-width="1"/>';
+      s += '<text x="'+((fx1 + fx2) / 2).toFixed(1)+'" y="'+(fy - 5)+'" text-anchor="middle" font-size="11" font-weight="900" fill="#334155">Frame '+fmt(frame)+'mm</text>';
+      s += '<line x1="'+tx.toFixed(1)+'" y1="0" x2="'+tx.toFixed(1)+'" y2="'+fullH.toFixed(1)+'" stroke="'+dim+'" stroke-width="1" marker-start="url(#'+uid+'A)" marker-end="url(#'+uid+'B)"/>';
+      s += '<text x="'+(tx + (rightFrame ? 5 : -5)).toFixed(1)+'" y="'+(fullH / 2 + 3.5).toFixed(1)+'" text-anchor="'+(rightFrame ? 'start' : 'end')+'" font-size="10.5" font-weight="900" fill="#334155">'+fmt(thickness)+'mm</text>';
+      s += '</svg>';
+      return s;
+    }
     function profileTemplateViewCard(template){
       const rule = template?.profileRule || inferProfileRuleFromTemplate(template) || {};
       const steps = Array.isArray(rule.pocketOffsets) && rule.pocketOffsets.length ? rule.pocketOffsets : [Number(rule.innerOffset) || 0];
@@ -6549,7 +6589,7 @@
       return '<div class="dxf-template-view-card profile-view-card">'
         + '<div class="profile-view-head"><span class="template-name">'+escapeHtml(template.name)+'</span><span class="profile-view-badge">'+(frontOnly ? 'Front only' : 'Front + Back')+'</span></div>'
         + '<div class="profile-view-body">'
-        +   '<div class="profile-view-draw">'+profileSchematicSvg(rule)+'</div>'
+        +   '<div class="profile-view-draw">'+profileFrameDetailSvg(template, rule)+'</div>'
         +   '<div class="profile-view-specs">'+specs
         +     '<div class="profile-spec-row profile-spec-lines"><span class="profile-spec-k">Offset lines</span><span class="profile-line-chips">'+(offsetRows || '<span class="profile-spec-v">none</span>')+'</span></div>'
         +   '</div>'
