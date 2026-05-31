@@ -1,0 +1,5 @@
+Fast CNC Apply Toolpath To All Sheets
+
+Loads the user's Vectric ToolpathTemplate once and lets VCarve Pro V12.5 apply it to the current multi-sheet job.
+
+Version 1.6 by Ednei

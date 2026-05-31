@@ -1,0 +1,5 @@
+Fast CNC Save All Sheets Toolpaths
+
+Saves the already-created VCarve toolpaths grouped by sheet, using the selected post processor.
+
+Version 0.3c by Ednei

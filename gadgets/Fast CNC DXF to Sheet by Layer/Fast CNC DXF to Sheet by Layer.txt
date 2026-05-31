@@ -1,0 +1,5 @@
+Fast CNC DXF to Sheet by Layer
+
+Moves geometry from a large imported DXF layout into real VCarve sheets using rectangles on the configured sheet boundary layer names.
+
+Version 0.3b by Ednei

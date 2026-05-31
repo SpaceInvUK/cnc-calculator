@@ -1,0 +1,260 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+  "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Fast CNC Save All Sheets Toolpaths</title>
+  <style type="text/css">
+    html {
+      overflow: auto;
+    }
+
+    body {
+      background-color: #eef0f3;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      margin: 0;
+    }
+
+    .header {
+      background-color: #ffffff;
+      border-bottom: 1px solid #c8ced8;
+      padding: 8px 12px;
+    }
+
+    .brand {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .brand-mark {
+      color: #111111;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      line-height: 1;
+      padding-right: 16px;
+      vertical-align: middle;
+      white-space: nowrap;
+      width: 116px;
+    }
+
+    .brand-sub {
+      color: #333333;
+      display: block;
+      font-size: 7px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-top: 3px;
+    }
+
+    .title-cell {
+      vertical-align: middle;
+    }
+
+    .title {
+      color: #111111;
+      font-size: 17px;
+      font-weight: bold;
+      line-height: 1.08;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: #4b5563;
+      font-size: 9px;
+      font-weight: bold;
+      margin-top: 2px;
+    }
+
+    .content {
+      padding: 10px 12px;
+    }
+
+    .panel {
+      background-color: #ffffff;
+      border: 1px solid #ccd3dd;
+      padding: 10px;
+    }
+
+    .section-title {
+      border-bottom: 1px solid #d9dee7;
+      color: #111827;
+      font-size: 10px;
+      font-weight: bold;
+      margin: 0 0 8px 0;
+      padding-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .grid {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .grid td {
+      padding: 0 8px 8px 0;
+      vertical-align: top;
+    }
+
+    label {
+      color: #333333;
+      display: block;
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+
+    input[type="text"],
+    select {
+      border: 1px solid #aab3c0;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      height: 22px;
+      padding: 2px 4px;
+    }
+
+    .folder-input {
+      background-color: #f8fafc;
+      border: 1px solid #aab3c0;
+      color: #111111;
+      display: block;
+      font-size: 10px;
+      height: 18px;
+      line-height: 18px;
+      overflow: hidden;
+      padding: 2px 4px;
+      white-space: nowrap;
+      width: 470px;
+    }
+
+    select {
+      width: 470px;
+    }
+
+    .SmallButton,
+    #ChooseOutputFolderButton {
+      background-color: #ffffff;
+      border: 1px solid #9ca3af;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      font-weight: bold;
+      height: 25px;
+      width: 130px;
+    }
+
+    .note {
+      color: #4b5563;
+      font-size: 9px;
+      line-height: 1.35;
+      margin: 4px 0 0 0;
+    }
+
+    .footer {
+      background-color: #ffffff;
+      border-top: 1px solid #c8ced8;
+      padding: 8px 12px;
+    }
+
+    .footer table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .FormButton {
+      background-color: #111827;
+      border: 1px solid #111827;
+      color: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      font-weight: bold;
+      height: 24px;
+      width: 100%;
+    }
+
+    .SecondaryButton {
+      background-color: #ffffff;
+      border: 1px solid #9ca3af;
+      color: #111111;
+    }
+
+    .version {
+      color: #555555;
+      font-size: 9px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .credit {
+      color: #111111;
+      font-size: 9px;
+      font-weight: bold;
+      margin-top: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <table class="brand">
+      <tr>
+        <td class="brand-mark">
+          FAST CNC
+          <span class="brand-sub">CUTTING SERVICE</span>
+        </td>
+        <td class="title-cell">
+          <div class="title"><span id="GadgetTitle">Fast CNC Save All Sheets Toolpaths</span></div>
+          <div class="subtitle">Save the calculated toolpaths from each sheet with the selected post processor</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="content">
+    <div class="panel">
+      <p class="section-title">Output</p>
+      <table class="grid">
+        <tr>
+          <td>
+            <label>Output folder</label>
+            <span class="folder-input" id="OutputFolderLabel">C:\Users\ednei\Downloads\Vcarve\CNC_Output</span>
+          </td>
+          <td style="width: 140px; padding-top: 15px;">
+            <BUTTON CLASS="DirectoryPicker" ID="ChooseOutputFolderButton" type=button>Browse...</BUTTON>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label for="PostNameSelector">Post processor</label>
+            <select id="PostNameSelector"></select>
+          </td>
+        </tr>
+      </table>
+
+      <p class="note">
+        Saves the toolpaths already in the job, one CNC file per sheet when possible.
+      </p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <table>
+      <tr>
+        <td style="width: 15%">&nbsp;</td>
+        <td style="width: 28%">
+          <input class="FormButton" type="button" id="ButtonOK" value="Save CNC Files">
+        </td>
+        <td style="width: 7%">&nbsp;</td>
+        <td style="width: 22%">
+          <input class="FormButton SecondaryButton" type="button" id="ButtonCancel" value="Cancel">
+        </td>
+        <td class="version">
+          <div>Version <span id="GadgetVersion">0.3c</span></div>
+          <div class="credit">by Ednei</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>

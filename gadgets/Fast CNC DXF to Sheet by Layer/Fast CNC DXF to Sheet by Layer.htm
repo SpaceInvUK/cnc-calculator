@@ -1,0 +1,238 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+  "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Fast CNC DXF to Sheet by Layer</title>
+  <style type="text/css">
+    html {
+      overflow: auto;
+    }
+
+    body {
+      background-color: #f1f2f4;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      margin: 0;
+    }
+
+    .header {
+      background-color: #ffffff;
+      border-bottom: 1px solid #cfd4dc;
+      padding: 9px 14px;
+    }
+
+    .brand {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .brand-mark {
+      width: 126px;
+      vertical-align: middle;
+      color: #111111;
+      font-size: 17px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .brand-sub {
+      display: block;
+      color: #333333;
+      font-size: 7px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-top: 3px;
+    }
+
+    .title-cell {
+      vertical-align: middle;
+    }
+
+    .title {
+      color: #111111;
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: #555555;
+      font-size: 10px;
+      font-weight: bold;
+      margin-top: 2px;
+    }
+
+    .content {
+      padding: 12px 14px;
+    }
+
+    .panel {
+      background-color: #ffffff;
+      border: 1px solid #d0d5dd;
+      padding: 10px;
+    }
+
+    label {
+      color: #333333;
+      display: block;
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+
+    input[type="text"] {
+      border: 1px solid #aeb6c2;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      height: 22px;
+      padding: 2px 5px;
+    }
+
+    .layer-input {
+      width: 350px;
+    }
+
+    .small-input {
+      width: 170px;
+    }
+
+    .field {
+      margin-bottom: 8px;
+    }
+
+    .grid {
+      border-collapse: collapse;
+    }
+
+    .grid td {
+      padding: 0 10px 8px 0;
+      vertical-align: top;
+    }
+
+    .check-row {
+      margin: 0 0 7px 0;
+    }
+
+    .note {
+      color: #444444;
+      font-size: 10px;
+      line-height: 1.35;
+      margin: 0;
+    }
+
+    .footer {
+      background-color: #ffffff;
+      border-top: 1px solid #cfd4dc;
+      padding: 9px 14px;
+    }
+
+    .footer table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .FormButton {
+      background-color: #111827;
+      border: 1px solid #111827;
+      color: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      font-weight: bold;
+      height: 25px;
+      width: 100%;
+    }
+
+    .SecondaryButton {
+      background-color: #ffffff;
+      border: 1px solid #9ca3af;
+      color: #111111;
+    }
+
+    .version {
+      color: #555555;
+      font-size: 9px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .credit {
+      color: #111111;
+      font-size: 9px;
+      font-weight: bold;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <table class="brand">
+      <tr>
+        <td class="brand-mark">
+          FAST CNC
+          <span class="brand-sub">CUTTING SERVICE</span>
+        </td>
+        <td class="title-cell">
+          <div class="title"><span id="GadgetTitle">Fast CNC DXF to Sheet by Layer</span></div>
+          <div class="subtitle">Create VCarve sheets from DXF sheet rectangles</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="content">
+    <div class="panel">
+      <div class="field">
+        <label for="SheetLayerNamesEdit">Sheet boundary layer names</label>
+        <input class="layer-input" type="text" id="SheetLayerNamesEdit" value="SHEET,CNC_SHEET">
+      </div>
+
+      <table class="grid">
+        <tr>
+          <td>
+            <label for="MinSheetSizeEdit">Minimum sheet side</label>
+            <input class="small-input" type="text" id="MinSheetSizeEdit" value="500.000">
+          </td>
+          <td>
+            <label for="ToleranceEdit">Boundary tolerance</label>
+            <input class="small-input" type="text" id="ToleranceEdit" value="0.500">
+          </td>
+        </tr>
+      </table>
+
+      <div class="check-row">
+        <input type="checkbox" id="PreviewOnlyCheck">
+        <label for="PreviewOnlyCheck" style="display: inline; font-weight: bold;">Preview only - report only, no changes</label>
+      </div>
+
+      <p class="note">
+        Moves objects from the active imported layout sheet into real VCarve sheets.
+        Only the boundary layer names above are used to find sheet rectangles.
+        All objects keep their original DXF layer names.
+      </p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <table>
+      <tr>
+        <td style="width: 12%">&nbsp;</td>
+        <td style="width: 28%">
+          <input class="FormButton" type="button" id="ButtonOK" value="Create Sheets">
+        </td>
+        <td style="width: 8%">&nbsp;</td>
+        <td style="width: 24%">
+          <input class="FormButton SecondaryButton" type="button" id="ButtonCancel" value="Cancel">
+        </td>
+        <td class="version">
+          <div>Version <span id="GadgetVersion">0.3b</span></div>
+          <div class="credit">by Ednei</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>
