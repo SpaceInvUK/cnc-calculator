@@ -413,7 +413,7 @@
     .modal-line{font-size:12px;line-height:1.45;color:#111}
     .dxf-template-view-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
     .dxf-template-view-card{border:1px solid #dbe5f0;border-radius:8px;background:#fff;padding:10px;display:grid;gap:8px}
-    .dxf-template-view-card svg{width:100%;height:120px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc}
+    .dxf-template-view-card svg{width:100%;height:150px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc}
     .dxf-template-view-meta{font-size:11px;line-height:1.35;color:#475569;font-weight:800}
     .modal-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
     @media (max-width:680px){.template-actions{grid-template-columns:1fr}}
@@ -496,27 +496,34 @@
     .frame-zone-hit:hover,.frame-zone-hit.active{fill:rgba(250,204,21,.25);stroke:#ca8a04;stroke-width:.65;stroke-dasharray:none}
     .sheet-drag-ghost{position:fixed;z-index:9999;pointer-events:none;overflow:visible;filter:drop-shadow(0 8px 18px rgba(15,23,42,.32));opacity:.9;background:rgba(255,255,255,.65);border:1px solid rgba(15,23,42,.22);border-radius:6px}
     body.sheet-dragging .sheet-visual{cursor:grabbing}
-    .sheet-part-editor{margin:8px 0 10px;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:#f8fafc}
+    .sheet-part-editor{margin:8px 0 10px;padding:8px;border:1.5px solid var(--border);border-radius:8px;background:#f8fafc;font-size:11px}
     .sheet-part-editor-title{font-size:11px;font-weight:900;margin-bottom:6px}
-    .sheet-part-editor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;align-items:end}
-    .sheet-part-editor .field label{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:#374151;margin-bottom:4px}
-    .sheet-part-editor input,.sheet-part-editor select{height:30px;padding:5px 8px;border-radius:7px;border:1px solid var(--border);font-size:12px;font-weight:800}
+    .sheet-part-editor-grid{display:grid;grid-template-columns:minmax(150px,.82fr) minmax(160px,1fr) minmax(160px,1fr) minmax(180px,1.1fr);gap:8px;align-items:start}
+    .sheet-part-editor .field label{font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:#374151;margin-bottom:4px}
+    .sheet-part-editor input,.sheet-part-editor select{height:30px;padding:5px 8px;border-radius:7px;border:1px solid var(--border);font-size:11px;font-weight:800}
     .sheet-part-editor .segmented{height:30px}
     .sheet-part-editor-note{font-size:10px;color:#4b5563;margin-top:6px}
     .selected-editor-section{grid-column:auto;border:1px solid #dbe5f0;border-radius:7px;background:#fff;padding:6px}
     .selected-editor-section.wide{grid-column:span 2}
+    .sheet-part-editor-grid .selected-shape-field{grid-column:1}
+    .sheet-part-editor-grid .selected-door-type-field{grid-column:1}
+    .selected-height-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;grid-column:2 / span 2}
     .selected-editor-section-title{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-bottom:5px;font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#1f2937}
     .selected-editor-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
     .selected-editor-subgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-items:end}
     .selected-editor-subgrid.tight{grid-template-columns:repeat(2,minmax(0,1fr))}
     .selectedFrameZoneControl.segmented{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));height:auto;gap:4px;border:0;background:transparent;padding:0}
-    .selectedFrameZoneControl.segmented button{min-height:28px;padding:5px 6px;border:1px solid var(--border);border-radius:7px;white-space:normal;line-height:1.1;font-size:10px}
-    .door-frame-section .door-frame-editor-layout{display:grid;grid-template-columns:minmax(74px,.38fr) minmax(140px,1fr);gap:8px;align-items:stretch}
+    .selectedFrameZoneControl.segmented button{min-height:26px;padding:4px 5px;border:1px solid var(--border);border-radius:7px;white-space:normal;line-height:1.1;font-size:9px}
+    .door-frame-section .door-frame-editor-layout{display:grid;grid-template-columns:minmax(82px,.34fr) minmax(130px,1fr);gap:8px;align-items:stretch}
     .door-frame-section .selectedFrameZoneControl.segmented{grid-template-columns:1fr;align-content:start}
-    .door-frame-section .selectedFrameZoneControl.segmented button{min-height:24px;font-size:9px;padding:4px 5px}
+    .door-frame-section .selectedFrameZoneControl.segmented button{min-height:22px;font-size:8.5px;padding:3px 4px}
+    .selected-pocket-section{grid-column:1 / -1}
     .selected-hinge-options,.selected-pocket-options,.selected-panel-options{display:none}
     .selected-hinge-options.show,.selected-pocket-options.show,.selected-panel-options.show{display:grid}
-    .selected-pocket-lines{margin-top:6px}
+    .selected-pocket-options.show{gap:8px}
+    .selected-pocket-options .selected-editor-subgrid{grid-template-columns:minmax(180px,.8fr) minmax(130px,.55fr);gap:8px;max-width:460px}
+    .selected-pocket-lines{margin-top:2px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px}
+    .selected-pocket-lines .pocket-line-item{grid-template-columns:12px minmax(74px,1fr) minmax(58px,.58fr) 28px;gap:6px}
     .selected-pocket-lines .pocket-line-item{background:#f8fafc}
     .sheet-caption{font-size:10px;font-weight:700;margin-top:5px;color:#111}
     .sheet-caption-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
@@ -651,10 +658,10 @@
     .door-machining-section .editor-section-grid{padding:0}
     .editor-section .pocket-panel{border:0;border-radius:0;background:#fff;padding:0;gap:0}
     .editor-section .pocket-panel-head{padding:12px;border-bottom:1px solid var(--block-line,#e6ebf1);background:#fff}
-    .editor-section .pocket-options.show{display:grid;padding:12px;gap:12px}
-    .editor-section .pocket-panel-row{gap:8px 12px}
-    .editor-section .pocket-lines{gap:8px}
-    .editor-section .pocket-line-item{border:1px solid #e2e8f0;border-radius:8px;padding:7px 8px;background:#f8fafc}
+    .editor-section .pocket-options.show{display:grid;padding:12px;gap:14px}
+    .editor-section .pocket-panel-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,auto));gap:10px 14px;align-items:end;justify-content:start}
+    .editor-section .pocket-lines{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+    .editor-section .pocket-line-item{display:grid;grid-template-columns:12px minmax(82px,1fr) minmax(58px,.55fr) 28px;border:1px solid #e2e8f0;border-radius:8px;padding:7px 8px;background:#f8fafc}
     .ui-test .dimensions-wrap{margin:0;padding:12px;border-top:1px solid var(--block-line,#e2e8f0);background:color-mix(in srgb, var(--block-tint,#fbfdff) 58%, #fff);overflow-x:auto}
     .ui-test .dimension-head,.ui-test .dimension-item{grid-template-columns:minmax(68px,.75fr) minmax(48px,.52fr) minmax(72px,.9fr) minmax(72px,.9fr) minmax(96px,.95fr) minmax(58px,.6fr) minmax(70px,.75fr) minmax(70px,.75fr) minmax(120px,1.2fr) minmax(56px,.55fr) 34px}
     .ui-test .sheet-visual{width:min(100%,var(--sheet-visual-width,300px));padding:7px;margin:6px 7px 0 0}
@@ -691,7 +698,7 @@
     .ui-test #labelsBox button{padding:9px 10px;font-size:12px}
     .ui-test .checklist-job-panel{display:none}
     .sheet-part-editor{position:relative}
-    .sheet-part-editor-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .sheet-part-editor-grid{grid-template-columns:minmax(150px,.82fr) minmax(160px,1fr) minmax(160px,1fr) minmax(180px,1.1fr)}
     .sheet-part-editor .field{min-width:0}
     @media (min-width:1180px){
       .ui-test .grid{grid-template-columns:minmax(760px,1.2fr) minmax(390px,.68fr)}
@@ -1322,19 +1329,19 @@
             </div>
             <div class="pocket-options">
               <div class="pocket-panel-row">
-                <div class="field inline-control"><label>Pocket Min</label><div class="control-with-info"><input class="pocketingMinutes digits-2" type="number" min="0" step="1" value="0" title="Automatic pocketing time based on inner frame area. 1 m² is treated as 12 minutes. You can override the value manually."><span class="info-dot" tabindex="0" data-tip="Automatic pocketing time based on inner frame area. 1 m² is treated as 12 minutes. You can override the value manually." aria-label="Pocket minutes info">i</span></div></div>
+                <div class="field inline-control"><label>Pocket Min</label><div class="control-with-info"><input class="pocketingMinutes" type="number" min="0" step="0.1" value="0" title="Automatic pocketing time based on inner frame area. 1 m² is treated as 12 minutes. You can override the value manually."><span class="info-dot" tabindex="0" data-tip="Automatic pocketing time based on inner frame area. 1 m² is treated as 12 minutes. You can override the value manually." aria-label="Pocket minutes info">i</span></div></div>
                 <div class="field inline-control"><label>Sides</label><select class="pocketSideMode sr-only"><option value="front">Front</option><option value="front-back">Front+Back</option></select><div class="segmented pocketSideControl" title="Choose whether pocketing is for the front only or both front and back faces."><button type="button" data-value="front">Front</button><button type="button" data-value="front-back">Front+Back</button></div></div>
                 <select class="flatFrameToggle sr-only"><option>No</option><option>Yes</option></select>
                 <div class="field inline-control back-frame-field"><label>Back Frame</label><input class="backFrameSize digits-2" type="number" min="1" step="1" value="50" title="Back face frame width in millimetres. This can be different from the front frame."></div>
               </div>
               <div class="pocket-lines">
-                <div class="pocket-line-item"><span class="swatch" style="background:#b45309"></span><select class="pocketLinePocketEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocketControl" type="button" style="--line-color:#b45309" aria-pressed="true">Pocket</button><input class="pocketLinePocketOffset pocket-line-offset digits-2" type="number" min="0" step="1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocketRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocketRoundControl" type="button" style="--line-color:#b45309" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#dc2626"></span><select class="pocketLine6Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLine6Control" type="button" style="--line-color:#dc2626" aria-pressed="false">6mm</button><input class="pocketLine6Offset pocket-line-offset digits-2" type="number" min="0" step="1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLine6RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLine6RoundControl" type="button" style="--line-color:#dc2626" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#2563eb"></span><select class="pocketLine2Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLine2Control" type="button" style="--line-color:#2563eb" aria-pressed="false">2mm</button><input class="pocketLine2Offset pocket-line-offset digits-2" type="number" min="0" step="1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLine2RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLine2RoundControl" type="button" style="--line-color:#2563eb" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#7c3aed"></span><select class="pocketLineChamferEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLineChamferControl" type="button" style="--line-color:#7c3aed" aria-pressed="false">Chamfer</button><input class="pocketLineChamferOffset pocket-line-offset digits-2" type="number" min="0" step="1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLineChamferRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLineChamferRoundControl" type="button" style="--line-color:#7c3aed" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#0f766e"></span><select class="pocketLineProfileEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLineProfileControl" type="button" style="--line-color:#0f766e" aria-pressed="false">Profile Tool</button><input class="pocketLineProfileOffset pocket-line-offset digits-2" type="number" min="0" step="1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLineProfileRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLineProfileRoundControl" type="button" style="--line-color:#0f766e" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#f97316"></span><select class="pocketLinePocket2Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocket2Control" type="button" style="--line-color:#f97316" aria-pressed="false">Pocket 2</button><input class="pocketLinePocket2Offset pocket-line-offset digits-2" type="number" min="0" step="1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocket2RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocket2RoundControl" type="button" style="--line-color:#f97316" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#a16207"></span><select class="pocketLinePocket3Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocket3Control" type="button" style="--line-color:#a16207" aria-pressed="false">Pocket 3</button><input class="pocketLinePocket3Offset pocket-line-offset digits-2" type="number" min="0" step="1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocket3RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocket3RoundControl" type="button" style="--line-color:#a16207" title="Round this pocket line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#b45309"></span><select class="pocketLinePocketEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocketControl" type="button" style="--line-color:#b45309" aria-pressed="true">Pocket</button><input class="pocketLinePocketOffset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocketRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocketRoundControl" type="button" style="--line-color:#b45309" title="Round this pocket line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#dc2626"></span><select class="pocketLine6Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLine6Control" type="button" style="--line-color:#dc2626" aria-pressed="false">6mm</button><input class="pocketLine6Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLine6RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLine6RoundControl" type="button" style="--line-color:#dc2626" title="Round this pocket line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#2563eb"></span><select class="pocketLine2Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLine2Control" type="button" style="--line-color:#2563eb" aria-pressed="false">2mm</button><input class="pocketLine2Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLine2RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLine2RoundControl" type="button" style="--line-color:#2563eb" title="Round this pocket line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#7c3aed"></span><select class="pocketLineChamferEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLineChamferControl" type="button" style="--line-color:#7c3aed" aria-pressed="false">Chamfer</button><input class="pocketLineChamferOffset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLineChamferRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLineChamferRoundControl" type="button" style="--line-color:#7c3aed" title="Round this pocket line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#0f766e"></span><select class="pocketLineProfileEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLineProfileControl" type="button" style="--line-color:#0f766e" aria-pressed="false">Profile Tool</button><input class="pocketLineProfileOffset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLineProfileRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLineProfileRoundControl" type="button" style="--line-color:#0f766e" title="Round this pocket line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#f97316"></span><select class="pocketLinePocket2Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocket2Control" type="button" style="--line-color:#f97316" aria-pressed="false">Pocket 2</button><input class="pocketLinePocket2Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocket2RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocket2RoundControl" type="button" style="--line-color:#f97316" title="Round this pocket line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#a16207"></span><select class="pocketLinePocket3Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocket3Control" type="button" style="--line-color:#a16207" aria-pressed="false">Pocket 3</button><input class="pocketLinePocket3Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocket3RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocket3RoundControl" type="button" style="--line-color:#a16207" title="Round this pocket line corners."></button></div>
               </div>
             </div>
           </div>
@@ -1714,7 +1721,8 @@
         backFrame:width || 70,
         materialThickness:thickness || 22,
         innerOffset:offset,
-        layer:(template.layers && template.layers[0]) || 'CNC-TOP_SECTION_FOR_STANDA'
+        pocketOffsets:[0, 6],
+        hasBackFace:true
       };
     }
     function profileTemplateMeta(template){
@@ -1722,9 +1730,10 @@
       if(!rule) return '';
       return 'Profile ' + formatMm(rule.frame) + 'mm frame, ' + formatMm(rule.materialThickness) + 'mm material, ' + formatMm(rule.innerOffset) + 'mm inner offset';
     }
-    function applyProfileTemplateDefaults(block, type){
+    function applyProfileTemplateDefaults(block, type, options={}){
       const rule = profileTemplateRule(type);
       if(!block || !rule) return false;
+      if(!options.force && block.profileTemplateAppliedType === type) return false;
       let changed = false;
       const set = (key, value)=>{
         if(String(block[key]) !== String(value)){
@@ -1732,21 +1741,25 @@
           changed = true;
         }
       };
+      if(rule.hasBackFace !== false) set('material', preferredPocketMaterial());
       set('thickness', Math.round(Number(rule.materialThickness || 22)) + 'mm');
       set('frameSize', Math.max(1, Number(rule.frame || 70)));
       set('backFrameSize', Math.max(1, Number(rule.backFrame || rule.frame || 70)));
       set('backFrameManualOverride', false);
+      set('pocketMaterialManualOverride', false);
       set('pocketingEnabled', 'Yes');
       set('pocketSideMode', 'front-back');
       set('pocketLinePocketEnabled', 'Yes');
-      set('pocketLinePocketOffset', Math.max(0, Number(rule.innerOffset || 7)));
-      set('pocketLine6Enabled', 'No');
+      set('pocketLinePocketOffset', 0);
+      set('pocketLine6Enabled', Array.isArray(rule.pocketOffsets) && rule.pocketOffsets.includes(6) ? 'Yes' : 'No');
+      set('pocketLine6Offset', Array.isArray(rule.pocketOffsets) && rule.pocketOffsets.includes(6) ? 6 : 0);
       set('pocketLine2Enabled', 'No');
       const cost = suggestedCost(block.material, block.thickness, block.size);
       if(String(block.materialCost) !== String(cost)){
         block.materialCost = cost;
         changed = true;
       }
+      block.profileTemplateAppliedType = type;
       if(changed) lastCalculation = null;
       return changed;
     }
@@ -1860,9 +1873,8 @@
       customDoorTemplates.forEach(template=>{
         const item = document.createElement('div');
         item.className = 'template-item';
-        const layers = (template.layers || []).join(', ') || '0';
         const buildRule = template.construction === 'profile' ? (profileTemplateMeta(template) || 'Profile section') : (template.construction === 'flushback-insert' ? 'Frame + insert' : 'Single piece');
-        item.innerHTML = '<div><div class="template-name">'+escapeHtml(template.name)+'</div><div class="template-meta">'+template.entities.length+' entities &bull; Layers: '+escapeHtml(layers)+' &bull; '+escapeHtml(buildRule)+'</div></div><button class="template-remove" type="button" aria-label="Remove '+escapeHtml(template.name)+'">&times;</button>';
+        item.innerHTML = '<div><div class="template-name">'+escapeHtml(template.name)+'</div><div class="template-meta">'+template.entities.length+' entities &bull; '+escapeHtml(buildRule)+'</div></div><button class="template-remove" type="button" aria-label="Remove '+escapeHtml(template.name)+'">&times;</button>';
         item.querySelector('button').addEventListener('click', ()=>{
           if(!window.confirm('Remove "'+template.name+'" from Door Type templates?')) return;
           customDoorTemplates = customDoorTemplates.filter(t=>t.id !== template.id);
@@ -1895,8 +1907,7 @@
       customOffcutTemplates.forEach(template=>{
         const item = document.createElement('div');
         item.className = 'template-item';
-        const layers = (template.layers || []).join(', ') || '0';
-        item.innerHTML = '<div><div class="template-name">'+escapeHtml(template.name)+'</div><div class="template-meta">'+template.entities.length+' entities &bull; Layers: '+escapeHtml(layers)+' &bull; '+Math.round(template.bounds.width)+' x '+Math.round(template.bounds.height)+'mm</div></div><button class="template-remove" type="button" aria-label="Remove '+escapeHtml(template.name)+'">&times;</button>';
+        item.innerHTML = '<div><div class="template-name">'+escapeHtml(template.name)+'</div><div class="template-meta">'+template.entities.length+' entities &bull; '+Math.round(template.bounds.width)+' x '+Math.round(template.bounds.height)+'mm</div></div><button class="template-remove" type="button" aria-label="Remove '+escapeHtml(template.name)+'">&times;</button>';
         item.querySelector('button').addEventListener('click', ()=>{
           if(!window.confirm('Remove "'+template.name+'" from Offcut templates?')) return;
           customOffcutTemplates = customOffcutTemplates.filter(t=>t.id !== template.id);
@@ -3221,10 +3232,11 @@
       });
     }
     function profilePocketLineSettings(rule){
+      const offsets = Array.isArray(rule?.pocketOffsets) ? rule.pocketOffsets.map(v=>Number(v)) : [0, 6];
       return POCKET_LINE_CONFIGS.map(config=>({
         ...config,
-        enabled:config.key === 'pocketLinePocket',
-        offset:config.key === 'pocketLinePocket' ? Math.max(0, Number(rule?.innerOffset || 7)) : 0,
+        enabled:config.key === 'pocketLinePocket' || (config.key === 'pocketLine6' && offsets.includes(6)),
+        offset:config.key === 'pocketLine6' && offsets.includes(6) ? 6 : 0,
         roundCorners:false
       }));
     }
@@ -6330,8 +6342,39 @@
       const usable = Math.max(1, size.width - sheetGap(block?.size) * 2);
       return Math.max(1, Math.ceil(Math.max(0, Number(width || 0)) / usable));
     }
+    function profileTemplatePreviewSvg(template){
+      const rule = template?.profileRule || inferProfileRuleFromTemplate(template) || {};
+      const frame = formatMm(rule.frame || 70);
+      const thickness = formatMm(rule.materialThickness || 22);
+      const offset = formatMm(rule.innerOffset || 7);
+      const frontBack = rule.hasBackFace === false ? 'Front' : 'Front + Back';
+      return `
+        <svg viewBox="0 0 340 150" xmlns="http://www.w3.org/2000/svg" class="profile-template-preview" aria-label="${escapeHtml(template.name)} measurements">
+          <defs>
+            <marker id="dxfArrowStart" markerWidth="7" markerHeight="7" refX="1" refY="3.5" orient="auto"><path d="M7 0 L0 3.5 L7 7" fill="none" stroke="#64748b" stroke-width="1.2"/></marker>
+            <marker id="dxfArrowEnd" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="#64748b" stroke-width="1.2"/></marker>
+          </defs>
+          <path d="M48 75 H184 L192 63 H288 V95 H192 L184 83 H48" fill="none" stroke="#2f6f56" stroke-width="1.8"/>
+          <path d="M192 63 H288 V95 H192" fill="none" stroke="#111827" stroke-width="1"/>
+          <line x1="192" y1="38" x2="288" y2="38" stroke="#64748b" stroke-width="1" marker-start="url(#dxfArrowStart)" marker-end="url(#dxfArrowEnd)"/>
+          <line x1="192" y1="42" x2="192" y2="58" stroke="#94a3b8" stroke-width="1"/>
+          <line x1="288" y1="42" x2="288" y2="58" stroke="#94a3b8" stroke-width="1"/>
+          <text x="240" y="31" text-anchor="middle" font-size="11" font-weight="800" fill="#334155">Frame ${escapeHtml(frame)}mm</text>
+          <line x1="306" y1="63" x2="306" y2="95" stroke="#64748b" stroke-width="1" marker-start="url(#dxfArrowStart)" marker-end="url(#dxfArrowEnd)"/>
+          <line x1="292" y1="63" x2="302" y2="63" stroke="#94a3b8" stroke-width="1"/>
+          <line x1="292" y1="95" x2="302" y2="95" stroke="#94a3b8" stroke-width="1"/>
+          <text x="336" y="76" text-anchor="end" font-size="9.5" font-weight="800" fill="#334155">Thickness</text>
+          <text x="336" y="88" text-anchor="end" font-size="10.5" font-weight="900" fill="#334155">${escapeHtml(thickness)}mm</text>
+          <line x1="184" y1="54" x2="192" y2="54" stroke="#64748b" stroke-width="1" marker-start="url(#dxfArrowStart)" marker-end="url(#dxfArrowEnd)"/>
+          <line x1="184" y1="58" x2="184" y2="72" stroke="#94a3b8" stroke-width="1"/>
+          <line x1="192" y1="58" x2="192" y2="63" stroke="#94a3b8" stroke-width="1"/>
+          <text x="188" y="48" text-anchor="middle" font-size="10" font-weight="800" fill="#334155">Offset ${escapeHtml(offset)}mm</text>
+          <text x="48" y="124" font-size="11" font-weight="800" fill="#334155">Material: MDF Hidrofugo Plus • ${escapeHtml(frontBack)}</text>
+        </svg>`;
+    }
     function templatePreviewSvg(template){
       if(!template) return '';
+      if(template.construction === 'profile') return profileTemplatePreviewSvg(template);
       const pad = 10;
       const w = Math.max(1, Number(template.bounds?.width || 1));
       const h = Math.max(1, Number(template.bounds?.height || 1));
@@ -6348,7 +6391,8 @@
       const cards = [];
       customDoorTemplates.forEach(template=>{
         const meta = template.construction === 'profile' ? (profileTemplateMeta(template) || 'Profile section') : (template.construction === 'flushback-insert' ? 'Frame + insert' : 'Single piece');
-        cards.push('<div class="dxf-template-view-card"><div class="template-name">'+escapeHtml(template.name)+'</div>'+templatePreviewSvg(template)+'<div class="dxf-template-view-meta">'+escapeHtml(meta)+'<br>Layers: '+escapeHtml((template.layers || []).join(', ') || '0')+'</div></div>');
+        const metaHtml = template.construction === 'profile' ? '' : '<div class="dxf-template-view-meta">'+escapeHtml(meta)+'</div>';
+        cards.push('<div class="dxf-template-view-card"><div class="template-name">'+escapeHtml(template.name)+'</div>'+templatePreviewSvg(template)+metaHtml+'</div>');
       });
       customOffcutTemplates.forEach(template=>{
         cards.push('<div class="dxf-template-view-card"><div class="template-name">'+escapeHtml(template.name)+'</div>'+templatePreviewSvg(template)+'<div class="dxf-template-view-meta">Offcut template<br>'+Math.round(template.bounds.width)+' x '+Math.round(template.bounds.height)+'mm</div></div>');
@@ -8706,6 +8750,11 @@
         if(block.autoGenerated) node.querySelector('.remove-btn').style.display = 'none';
         if(block.autoGenerated && node.querySelector('.biding-row')) node.querySelector('.biding-row').style.display = 'none';
         bindSmartImportControls(node, block);
+        if(!panelMode && isProfileDoorTemplate(block.globalShakerType)){
+          applyProfileTemplateDefaults(block, block.globalShakerType);
+        } else if(!isProfileDoorTemplate(block.globalShakerType)){
+          block.profileTemplateAppliedType = '';
+        }
 
         const materialSel = node.querySelector('.material');
         materialOptions.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;materialSel.appendChild(o);});
@@ -8953,7 +9002,7 @@
         bindSegmentedControl(node.querySelector('.globalShakerControl'), block.globalShakerType, value=>{
           doorTypeSelect.value = value;
           setBlockValue(block, 'globalShakerType', value);
-          applyProfileTemplateDefaults(block, value);
+          applyProfileTemplateDefaults(block, value, {force:true});
           block.parts.forEach(p=>p.shaker = block.globalShakerType==='no' ? 'No' : 'Yes');
           syncReededControls();
           requestRender();
@@ -9792,7 +9841,7 @@
               const nextType = normalizeDoorTypeValue(e.target.value, block.globalShakerType);
               setPartValue(block, pIdx, 'doorType', nextType);
               setPartValue(block, pIdx, 'shaker', e.target.value === 'no' ? 'No' : 'Yes');
-              applyProfileTemplateDefaults(block, nextType);
+              applyProfileTemplateDefaults(block, nextType, {force:true});
               requestRender();
             });
           }
@@ -9955,7 +10004,7 @@
         });
         doorTypeSelect.addEventListener('change', e=>{
           setBlockValue(block, 'globalShakerType', e.target.value);
-          applyProfileTemplateDefaults(block, e.target.value);
+          applyProfileTemplateDefaults(block, e.target.value, {force:true});
           block.parts.forEach(p=>p.shaker = block.globalShakerType==='no' ? 'No' : 'Yes');
           setBlockValue(block, 'flatFrameToggle', block.globalShakerType === 'no' && block.pocketingEnabled === 'Yes' ? 'Yes' : 'No');
           flatFrameSelect.value = block.flatFrameToggle;
@@ -12312,7 +12361,7 @@
         return '<div class="pocket-line-item" data-line-key="'+escapeHtml(config.key)+'">'+
           '<span class="swatch" style="background:'+escapeHtml(config.color)+'"></span>'+
           '<button class="pocket-title-toggle pocket-line-toggle selectedPartPocketLineToggle '+(enabled ? '' : 'off')+'" type="button" style="--line-color:'+escapeHtml(config.color)+'" aria-pressed="'+(enabled ? 'true' : 'false')+'">'+escapeHtml(config.label)+'</button>'+
-          '<input class="selectedPartPocketLineOffset pocket-line-offset digits-2" data-line-key="'+escapeHtml(config.key)+'" type="number" min="0" step="0.01" value="'+escapeHtml(offset)+'" title="Inset from the inner frame edge toward the centre.">'+
+          '<input class="selectedPartPocketLineOffset pocket-line-offset" data-line-key="'+escapeHtml(config.key)+'" type="number" min="0" step="0.1" value="'+escapeHtml(offset)+'" title="Inset from the inner frame edge toward the centre.">'+
           '<button class="line-radius-toggle selectedPartPocketLineRound '+(rounded ? 'active' : '')+'" data-line-key="'+escapeHtml(config.key)+'" type="button" style="--line-color:'+escapeHtml(config.color)+'" aria-pressed="'+(rounded ? 'true' : 'false')+'" title="Round this pocket line corners."></button>'+
         '</div>';
       }).join('');
@@ -12375,10 +12424,12 @@
           <div class="sheet-part-editor-title">Edit piece: ${escapeHtml(title)}${selectedPanelItem ? ' - ' + escapeHtml(selectedPanelItem.displayLabel || ('P' + (Number(selectedPanelItem.physicalIndex ?? selectedSectionIndex) + 1) + (selectedPanelItem.physical?.direction === 'vertical' ? 'V' : ''))) : (selectedSectionIndex == null ? '' : ' - Panel ' + escapeHtml(selectedSectionIndex + 1))}</div>
           <div class="sheet-part-editor-grid">
             <div class="field selected-shape-field"><label>Shape</label><select class="selectedPartShape"><option value="rectangle"${shape==='rectangle'?' selected':''}>Rectangle</option><option value="sloped"${shape==='sloped'?' selected':''}>Sloped / Loft</option></select></div>
-            <div class="field door-edit-only"><label>Door type</label><select class="selectedPartDoorType">${doorTypeOptionsHtml(found.block, effectivePartDoorType(part, found.block))}</select></div>
+            <div class="field door-edit-only selected-door-type-field"><label>Door type</label><select class="selectedPartDoorType">${doorTypeOptionsHtml(found.block, effectivePartDoorType(part, found.block))}</select></div>
             ${panelEditor ? '' : `<div class="selected-editor-section door-edit-only"><div class="selected-editor-section-title"><span>Grain</span><button class="pocket-title-toggle tiny-toggle selectedPartGrainDirection ${grainOn ? '' : 'off'}" type="button" aria-pressed="${grainOn ? 'true' : 'false'}">Grain</button></div></div>`}
-            <div class="field selected-height-field"><label>Left height</label><input class="selectedPartLeftHeight" type="number" min="0" step="1" value="${escapeHtml(shape === 'sloped' ? side.left : height)}"></div>
-            <div class="field selected-height-field"><label>Right height</label><input class="selectedPartRightHeight" type="number" min="0" step="1" value="${escapeHtml(shape === 'sloped' ? side.right : height)}"></div>
+            <div class="selected-height-pair">
+              <div class="field selected-height-field"><label>Left height</label><input class="selectedPartLeftHeight" type="number" min="0" step="1" value="${escapeHtml(shape === 'sloped' ? side.left : height)}"></div>
+              <div class="field selected-height-field"><label>Right height</label><input class="selectedPartRightHeight" type="number" min="0" step="1" value="${escapeHtml(shape === 'sloped' ? side.right : height)}"></div>
+            </div>
             ${panelEditor ? `
             <div class="selected-editor-section panel-selected-setup">
               <div class="selected-editor-section-title"><span>Shakers</span></div>
@@ -12437,7 +12488,7 @@
                 <div class="field"><label>Hinge spacing</label><input class="selectedPartHingeSpacing" type="number" min="1" step="1" placeholder="Auto" value="${escapeHtml(part.hingeSpacing || '')}"></div>
               </div>
             </div>
-            <div class="selected-editor-section">
+            <div class="selected-editor-section selected-pocket-section">
               <div class="selected-editor-section-title">
                 <span>Pocket</span>
                 <div class="selected-editor-actions">
@@ -13012,7 +13063,7 @@
         const value = normalizeDoorTypeValue(e.target.value, block.globalShakerType);
         setPartValue(block, partIndex, 'doorType', value);
         setPartValue(block, partIndex, 'shaker', value === 'no' ? 'No' : 'Yes');
-        applyProfileTemplateDefaults(block, value);
+        applyProfileTemplateDefaults(block, value, {force:true});
         requestRender();
       });
       bindHeightDraft(leftInput, 'leftHeight');
@@ -13801,7 +13852,7 @@
               const inner = cavityPoints(c);
               const offset = offsetPolygonPoints(inner, Math.max(0, Number(rule?.innerOffset || 7)));
               drawLinePoints(inner, '#111', '0.35');
-              if(offset) drawLinePoints(offset, templateLayerColor(rule?.layer || template.layers?.[0] || 'CNC-TOP_SECTION_FOR_STANDA'), '0.32');
+              if(offset) drawLinePoints(offset, '#dc2626', '0.32');
             });
           } else if(template){
             svg += renderCustomTemplateSvg(template, {x:p.x, y:p.y, w:p.w, h:p.h}, scale);
@@ -14456,11 +14507,10 @@
         if(!template) return;
         if(template.construction === 'profile'){
           const rule = p.profileRule || template.profileRule || inferProfileRuleFromTemplate(template);
-          const layer = rule?.layer || template.layers?.[0] || 'CNC-TOP_SECTION_FOR_STANDA';
+          const lines = profilePocketLineSettings(rule);
           placementCavities(p, Number(p.frame || rule?.frame || 70), p.panels, p.panelSize).forEach(c=>{
             writePolyline('OUT', cavityPoints(c), true);
-            const offset = offsetPolygonPoints(cavityPoints(c), Math.max(0, Number(rule?.innerOffset || 7)));
-            if(offset) writePolyline(layer, offset, true);
+            drawPocketGuideLayers(c, lines, false);
           });
           return;
         }
