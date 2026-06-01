@@ -117,6 +117,7 @@
     .material-block[data-calc-mode="panel"] .hinges-head,
     .material-block[data-calc-mode="panel"] .hinges-cell{display:none!important}
     .material-block[data-calc-mode="panel"] .biding-row{display:none!important}
+    .material-block[data-calc-mode="panel"] .reeded-row{display:none!important}
     .material-block[data-calc-mode="panel"] .editor-section.compact{display:none!important}
     .sheet-part-editor.panel-editor .door-edit-only{display:none!important}
     .sheet-part-editor.panel-editor .selected-shape-field,
@@ -140,6 +141,8 @@
     .material-block[data-calc-mode="panel"] .panel-side-grid.panel-only{display:none!important}
     .material-block[data-calc-mode="panel"] .panel-side-grid.panel-only.show{display:grid!important}
     .material-block[data-calc-mode="panel"] .machining-section{display:none!important}
+    .panel-shaker-setup-section .editor-section-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+    .panel-shaker-setup-section .panel-shaker-process-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
     .selected-irregular-field{display:none!important}
     .selected-irregular-field.show{display:flex!important}
     .panel-setup-title,.panel-side-title{grid-column:1/-1;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
@@ -654,6 +657,11 @@
     .material-block[data-calc-mode="panel"] .material-editor>.editor-section{grid-column:1/-1}
     body.panel-mode .material-block[data-calc-mode="panel"] .takeoff-section{display:none}
     body.panel-mode .material-block[data-calc-mode="panel"]:not(:first-of-type) .material-pricing-section{display:none}
+    body.panel-mode .material-block[data-calc-mode="panel"]:not(:first-of-type) .panel-shaker-setup-section{display:none!important}
+    .material-block[data-calc-mode="panel"] .material-pricing-section{order:1}
+    .material-block[data-calc-mode="panel"] .panel-shaker-setup-section{order:2}
+    .material-block[data-calc-mode="panel"] .pocketing-section{order:3}
+    .material-block[data-calc-mode="panel"] .room-setup-section{order:4}
     .material-block[data-calc-mode="panel"] .editor-section-grid{gap:9px}
     .material-block[data-calc-mode="panel"] .editor-section-grid>.field:has(.size){grid-column:auto}
     .material-block[data-calc-mode="panel"] .panel-wrap-row{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));align-items:end}
@@ -1270,7 +1278,22 @@
           </div>
         </div>
 
-        <div class="editor-section">
+        <div class="editor-section panel-shaker-setup-section panel-only">
+          <div class="editor-section-head"><div class="editor-section-title">Shaker Setup</div></div>
+          <div class="editor-section-grid">
+            <div class="field inline-control"><label>Shaker Type</label><select class="panelGlobalShakerType door-type-select" title="Panel shaker machining style"><option value="no">Flat</option><option value="traditional">Traditional</option><option value="flushback">Flushback</option><option value="reeded">Reeded</option></select></div>
+            <div class="field inline-control"><label>Frame (mm) <span class="panelFrameWarnMark"></span></label><input class="panelFrameSize digits-2" type="number" min="1" step="1" value="50" title="Panel shaker rail/stile width in millimetres"></div>
+            <div class="field inline-control"><label>Reeded Direction</label><select class="panelReededDirection sr-only"><option value="vertical">Vertical</option><option value="horizontal">Horizontal</option></select><div class="segmented panelReededDirectionControl" title="Choose the direction of the reeded lines."><button type="button" data-value="vertical">Vertical</button><button type="button" data-value="horizontal">Horizontal</button></div></div>
+            <div class="field inline-control"><label>Spacing</label><input class="panelReededSpacing digits-2" type="number" min="1" step="0.5" value="12.5" title="Target distance between each reeded line in millimetres."></div>
+            <div class="panel-shaker-process-row">
+              <div class="field inline-control"><label>Extra Processes</label><input class="panelExtraProcess digits-2" type="number" min="0" max="999" step="1" value="0" title="Number of additional machining processes. Each adds 10%."></div>
+              <div class="field inline-control"><label>Drillings (+5%)</label><select class="panelDrillings sr-only"><option>No</option><option>Yes</option></select><div class="control-with-info"><button class="pocket-title-toggle tiny-toggle panelDrillingsControl off" type="button" aria-pressed="false" title="Adds drilling operations and applies the drilling charge to CNC Service only.">Drillings</button><span class="info-dot" tabindex="0" data-tip="Adds drilling operations and applies the drilling charge to CNC Service only." aria-label="Drillings info">i</span></div></div>
+            </div>
+            <div class="hint">This setup is shared by every shaker in every panel, room, and wall.</div>
+          </div>
+        </div>
+
+        <div class="editor-section room-setup-section">
           <div class="editor-section-head"><div class="editor-section-title setup-section-title">Door Setup</div></div>
           <div class="editor-section-grid single">
             <div class="room-toolbar panel-only">
@@ -1449,7 +1472,7 @@
     let showBackSidePocketingMode = true;
     let selectedWallOpening = null;
     const PART_DEFAULTS = {width:'',height:'',doorType:'',shaker:'No',panels:1,panelSize:'',grainDirection:'',panelDirection:'',wallPanelDirection:'',panelRows:'',panelColumns:'',panelIrregularShape:'Yes',wallPanelOverrides:[],panelSideTop:'',panelSideRight:'',panelSideBottom:'',panelSideLeft:'',wallWidth:'',wallHeight:'',wallSections:'',panelHorizontalHeight:'',panelVerticalHeight:'',wallOpenings:[],wallDoorEnabled:'',wallDoorWidth:'',wallDoorHeight:'',wallDoorX:'',wallWindowEnabled:'',wallWindowWidth:'',wallWindowHeight:'',wallWindowX:'',wallWindowBottom:'',shapeType:'rectangle',leftHeight:'',rightHeight:'',frameTop:'',frameRight:'',frameBottom:'',frameLeft:'',frameMiddle:'',frameEditZone:'left',hinges:'No',hingeSide:'auto',hingeOffset:100,hingeSpacing:'',pocketingEnabled:'',pocketRoundCorners:'',pocketSideMode:'',backFrameSize:'',sprayFinish:'No',spraySides:[],manualSheetIndex:'',manualSheetSize:'',manualX:'',manualY:'',manualRotated:'No',manualRotationAngle:0,text:'',quantity:1};
-    const FOCUSABLE_FIELD_CLASSES = new Set(['smartTakeoffText','material','thickness','size','materialCost','cncServiceCost','quantityDiscountPct','globalShakerType','frameSize','reededDirection','reededSpacing','bidingMode','bidingSize','bidingClearance','bidingThickness','panelRows','panelColumns','panelShakerMode','panelShakerSize','panelHorizontalHeight','panelVerticalHeight','panelWindowSillHeight','wallWidth','wallHeight','wallPartWidth','wallPartHeight','wallPartShakers','wallPartHorizontalPanelHeight','wallPartVerticalPanelHeight','wallPartSkirtingEnabled','wallPartSkirtingHeight','wallOpeningName','wallOpeningWidth','wallOpeningHeight','wallOpeningX','wallOpeningXFrom','wallOpeningBottom','wallSections','wallDoorWidth','wallDoorHeight','wallDoorX','wallWindowWidth','wallWindowHeight','wallWindowX','wallWindowBottom','panelDoorAllowance','panelSkirtingHeight','panelSideTop','panelSideRight','panelSideBottom','panelSideLeft','backFrameSize','extraProcess','pocketingMinutes','pocketLinePocketOffset','pocketLine6Offset','pocketLine2Offset','pocketLinePocket3Offset','pocketLineChamferOffset','pocketLineProfileOffset','pocketLinePocket2Offset','pocketLinePocket3Offset','timeMinutes','partWidth','partHeight','partDoorType','partPanelDirection','partPanels','partPanelRows','partPanelSize','partText','partQuantity','selectedPartDoorType','selectedPartPanelDirection','selectedPartLeftHeight','selectedPartRightHeight','selectedPartPanelRows','selectedPartPanelIrregular','selectedPartPanelSize','selectedPartPanels','selectedPartFrameZoneSize','selectedPartHingeOffset','selectedPartHingeSpacing','selectedPartBackFrameSize','selectedWallWidth','selectedWallHeight','selectedWallSections','selectedWallDoorWidth','selectedWallDoorHeight','selectedWallDoorX','selectedWallWindowWidth','selectedWallWindowHeight','selectedWallWindowX','selectedWallWindowBottom']);
+    const FOCUSABLE_FIELD_CLASSES = new Set(['smartTakeoffText','material','thickness','size','materialCost','cncServiceCost','quantityDiscountPct','globalShakerType','panelGlobalShakerType','frameSize','panelFrameSize','reededDirection','reededSpacing','panelReededDirection','panelReededSpacing','bidingMode','bidingSize','bidingClearance','bidingThickness','panelRows','panelColumns','panelShakerMode','panelShakerSize','panelHorizontalHeight','panelVerticalHeight','panelWindowSillHeight','wallWidth','wallHeight','wallPartWidth','wallPartHeight','wallPartShakers','wallPartHorizontalPanelHeight','wallPartVerticalPanelHeight','wallPartSkirtingEnabled','wallPartSkirtingHeight','wallOpeningName','wallOpeningWidth','wallOpeningHeight','wallOpeningX','wallOpeningXFrom','wallOpeningBottom','wallSections','wallDoorWidth','wallDoorHeight','wallDoorX','wallWindowWidth','wallWindowHeight','wallWindowX','wallWindowBottom','panelDoorAllowance','panelSkirtingHeight','panelSideTop','panelSideRight','panelSideBottom','panelSideLeft','backFrameSize','extraProcess','panelExtraProcess','pocketingMinutes','pocketLinePocketOffset','pocketLine6Offset','pocketLine2Offset','pocketLinePocket3Offset','pocketLineChamferOffset','pocketLineProfileOffset','pocketLinePocket2Offset','pocketLinePocket3Offset','timeMinutes','partWidth','partHeight','partDoorType','partPanelDirection','partPanels','partPanelRows','partPanelSize','partText','partQuantity','selectedPartDoorType','selectedPartPanelDirection','selectedPartLeftHeight','selectedPartRightHeight','selectedPartPanelRows','selectedPartPanelIrregular','selectedPartPanelSize','selectedPartPanels','selectedPartFrameZoneSize','selectedPartHingeOffset','selectedPartHingeSpacing','selectedPartBackFrameSize','selectedWallWidth','selectedWallHeight','selectedWallSections','selectedWallDoorWidth','selectedWallDoorHeight','selectedWallDoorX','selectedWallWindowWidth','selectedWallWindowHeight','selectedWallWindowX','selectedWallWindowBottom']);
     const DOOR_TYPE_OPTIONS = [
       {value:'no', label:'Flat'},
       {value:'traditional', label:'Traditional'},
@@ -1991,6 +2014,34 @@
       });
       lastCalculation = null;
     }
+    function syncPanelShakerSetup(source){
+      if(!source || !isPanelBlock(source)) return;
+      const scalarKeys = [
+        'globalShakerType','frameSize','backFrameSize','backFrameManualOverride',
+        'extraProcess','drillings','reededDirection','reededSpacing',
+        'pocketingEnabled','pocketRoundCorners','pocketSideMode',
+        'pocketingMinutes','pocketingManualOverride','flatFrameToggle'
+      ];
+      const offsetKeys = POCKET_LINE_CONFIGS.flatMap(config=>[
+        config.key + 'Enabled',
+        config.key + 'Offset',
+        config.key + 'RoundCorners'
+      ]);
+      let changed = false;
+      blocks.filter(block=>isPanelBlock(block) && block !== source).forEach(block=>{
+        scalarKeys.concat(offsetKeys).forEach(key=>{
+          const next = source[key] === undefined ? undefined : deepCopy(source[key]);
+          if(JSON.stringify(block[key]) !== JSON.stringify(next)){
+            block[key] = next;
+            changed = true;
+          }
+        });
+      });
+      if(changed) lastCalculation = null;
+    }
+    function firstPanelBlock(){
+      return blocks.find(block=>isPanelBlock(block) && !block.autoGenerated) || blocks.find(block=>isPanelBlock(block)) || null;
+    }
     const PANEL_RULE_SIZE_KEYS = {
       normal:'panelRuleNormalSize',
       joint:'panelRuleJointSize',
@@ -2486,7 +2537,7 @@
     function applyPanelDefaults(block){
       if(!block) return block;
       block.calcMode = 'panel';
-      block.globalShakerType = 'no';
+      block.globalShakerType = normalizeDoorTypeValue(block.globalShakerType || 'no', 'no');
       block.frameSize = Number(block.frameSize || 0) === 50 || !(Number(block.frameSize) > 0) ? 80 : Number(block.frameSize);
       block.panelDirection = block.panelDirection || 'horizontal';
       block.panelSideRulesOpen = yesNoValue(block.panelSideRulesOpen, 'No');
@@ -8232,7 +8283,9 @@
       const isVerticalPanel = physical.direction === 'vertical';
       const generatedPrimaryShakers = isVerticalPanel ? customRows.length : customColumns.length;
       const primaryShakers = generatedPrimaryShakers || requestedShakers;
-      const partPocketOn = partPocketingValue(part, block) === 'Yes' || block?.pocketingEnabled === 'Yes';
+      const panelDoorType = normalizeDoorTypeValue(block?.globalShakerType || 'no', 'no');
+      const panelProfileRule = profileTemplateRule(panelDoorType);
+      const partPocketOn = partPocketingValue(part, block) === 'Yes' || block?.pocketingEnabled === 'Yes' || panelDoorType !== 'no';
       const displayLabel = item?.displayLabel || ('P' + (Number(item?.physicalIndex ?? sectionIndex) + 1) + (physical.direction === 'vertical' ? 'V' : ''));
       const text = String(sectionOverride.text || part?.text || '').trim() || ((layout?.wallMode || block?.wallEnabled === 'Yes')
         ? (wallDisplayName(block, Number(sourcePartIndex || 0)) + ' - ' + displayLabel)
@@ -8291,7 +8344,7 @@
         wallOpenings:Array.isArray(layout?.openings) ? layout.openings.map(opening=>({...opening})) : [],
         pocketSideMode:partPocketSideMode(part, block),
         pocketRoundCorners:partPocketRoundCornersValue(part, block) === 'Yes',
-        pocketLines:partPocketOn ? pocketLineSettingsForPart(part, block) : [],
+        pocketLines:partPocketOn ? (panelProfileRule ? profilePocketLineSettings(panelProfileRule) : pocketLineSettingsForPart(part, block)) : [],
         manualSheetIndex:manualSheetIndex === '' || manualSheetIndex == null ? '' : Math.max(0, Math.round(Number(manualSheetIndex || 0))),
         manualSheetSize:SHEET_SIZES[manualSheetSize] ? manualSheetSize : '',
         manualX:manualX === '' || manualX == null ? '' : Math.max(0, Number(manualX || 0)),
@@ -8416,7 +8469,11 @@
         const qty = Math.max(1, Number(p.quantity||1));
         for(let i=0;i<qty;i++){
           if(isPanelBlock(block)){
-            const frontFrame = Math.max(1, Number(block.frameSize || 80));
+            const panelDoorType = normalizeDoorTypeValue(block.globalShakerType || 'no', 'no');
+            const panelProfileRule = profileTemplateRule(panelDoorType);
+            const frontFrame = panelProfileRule ? Math.max(1, Number(panelProfileRule.frame || 70)) : Math.max(1, Number(block.frameSize || 80));
+            const backFrame = panelProfileRule ? Math.max(1, Number(panelProfileRule.backFrame || panelProfileRule.frame || frontFrame)) : Math.max(1, Number(block.backFrameSize || block.frameSize || 80));
+            const panelPocketLines = panelProfileRule ? profilePocketLineSettings(panelProfileRule) : pocketLineSettingsForPart(p, block);
             const panelW = Math.max(0, Number(p.width || 0));
             const panelH = Math.max(0, Number(p.height || 0));
             if(!(panelW > 0 && panelH > 0)) continue;
@@ -8430,8 +8487,8 @@
                 id: out.length + 1,
                 width:panelData.width,
                 height:panelData.height,
-                shaker:false,
-                shakerType:'panel',
+                shaker:panelDoorType !== 'no' || block.pocketingEnabled === 'Yes',
+                shakerType:panelDoorType,
                 panelMode:'panel',
                 calcMode:'panel',
                 insertKind:'',
@@ -8443,11 +8500,12 @@
                 parentBlockId:p.parentBlockId ?? '',
                 parentPartIndex:p.parentPartIndex ?? '',
                 frame:frontFrame,
-                backFrame:frontFrame,
-                framePocket:false,
-                pocketSideMode:panelData.pocketSideMode,
+                backFrame,
+                framePocket:panelDoorType === 'no' && block.pocketingEnabled === 'Yes',
+                pocketSideMode:panelProfileRule ? (panelProfileRule.hasBackFace === false ? 'front' : 'front-back') : panelData.pocketSideMode,
                 pocketRoundCorners:panelData.pocketRoundCorners,
-                pocketLines:panelData.pocketLines,
+                pocketLines:panelPocketLines,
+                profileRule:panelProfileRule ? deepCopy(panelProfileRule) : null,
                 panelDirection:panelData.panelDirection,
                 panelRows:panelData.panelRows,
                 panelColumns:panelData.panelColumns,
@@ -9129,6 +9187,10 @@
       if(serviceBox && serviceHome && serviceBox.closest('#materialsContainer')) serviceHome.appendChild(serviceBox);
       container.innerHTML = '';
       ensureActiveModeBlock();
+      if(activeCalculatorMode === 'panel'){
+        const sharedPanel = firstPanelBlock();
+        if(sharedPanel) syncPanelShakerSetup(sharedPanel);
+      }
       const addButton = document.getElementById('addMaterialBtn');
       if(addButton) addButton.textContent = activeCalculatorMode === 'panel' ? '+ Add Next Room' : '+ Add Next Material';
       const visibleBlocks = blocks.filter(block=>calcModeForBlock(block) === activeCalculatorMode);
@@ -9152,8 +9214,9 @@
         if(block.autoGenerated) node.querySelector('.remove-btn').style.display = 'none';
         if(block.autoGenerated && node.querySelector('.biding-row')) node.querySelector('.biding-row').style.display = 'none';
         bindSmartImportControls(node, block);
-        if(!panelMode && isProfileDoorTemplate(block.globalShakerType) && (block.profileTemplateAppliedType !== block.globalShakerType || block.profileDefaultsVersion !== PROFILE_DEFAULTS_VERSION)){
+        if(isProfileDoorTemplate(block.globalShakerType) && (block.profileTemplateAppliedType !== block.globalShakerType || block.profileDefaultsVersion !== PROFILE_DEFAULTS_VERSION)){
           applyProfileTemplateDefaults(block, block.globalShakerType);
+          if(panelMode) syncPanelMaterialPricing(block);
         } else if(!isProfileDoorTemplate(block.globalShakerType)){
           block.profileTemplateAppliedType = '';
           block.profileDefaultsVersion = 0;
@@ -9188,6 +9251,16 @@
         }
         const doorTypeSelect = node.querySelector('.globalShakerType');
         populateDoorTypeSelect(doorTypeSelect, block.globalShakerType);
+        const panelShakerTypeSelect = node.querySelector('.panelGlobalShakerType');
+        populateDoorTypeSelect(panelShakerTypeSelect, block.globalShakerType);
+        const panelFrameInput = node.querySelector('.panelFrameSize');
+        const panelFrameWarn = node.querySelector('.panelFrameWarnMark');
+        const panelExtraProcessInput = node.querySelector('.panelExtraProcess');
+        const panelDrillingsSelect = node.querySelector('.panelDrillings');
+        const panelDrillingsControl = node.querySelector('.panelDrillingsControl');
+        const panelReededDirectionSelect = node.querySelector('.panelReededDirection');
+        const panelReededDirectionControl = node.querySelector('.panelReededDirectionControl');
+        const panelReededSpacingInput = node.querySelector('.panelReededSpacing');
         const grainDirectionSelect = node.querySelector('.grainDirectionEnabled');
         const grainDirectionControl = node.querySelector('.grainDirectionControl');
         if(grainDirectionSelect) grainDirectionSelect.value = grainDirectionBlockValue(block);
@@ -9201,6 +9274,7 @@
         const frameHint = node.querySelector('.frameHint');
         if(frameHint) frameHint.textContent = panelMode ? 'Frame controls the panel rail/stile width. Joint, door, corner, and column sides are calculated from this value.' : 'Frame is used for door profiles. Recommended minimum: 50 mm.';
         node.querySelector('.frameSize').value = block.frameSize;
+        if(panelFrameInput) panelFrameInput.value = block.frameSize;
         const panelDirectionSelect = node.querySelector('.panelDirection');
         const panelRowsInput = node.querySelector('.panelRows');
         const panelColumnsInput = node.querySelector('.panelColumns');
@@ -9265,7 +9339,6 @@
           });
         }
         if(panelMode){
-          block.globalShakerType = 'no';
           block.wallEnabled = block.wallEnabled === 'Yes' ? 'Yes' : 'No';
           if(roomNameInput){
             roomNameInput.placeholder = 'Room ' + (idx + 1);
@@ -9319,6 +9392,8 @@
         const reededSpacingInput = node.querySelector('.reededSpacing');
         reededDirectionSelect.value = normalizeReededDirection(block.reededDirection);
         reededSpacingInput.value = normalizeReededSpacing(block.reededSpacing);
+        if(panelReededDirectionSelect) panelReededDirectionSelect.value = normalizeReededDirection(block.reededDirection);
+        if(panelReededSpacingInput) panelReededSpacingInput.value = normalizeReededSpacing(block.reededSpacing);
         const bidingSelect = node.querySelector('.bidingEnabled');
         const bidingControl = node.querySelector('.bidingControl');
         const bidingModeSelect = node.querySelector('.bidingMode');
@@ -9336,6 +9411,7 @@
         node.querySelector('.backFrameSize').value = block.backFrameSize || block.frameSize;
         node.querySelector('.flatFrameToggle').value = block.flatFrameToggle || 'No';
         node.querySelector('.extraProcess').value = block.extraProcess;
+        if(panelExtraProcessInput) panelExtraProcessInput.value = block.extraProcess;
         if(block.parts.some(p=>p.hinges === 'Yes')) block.drillings = 'Yes';
         const drillingsSelect = node.querySelector('.drillings');
         const drillingsControl = node.querySelector('.drillingsControl');
@@ -9358,6 +9434,7 @@
         }));
         const flatFrameSelect = node.querySelector('.flatFrameToggle');
         drillingsSelect.value = block.drillings;
+        if(panelDrillingsSelect) panelDrillingsSelect.value = block.drillings;
         pocketingSelect.value = block.pocketingEnabled || 'No';
         pocketRoundSelect.value = block.pocketRoundCorners || 'No';
         flatFrameSelect.value = block.pocketingEnabled === 'Yes' && block.globalShakerType === 'no' ? 'Yes' : 'No';
@@ -9403,6 +9480,31 @@
               lastCalculation = null;
             });
           });
+        }
+        function syncPanelSharedSetup(){
+          if(!panelMode) return;
+          syncPanelShakerSetup(block);
+        }
+        function syncPanelShakerSetupState(){
+          if(!panelMode) return;
+          if(panelShakerTypeSelect) panelShakerTypeSelect.value = block.globalShakerType;
+          if(panelFrameInput) panelFrameInput.value = block.frameSize;
+          if(panelFrameWarn){
+            const warnNeeded = Number(block.frameSize || 0) < 50;
+            panelFrameWarn.textContent = warnNeeded ? '!' : '';
+            panelFrameInput?.classList.toggle('frame-warning', warnNeeded);
+          }
+          if(panelExtraProcessInput) panelExtraProcessInput.value = block.extraProcess;
+          if(panelDrillingsSelect) panelDrillingsSelect.value = block.drillings;
+          if(panelDrillingsControl) setToggleButtonValue(panelDrillingsControl, block.drillings);
+          const showReeded = block.globalShakerType === 'reeded';
+          if(panelReededDirectionSelect) panelReededDirectionSelect.disabled = !showReeded;
+          if(panelReededSpacingInput) panelReededSpacingInput.disabled = !showReeded;
+          if(panelReededDirectionControl){
+            setSegmentedValue(panelReededDirectionControl, normalizeReededDirection(block.reededDirection));
+            panelReededDirectionControl.querySelectorAll('button').forEach(btn=>btn.disabled = !showReeded);
+          }
+          if(panelReededSpacingInput) panelReededSpacingInput.value = String(normalizeReededSpacing(block.reededSpacing));
         }
         bindSegmentedControl(node.querySelector('.globalShakerControl'), block.globalShakerType, value=>{
           doorTypeSelect.value = value;
@@ -9950,6 +10052,7 @@
           }
           syncPocketingState();
           syncFrameAvailability();
+          syncPanelSharedSetup();
           requestRender();
         }
         if(pocketingTitleToggle){
@@ -9961,6 +10064,7 @@
             pocketRoundSelect.value = next;
             setBlockValue(block, 'pocketRoundCorners', next);
             syncPocketingState();
+            syncPanelSharedSetup();
             requestRender();
           });
         }
@@ -9968,6 +10072,7 @@
           pocketSideSelect.value = value;
           setBlockValue(block, 'pocketSideMode', value);
           syncPocketingState();
+          syncPanelSharedSetup();
           requestRender();
         });
         pocketLineControls.forEach(({config, select, control, offsetInput, roundSelect, roundControl})=>{
@@ -9975,6 +10080,7 @@
             select.value = value;
             setBlockValue(block, config.key + 'Enabled', value);
             syncPocketingState();
+            syncPanelSharedSetup();
             requestRender();
           });
           if(roundControl){
@@ -9983,6 +10089,7 @@
               if(roundSelect) roundSelect.value = next;
               setBlockValue(block, config.key + 'RoundCorners', next);
               syncPocketingState();
+              syncPanelSharedSetup();
               requestRender();
             });
           }
@@ -9990,6 +10097,7 @@
             offsetInput.addEventListener('input', e=>{
               const value = Math.max(0, Number(e.target.value || 0));
               if(Number.isFinite(value)) setBlockValue(block, config.key + 'Offset', value);
+              syncPanelSharedSetup();
               requestRender();
             });
           }
@@ -10072,6 +10180,7 @@
         syncPocketingState();
         syncFrameAvailability();
         syncPanelControls();
+        syncPanelShakerSetupState();
         syncBidingState();
         syncReededControls();
         function enableDrillingsFromHinges(){
@@ -10417,6 +10526,20 @@
           syncReededControls();
           requestRender();
         });
+        panelShakerTypeSelect?.addEventListener('change', e=>{
+          const value = normalizeDoorTypeValue(e.target.value, block.globalShakerType);
+          setBlockValue(block, 'globalShakerType', value);
+          applyProfileTemplateDefaults(block, value, {force:true});
+          block.parts.forEach(p=>p.shaker = block.globalShakerType==='no' ? 'No' : 'Yes');
+          setBlockValue(block, 'flatFrameToggle', block.globalShakerType === 'no' && block.pocketingEnabled === 'Yes' ? 'Yes' : 'No');
+          flatFrameSelect.value = block.flatFrameToggle;
+          syncPanelMaterialPricing(block);
+          syncPanelSharedSetup();
+          syncFrameAvailability();
+          syncReededControls();
+          syncPanelShakerSetupState();
+          requestRender();
+        });
         reededDirectionSelect.addEventListener('change', e=>{
           setBlockValue(block, 'reededDirection', normalizeReededDirection(e.target.value));
           syncReededControls();
@@ -10428,6 +10551,31 @@
           e.target.value = value;
           requestRender();
         });
+        panelReededDirectionSelect?.addEventListener('change', e=>{
+          setBlockValue(block, 'reededDirection', normalizeReededDirection(e.target.value));
+          syncPanelSharedSetup();
+          syncReededControls();
+          syncPanelShakerSetupState();
+          requestRender();
+        });
+        panelReededSpacingInput?.addEventListener('input', e=>{
+          const value = normalizeReededSpacing(e.target.value);
+          setBlockValue(block, 'reededSpacing', value);
+          e.target.value = value;
+          syncPanelSharedSetup();
+          requestRender();
+        });
+        if(panelReededDirectionControl){
+          bindSegmentedControl(panelReededDirectionControl, normalizeReededDirection(block.reededDirection), value=>{
+            const normalized = normalizeReededDirection(value);
+            if(panelReededDirectionSelect) panelReededDirectionSelect.value = normalized;
+            setBlockValue(block, 'reededDirection', normalized);
+            syncPanelSharedSetup();
+            syncReededControls();
+            syncPanelShakerSetupState();
+            requestRender();
+          });
+        }
         node.querySelector('.frameSize').addEventListener('input', e=>{
           const value = Math.max(1, Number(e.target.value||1));
           setBlockValue(block, 'frameSize', value);
@@ -10438,11 +10586,24 @@
           syncFrameAvailability();
           requestRender();
         });
+        panelFrameInput?.addEventListener('input', e=>{
+          const value = Math.max(1, Number(e.target.value||1));
+          setBlockValue(block, 'frameSize', value);
+          if(!block.backFrameManualOverride){
+            setBlockValue(block, 'backFrameSize', value);
+            backFrameInput.value = value;
+          }
+          syncPanelSharedSetup();
+          syncFrameAvailability();
+          syncPanelShakerSetupState();
+          requestRender();
+        });
         backFrameInput.addEventListener('input', e=>{
           const value = Math.max(1, Number(e.target.value||1));
           e.target.value = value;
           setBlockValue(block, 'backFrameManualOverride', true);
           setBlockValue(block, 'backFrameSize', value);
+          syncPanelSharedSetup();
           requestRender();
         });
         node.querySelector('.extraProcess').addEventListener('input', e=>{
@@ -10451,7 +10612,28 @@
           setBlockValue(block, 'extraProcess', value);
           updateSheetPriceEditor();
         });
+        panelExtraProcessInput?.addEventListener('input', e=>{
+          const value = Math.min(999, Math.max(0, Number(e.target.value||0)));
+          e.target.value = value;
+          setBlockValue(block, 'extraProcess', value);
+          syncPanelSharedSetup();
+          updateSheetPriceEditor();
+        });
         node.querySelector('.drillings').addEventListener('change', e=>{setBlockValue(block, 'drillings', e.target.value); updateSheetPriceEditor();});
+        panelDrillingsSelect?.addEventListener('change', e=>{
+          setBlockValue(block, 'drillings', e.target.value);
+          syncPanelSharedSetup();
+          updateSheetPriceEditor();
+        });
+        if(panelDrillingsControl){
+          bindToggleButton(panelDrillingsControl, block.drillings, value=>{
+            if(panelDrillingsSelect) panelDrillingsSelect.value = value;
+            drillingsSelect.value = value;
+            setBlockValue(block, 'drillings', value);
+            syncPanelSharedSetup();
+            updateSheetPriceEditor();
+          });
+        }
         pocketingSelect.addEventListener('change', e=>setPocketingEnabled(e.target.value));
         pocketSideSelect.addEventListener('change', e=>{
           setBlockValue(block, 'pocketSideMode', e.target.value === 'front-back' ? 'front-back' : 'front');
@@ -10463,6 +10645,7 @@
           setBlockValue(block, 'pocketingMinutes', value);
           setBlockValue(block, 'pocketingManualOverride', true);
           e.target.value = String(value);
+          syncPanelSharedSetup();
           updatePreview();
         });
         node.querySelector('.timeMinutes').addEventListener('input', e=>{setBlockValue(block, 'timeMinutes', Math.max(0, Number(e.target.value||0)));});
