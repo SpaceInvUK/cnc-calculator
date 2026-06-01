@@ -14948,10 +14948,18 @@
       }
       function drawPanelPartDxf(p, ox=0, oy=0, face='front'){
         placementOutline('OUT', p, ox, oy);
+        // Panel placements usually carry no explicit pocketLines, so resolve the same
+        // default the on-screen preview uses (Pocket @ 0 = the cell boundary). Without
+        // this the DXF would only contain the outer rectangle, not the shaker cells.
+        const pocketLines = (Array.isArray(p.pocketLines) && p.pocketLines.length) ? p.pocketLines : pocketLineSettingsForPart(p, null);
         panelCellCavities(p).forEach(c=>{
           const shifted = shiftedPoints(cavityPoints(c), ox, oy);
           if(face === 'front'){
-            drawPocketGuideLayers({x:ox+c.x, y:oy+c.y, w:c.w, h:c.h, points:shifted, sloped:false}, Array.isArray(p.pocketLines) ? p.pocketLines : [], !!p.pocketRoundCorners);
+            drawPocketGuideLayers({x:ox+c.x, y:oy+c.y, w:c.w, h:c.h, points:shifted, sloped:false}, pocketLines, !!p.pocketRoundCorners);
+          } else if(p.pocketRoundCorners){
+            writeRoundedPolyline('POCKET_10MM', shifted, true, 2.5);
+          } else {
+            writePolyline('POCKET_10MM', shifted, true);
           }
         });
         textEntity(ox + Number(p.x || 0) + Number(p.w || p.width || 0) / 2, oy + Number(p.y || 0) + Number(p.h || p.height || 0) / 2, 18, placementLabel(p), 'text', 'center');
