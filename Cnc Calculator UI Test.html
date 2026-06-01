@@ -1489,13 +1489,13 @@
     const QUOTE_FILE_VERSION = 1;
     const VAT_RATE = 20;
     const POCKET_LINE_CONFIGS = [
-      {key:'pocketLinePocket', label:'Offset A', layer:'POCKET_10MM', color:'#b45309'},
-      {key:'pocketLine6', label:'Offset B', layer:'POCKET_6MM', color:'#dc2626'},
-      {key:'pocketLine2', label:'Offset C', layer:'POCKET_2MM', color:'#2563eb'},
-      {key:'pocketLineChamfer', label:'Offset D', layer:'CHAMFER', color:'#7c3aed'},
-      {key:'pocketLineProfile', label:'Offset E', layer:'PROFILE_TOOL', color:'#0f766e'},
-      {key:'pocketLinePocket2', label:'Offset F', layer:'POCKET_2', color:'#f97316'},
-      {key:'pocketLinePocket3', label:'Offset G', layer:'POCKET_3', color:'#a16207'}
+      {key:'pocketLinePocket', label:'Offset A', layer:'OFFSET_A', color:'#b45309', dxfColor:30},
+      {key:'pocketLine6', label:'Offset B', layer:'OFFSET_B', color:'#dc2626', dxfColor:1},
+      {key:'pocketLine2', label:'Offset C', layer:'OFFSET_C', color:'#2563eb', dxfColor:5},
+      {key:'pocketLineChamfer', label:'Offset D', layer:'OFFSET_D', color:'#7c3aed', dxfColor:210},
+      {key:'pocketLineProfile', label:'Offset E', layer:'OFFSET_E', color:'#0f766e', dxfColor:94},
+      {key:'pocketLinePocket2', label:'Offset F', layer:'OFFSET_F', color:'#f97316', dxfColor:30},
+      {key:'pocketLinePocket3', label:'Offset G', layer:'OFFSET_G', color:'#a16207', dxfColor:32}
     ];
     const SPRAY_PROFILE_CONFIGS = [
       {key:'endPanels', label:'End Panels', rate:50},
@@ -8341,9 +8341,7 @@
         wallWindowHeight:layout?.window?.height ?? '',
         wallWindowX:layout?.window?.x ?? '',
         wallWindowBottom:layout?.window?.bottom ?? '',
-        wallOpenings:(item?.emptyTopPanel === true || item?.objectLowerPanel === true || item?.section?.emptyTopPanel === true || item?.section?.objectLowerPanel === true)
-          ? []
-          : (Array.isArray(layout?.openings) ? layout.openings.map(opening=>({...opening})) : []),
+        wallOpenings:[],
         pocketSideMode:partPocketSideMode(part, block),
         pocketRoundCorners:partPocketRoundCornersValue(part, block) === 'Yes',
         pocketLines:partPocketOn ? (panelProfileRule ? profilePocketLineSettings(panelProfileRule) : pocketLineSettingsForPart(part, block)) : [],
@@ -14826,6 +14824,7 @@
         {name:'BEADING', color:30},
         {name:'POKET_INSERT', color:30},
         {name:'SHADOW', color:105},
+        ...POCKET_LINE_CONFIGS.map(config=>({name:config.layer, color:config.dxfColor || 7})),
         {name:'POCKET_10MM', color:6},
         {name:'POCKET_6MM', color:1},
         {name:'POCKET_2MM', color:5},
@@ -15089,13 +15088,13 @@
           line('REEDED', seg.x1, seg.y1, seg.x2, seg.y2);
         });
       }
-      function profileTemplateDxfLayer(entity, fallbackLayer='POCKET_10MM'){
+      function profileTemplateDxfLayer(entity, fallbackLayer='OFFSET_A'){
         const upper = String(entity?.layer || '').toUpperCase();
         if(upper.includes('OUT')) return 'OUT';
-        if(upper.includes('6')) return 'POCKET_6MM';
-        if(upper.includes('2')) return 'POCKET_2MM';
-        if(upper.includes('CHAMFER')) return 'CHAMFER';
-        if(upper.includes('PROFILE')) return 'PROFILE_TOOL';
+        if(upper.includes('6')) return 'OFFSET_B';
+        if(upper.includes('2')) return 'OFFSET_C';
+        if(upper.includes('CHAMFER')) return 'OFFSET_D';
+        if(upper.includes('PROFILE')) return 'OFFSET_E';
         if(upper.includes('POCKET') || upper.includes('POKET') || upper.includes('SECTION')) return fallbackLayer;
         return fallbackLayer;
       }
@@ -15132,7 +15131,7 @@
         if(!template) return;
         if(template.construction === 'profile'){
           const dest = {x:ox+p.x, y:oy+p.y, w:p.w, h:p.h};
-          template.entities.forEach(entity=>drawTemplateEntityDxf(template, dest, {...entity, layer:profileTemplateDxfLayer(entity)}, 'POCKET_10MM'));
+          template.entities.forEach(entity=>drawTemplateEntityDxf(template, dest, {...entity, layer:profileTemplateDxfLayer(entity)}, 'OFFSET_A'));
           return;
         }
         const dest = {x:ox+p.x, y:oy+p.y, w:p.w, h:p.h};
@@ -15165,9 +15164,9 @@
           if(face === 'front'){
             drawPocketGuideLayers({x:ox+c.x, y:oy+c.y, w:c.w, h:c.h, points:shifted, sloped:false}, pocketLines, !!p.pocketRoundCorners);
           } else if(p.pocketRoundCorners){
-            writeRoundedPolyline('POCKET_10MM', shifted, true, 2.5);
+            writeRoundedPolyline('OFFSET_A', shifted, true, 2.5);
           } else {
-            writePolyline('POCKET_10MM', shifted, true);
+            writePolyline('OFFSET_A', shifted, true);
           }
         });
         textEntity(ox + Number(p.x || 0) + Number(p.w || p.width || 0) / 2, oy + Number(p.y || 0) + Number(p.h || p.height || 0) / 2, 18, placementLabel(p), 'text', 'center');
