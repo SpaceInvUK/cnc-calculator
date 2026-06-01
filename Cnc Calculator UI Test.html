@@ -1461,7 +1461,7 @@
     const MATERIAL_PRICE_STORAGE_KEY = 'fastCncMaterialPricesV1';
     const MATERIAL_BOOK_KEY = 'fastCncMaterialBookV1';
     const DEFAULT_NEW_MATERIAL_THICKNESSES = ['6mm','9mm','12mm','15mm','18mm','22mm','25mm'];
-    const PROFILE_DEFAULTS_VERSION = 3;
+    const PROFILE_DEFAULTS_VERSION = 4;
     const QUOTE_FILE_VERSION = 1;
     const VAT_RATE = 20;
     const POCKET_LINE_CONFIGS = [
@@ -1936,7 +1936,7 @@
     function applyProfileTemplateDefaults(block, type, options={}){
       const rule = profileTemplateRule(type);
       if(!block || !rule) return false;
-      if(!options.force && block.profileTemplateAppliedType === type) return false;
+      if(!options.force && block.profileTemplateAppliedType === type && block.profileDefaultsVersion === PROFILE_DEFAULTS_VERSION) return false;
       let changed = false;
       const set = (key, value)=>{
         if(String(block[key]) !== String(value)){
@@ -1946,9 +1946,13 @@
       };
       if(rule.hasBackFace !== false) set('material', preferredPocketMaterial());
       set('thickness', Math.round(Number(rule.materialThickness || 22)) + 'mm');
-      set('frameSize', Math.max(1, Number(rule.frame || 70)));
-      set('backFrameSize', Math.max(1, Number(rule.backFrame || rule.frame || 70)));
-      set('backFrameManualOverride', false);
+      const frontFrameVal = Math.max(1, Number(rule.frame || 70));
+      const backFrameVal = Math.max(1, Number(rule.backFrame || rule.frame || 70));
+      set('frameSize', frontFrameVal);
+      set('backFrameSize', backFrameVal);
+      // Lock the back frame so the "back = front" auto-sync can't overwrite a measured
+      // back frame that differs from the front.
+      set('backFrameManualOverride', backFrameVal !== frontFrameVal);
       set('pocketMaterialManualOverride', false);
       set('pocketingEnabled', 'Yes');
       set('pocketSideMode', rule.hasBackFace === false ? 'front' : 'front-back');
