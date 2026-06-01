@@ -1906,11 +1906,17 @@
       const bottomMin = bottomXs.length ? Math.min(...bottomXs) : bounds.minX;
       const bottomMax = bottomXs.length ? Math.max(...bottomXs) : bounds.maxX;
       const hasBackFace = (bottomMin > bounds.minX + tol) || (bottomMax < bounds.maxX - tol);
+      // Back frame is measured on its own from the bottom block; it can differ from the front.
+      let backFrame = frame;
+      if(hasBackFace){
+        backFrame = round1(rightFrame ? (bounds.maxX - bottomMin) : (bottomMax - bounds.minX));
+        if(!(backFrame > 0)) backFrame = frame;
+      }
 
       return {
         type:'profile',
         frame:frame || 70,
-        backFrame:frame || 70,
+        backFrame:backFrame || frame || 70,
         materialThickness:thickness || 22,
         innerOffset:offsets[offsets.length - 1] || 0,
         pocketOffsets:offsets,
