@@ -8456,6 +8456,11 @@
       });
       return out;
     }
+    function subtractOpeningsFromPanelCavities(cavities, openings){
+      const original = (cavities || []).filter(cavity=>cavity && cavity.w > 0 && cavity.h > 0);
+      const clipped = subtractOpeningsFromCavities(original, openings);
+      return clipped.length ? clipped : original;
+    }
     function getCncFamily(material){
       const birchFamily=['Birch','Birch Plywood','Hardwood Plywood','Softwood Plywood','Marine Plywood','Poplar Plywood','Phenolic-coated Plywood','Solid Oak Panels','Solid Pine Panels','Solid Beech Panels','Bamboo Panels'];
       return birchFamily.includes(material) ? 'Birch' : 'MDF';
@@ -11106,11 +11111,11 @@
       const ph = Math.max(0, Number(p?.h || p?.height || p?.origH || 0));
       if(settings.upperStepFrame && settings.upperStepLowerHeight > 0 && settings.upperStepLowerHeight < ph){
         const stepped = upperSteppedPanelCellCavities(p, settings, px, py, pw, ph);
-        return subtractOpeningsFromCavities(stepped, panelOpeningRectsForPlacement(p));
+        return subtractOpeningsFromPanelCavities(stepped, panelOpeningRectsForPlacement(p));
       }
       if(settings.autoVertical && settings.verticalStepFrame && settings.verticalStepHeight > 0){
         const stepped = steppedPanelCellCavities(p, settings, px, py, pw, ph);
-        return subtractOpeningsFromCavities(stepped, panelOpeningRectsForPlacement(p));
+        return subtractOpeningsFromPanelCavities(stepped, panelOpeningRectsForPlacement(p));
       }
       const innerX = px + settings.sides.left;
       const innerY = py + settings.sides.top;
@@ -11144,7 +11149,7 @@
         }
         yCursor += (rowHeights[row] || 0) + settings.frame;
       }
-      return subtractOpeningsFromCavities(out, panelOpeningRectsForPlacement(p));
+      return subtractOpeningsFromPanelCavities(out, panelOpeningRectsForPlacement(p));
     }
     function panelCellCavities(p){
       const angle = normalizeRotationAngle(placementRotationAngle(p));
