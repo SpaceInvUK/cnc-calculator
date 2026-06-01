@@ -415,6 +415,24 @@
     .dxf-template-view-card{border:1px solid #dbe5f0;border-radius:8px;background:#fff;padding:10px;display:grid;gap:8px}
     .dxf-template-view-card svg{width:100%;height:150px;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc}
     .dxf-template-view-meta{font-size:11px;line-height:1.35;color:#475569;font-weight:800}
+    .material-price-modal-card{width:min(760px,100%)}
+    .material-price-tools{display:grid;grid-template-columns:1fr;gap:8px;margin:12px 0 4px}
+    .material-price-search{height:36px;padding:8px 10px;border:1.5px solid var(--border-strong);border-radius:8px;font-size:13px;font-weight:600;width:100%}
+    .material-price-add{display:flex;gap:8px}
+    .material-price-add input{flex:1;min-width:0;height:36px;padding:8px 10px;border:1.5px solid var(--border-strong);border-radius:8px;font-size:13px;font-weight:600}
+    .material-price-add button{white-space:nowrap}
+    .material-price-list{max-height:min(54vh,520px);overflow:auto;display:grid;gap:10px;margin-top:8px}
+    .material-price-group{border:1px solid #e2e8f0;border-radius:8px;background:#fff;padding:10px}
+    .material-price-group-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+    .material-price-group-title{font-size:12.5px;font-weight:900;color:#111;word-break:break-word}
+    .material-price-group-title .custom-tag{font-size:9px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:999px;padding:2px 6px;margin-left:7px}
+    .material-price-remove{flex:0 0 auto;width:26px;height:26px;padding:0;border-radius:7px;background:#fff;color:#b91c1c;border:1.5px solid #fecaca;font-size:15px;line-height:1;cursor:pointer}
+    .material-price-remove:hover{background:#fef2f2}
+    .material-price-cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:7px}
+    .material-price-cell{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px;border:1px solid #e7edf4;border-radius:7px;padding:5px 7px;background:#fbfdff}
+    .material-price-cell label{font-size:11px;font-weight:900;color:#475569}
+    .material-price-cell input{width:100%;min-width:0;height:30px;padding:4px 6px;border:1.5px solid var(--border);border-radius:7px;font-size:12.5px;font-weight:800;text-align:right}
+    .material-price-cell.edited input{border-color:#3b82f6;background:#eff6ff}
     .profile-view-card{grid-column:1/-1;gap:10px}
     .profile-view-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
     .profile-view-badge{font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:999px;padding:3px 9px;white-space:nowrap}
@@ -1185,6 +1203,24 @@
       </div>
     </div>
   </div>
+  <div id="materialPriceModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card material-price-modal-card" role="dialog" aria-modal="true" aria-labelledby="materialPriceTitle">
+      <div class="modal-title" id="materialPriceTitle">Material Pricing</div>
+      <div class="modal-copy">Edit the standard sheet price for each material and thickness. Changes are saved on this device and become the default for every new quote (they survive a page refresh). Other sheet sizes scale by area automatically. Leave a box empty to fall back to the built-in default.</div>
+      <div class="material-price-tools">
+        <input id="materialPriceSearch" type="text" class="material-price-search" placeholder="Search material (e.g. MDF, Birch, Oak)...">
+        <div class="material-price-add">
+          <input id="newMaterialName" type="text" placeholder="New material name...">
+          <button class="btn-secondary" id="addMaterialPriceBtn" type="button">+ Add material</button>
+        </div>
+      </div>
+      <div id="materialPriceList" class="modal-list material-price-list"></div>
+      <div class="modal-actions">
+        <button class="btn-outline" id="resetMaterialPriceBtn" type="button">Reset all to defaults</button>
+        <button class="btn-primary" id="closeMaterialPriceBtn" type="button">Done</button>
+      </div>
+    </div>
+  </div>
 
   <template id="materialTemplate">
     <div class="material-block">
@@ -1423,6 +1459,8 @@
     const TEMPLATE_STORAGE_KEY = 'fastCncDoorTemplatesV1';
     const OFFCUT_TEMPLATE_STORAGE_KEY = 'fastCncOffcutTemplatesV1';
     const MATERIAL_PRICE_STORAGE_KEY = 'fastCncMaterialPricesV1';
+    const MATERIAL_BOOK_KEY = 'fastCncMaterialBookV1';
+    const DEFAULT_NEW_MATERIAL_THICKNESSES = ['6mm','9mm','12mm','15mm','18mm','22mm','25mm'];
     const PROFILE_DEFAULTS_VERSION = 3;
     const QUOTE_FILE_VERSION = 1;
     const VAT_RATE = 20;
@@ -1453,6 +1491,7 @@
     let customDoorTemplates = loadCustomDoorTemplates();
     let customOffcutTemplates = loadCustomOffcutTemplates();
     let materialPriceOverrides = loadMaterialPriceOverrides();
+    let materialBook = loadMaterialBook();
 
     function deepCopy(value){
       return JSON.parse(JSON.stringify(value));
@@ -1690,6 +1729,77 @@
       if(!Number.isFinite(amount) || amount < 0) return;
       materialPriceOverrides[materialPriceKey(material, thickness, size)] = amount;
       safeLocalStorageSet(MATERIAL_PRICE_STORAGE_KEY, JSON.stringify(materialPriceOverrides));
+    }
+    // Material price book: persistent standard prices + custom/removed materials (survives F5).
+    function loadMaterialBook(){
+      try{
+        const saved = JSON.parse(safeLocalStorageGet(MATERIAL_BOOK_KEY, '{}') || '{}');
+        return {
+          prices: saved && typeof saved.prices === 'object' && saved.prices ? saved.prices : {},
+          custom: Array.isArray(saved && saved.custom) ? saved.custom : [],
+          removed: Array.isArray(saved && saved.removed) ? saved.removed : []
+        };
+      }catch(_){ return {prices:{}, custom:[], removed:[]}; }
+    }
+    function saveMaterialBook(){
+      safeLocalStorageSet(MATERIAL_BOOK_KEY, JSON.stringify(materialBook));
+    }
+    function effectiveMaterialList(){
+      const removed = new Set(materialBook.removed || []);
+      const base = materialOptions.filter(m=>!removed.has(m));
+      const custom = (materialBook.custom || []).filter(m=>!base.includes(m));
+      return base.concat(custom);
+    }
+    function materialThicknessList(material){
+      const keys = new Set();
+      if(basePrices[material]) Object.keys(basePrices[material]).forEach(k=>keys.add(k));
+      if(materialBook.prices[material]) Object.keys(materialBook.prices[material]).forEach(k=>keys.add(k));
+      if(!keys.size) DEFAULT_NEW_MATERIAL_THICKNESSES.forEach(k=>keys.add(k));
+      return [...keys].sort((a,b)=>(parseFloat(a) || 0) - (parseFloat(b) || 0));
+    }
+    function materialBookOverrideValue(material, thickness){
+      const group = materialBook.prices[material];
+      const value = group ? group[thickness] : undefined;
+      return Number.isFinite(Number(value)) ? Number(value) : null;
+    }
+    function setMaterialBookPrice(material, thickness, value){
+      if(!material || !thickness) return;
+      const raw = String(value == null ? '' : value).trim();
+      if(!materialBook.prices[material]) materialBook.prices[material] = {};
+      if(raw === ''){
+        delete materialBook.prices[material][thickness];
+        if(!Object.keys(materialBook.prices[material]).length) delete materialBook.prices[material];
+      } else {
+        const n = Math.max(0, Number(raw));
+        if(Number.isFinite(n)) materialBook.prices[material][thickness] = n;
+      }
+      saveMaterialBook();
+    }
+    function addCustomMaterial(name){
+      const clean = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+      if(!clean) return false;
+      const exists = effectiveMaterialList().some(m=>m.toLowerCase() === clean.toLowerCase());
+      // If it was a removed built-in, just un-remove it.
+      if(materialBook.removed.includes(clean)){
+        materialBook.removed = materialBook.removed.filter(m=>m !== clean);
+        saveMaterialBook();
+        return true;
+      }
+      if(exists) return false;
+      materialBook.custom.push(clean);
+      materialBook.prices[clean] = {};
+      DEFAULT_NEW_MATERIAL_THICKNESSES.forEach(t=>{ materialBook.prices[clean][t] = 0; });
+      saveMaterialBook();
+      return true;
+    }
+    function removeMaterialFromBook(name){
+      if(materialBook.custom.includes(name)){
+        materialBook.custom = materialBook.custom.filter(m=>m !== name);
+        delete materialBook.prices[name];
+      } else if(materialOptions.includes(name) && !materialBook.removed.includes(name)){
+        materialBook.removed.push(name);
+      }
+      saveMaterialBook();
     }
     function sanitizeTemplateName(value){
       return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 42);
@@ -6371,6 +6481,8 @@
       }
     }
     function baseSheetPrice(material, thickness){
+      const book = materialBookOverrideValue(material, thickness);
+      if(book != null) return book;
       const raw = basePrices[material] && basePrices[material][thickness] !== undefined ? Number(basePrices[material][thickness]) : 0;
       return Number.isFinite(raw) ? raw : 0;
     }
@@ -6388,6 +6500,13 @@
       const baseSize = SHEET_SIZES['8x4'];
       const referenceSize = SHEET_SIZES['10x4'];
       const chosenSize = SHEET_SIZES[size] || baseSize;
+      // A price-book value is authoritative: it scales by sheet area to every size.
+      const bookBase = materialBookOverrideValue(material, thickness);
+      if(bookBase != null){
+        if(size === '8x4') return formatPriceValue(bookBase);
+        const ratio = (chosenSize.width * chosenSize.height) / Math.max(1, baseSize.width * baseSize.height);
+        return formatPriceValue(bookBase * ratio);
+      }
       const tablePrice = baseSheetPrice(material, thickness);
       const exact = exactSheetPrice(material, thickness, size);
       if(exact != null) return formatPriceValue(exact);
@@ -6565,6 +6684,12 @@
       let s = '<svg viewBox="'+vbX.toFixed(1)+' '+vbY.toFixed(1)+' '+vbW.toFixed(1)+' '+vbH.toFixed(1)+'" xmlns="http://www.w3.org/2000/svg" class="profile-schematic" font-family="Arial">';
       s += '<defs><marker id="'+uid+'A" markerWidth="7" markerHeight="7" refX="1" refY="3.5" orient="auto"><path d="M7 0 L0 3.5 L7 7" fill="none" stroke="'+dim+'" stroke-width="1.1"/></marker><marker id="'+uid+'B" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="none" stroke="'+dim+'" stroke-width="1.1"/></marker></defs>';
       s += drawing;
+      // Thin colour-coded guide line at each offset (matches the offset-line chips).
+      offs.forEach((off, i)=>{
+        const ox = rightFrame ? (innerScreenX - off * P) : (innerScreenX + off * P);
+        const color = (POCKET_LINE_CONFIGS[i] && POCKET_LINE_CONFIGS[i].color) || '#b45309';
+        s += '<line x1="'+ox.toFixed(1)+'" y1="0" x2="'+ox.toFixed(1)+'" y2="'+fullH.toFixed(1)+'" stroke="'+color+'" stroke-width="'+Math.max(0.6, sw * 0.85).toFixed(2)+'" stroke-dasharray="3 2" opacity="0.85"/>';
+      });
       s += '<line x1="'+fx1.toFixed(1)+'" y1="'+fy+'" x2="'+fx2.toFixed(1)+'" y2="'+fy+'" stroke="'+dim+'" stroke-width="1" marker-start="url(#'+uid+'A)" marker-end="url(#'+uid+'B)"/>';
       s += '<line x1="'+fx1.toFixed(1)+'" y1="'+(fy - 4)+'" x2="'+fx1.toFixed(1)+'" y2="4" stroke="#cbd5e1" stroke-width="1"/>';
       s += '<line x1="'+fx2.toFixed(1)+'" y1="'+(fy - 4)+'" x2="'+fx2.toFixed(1)+'" y2="4" stroke="#cbd5e1" stroke-width="1"/>';
@@ -6623,6 +6748,52 @@
     }
     function closeDxfTemplatesView(){
       const modal = document.getElementById('dxfTemplatesModal');
+      if(!modal) return;
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    function renderMaterialPriceList(filter){
+      const list = document.getElementById('materialPriceList');
+      if(!list) return;
+      const q = String(filter || '').trim().toLowerCase();
+      const groups = effectiveMaterialList().filter(m=>!q || m.toLowerCase().includes(q)).map(material=>{
+        const isCustom = (materialBook.custom || []).includes(material);
+        const cells = materialThicknessList(material).map(th=>{
+          const def = basePrices[material] && basePrices[material][th] !== undefined ? Number(basePrices[material][th]) : null;
+          const override = materialBookOverrideValue(material, th);
+          const value = override != null ? override : (def != null ? def : '');
+          const edited = override != null;
+          return '<div class="material-price-cell'+(edited ? ' edited' : '')+'">'
+            + '<label>'+escapeHtml(th)+'</label>'
+            + '<input type="number" min="0" step="1" value="'+escapeHtml(value)+'" data-material="'+escapeHtml(material)+'" data-thickness="'+escapeHtml(th)+'" aria-label="'+escapeHtml(material+' '+th)+'">'
+            + '</div>';
+        }).join('');
+        return '<div class="material-price-group">'
+          + '<div class="material-price-group-head"><div class="material-price-group-title">'+escapeHtml(material)+(isCustom ? '<span class="custom-tag">custom</span>' : '')+'</div>'
+          + '<button class="material-price-remove" type="button" data-remove-material="'+escapeHtml(material)+'" title="Remove this material">&times;</button></div>'
+          + '<div class="material-price-cells">'+cells+'</div>'
+          + '</div>';
+      });
+      list.innerHTML = groups.join('') || '<div class="modal-line">No materials match that search.</div>';
+    }
+    function repriceBlocksFromBook(){
+      blocks.forEach(block=>{ block.materialCost = suggestedCost(block.material, block.thickness, block.size); });
+      lastCalculation = null;
+    }
+    function showMaterialPriceModal(){
+      const modal = document.getElementById('materialPriceModal');
+      if(!modal) return;
+      const search = document.getElementById('materialPriceSearch');
+      if(search) search.value = '';
+      const nameInput = document.getElementById('newMaterialName');
+      if(nameInput) nameInput.value = '';
+      renderMaterialPriceList('');
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+      if(search) setTimeout(()=>search.focus({preventScroll:true}), 30);
+    }
+    function closeMaterialPriceModal(){
+      const modal = document.getElementById('materialPriceModal');
       if(!modal) return;
       modal.classList.remove('show');
       modal.setAttribute('aria-hidden', 'true');
@@ -8978,11 +9149,13 @@
         }
 
         const materialSel = node.querySelector('.material');
-        materialOptions.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;materialSel.appendChild(o);});
+        const matList = effectiveMaterialList();
+        if(block.material && !matList.includes(block.material)) matList.push(block.material);
+        matList.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;materialSel.appendChild(o);});
         materialSel.value = block.material;
 
         const thicknessSel = node.querySelector('.thickness');
-        (thicknessMap[block.material]||['18mm']).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;thicknessSel.appendChild(o);});
+        (thicknessMap[block.material] || materialThicknessList(block.material) || ['18mm']).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;thicknessSel.appendChild(o);});
         if(!(thicknessMap[block.material]||[]).includes(block.thickness)){const o=document.createElement('option');o.value=block.thickness;o.textContent=block.thickness;thicknessSel.appendChild(o);}
         thicknessSel.value = block.thickness;
 
@@ -15895,7 +16068,7 @@
     });
     document.getElementById('toolbarUndoBtn')?.addEventListener('click', ()=>{ undoHistory(); closeCommandMenus(); });
     document.getElementById('toolbarRedoBtn')?.addEventListener('click', ()=>{ redoHistory(); closeCommandMenus(); });
-    document.getElementById('editMaterialPricingBtn')?.addEventListener('click', ()=>{ focusMaterialPricing(); closeCommandMenus(); });
+    document.getElementById('editMaterialPricingBtn')?.addEventListener('click', ()=>{ showMaterialPriceModal(); closeCommandMenus(); });
     document.getElementById('hideValuesBtn')?.addEventListener('click', ()=>{ setHideValuesMode(!hideValuesMode); closeCommandMenus(); });
     document.getElementById('showBackPocketingBtn')?.addEventListener('click', ()=>{
       setShowBackSidePocketingMode(!showBackSidePocketingMode);
@@ -15918,6 +16091,46 @@
     });
     document.getElementById('closeDxfTemplatesViewBtn')?.addEventListener('click', closeDxfTemplatesView);
     document.getElementById('dxfTemplatesModal')?.addEventListener('click', e=>{ if(e.target.id === 'dxfTemplatesModal') closeDxfTemplatesView(); });
+    document.getElementById('closeMaterialPriceBtn')?.addEventListener('click', closeMaterialPriceModal);
+    document.getElementById('materialPriceModal')?.addEventListener('click', e=>{ if(e.target.id === 'materialPriceModal') closeMaterialPriceModal(); });
+    document.getElementById('materialPriceSearch')?.addEventListener('input', e=>renderMaterialPriceList(e.target.value));
+    document.getElementById('materialPriceList')?.addEventListener('input', e=>{
+      const input = e.target.closest('input[data-material]');
+      if(!input) return;
+      setMaterialBookPrice(input.dataset.material, input.dataset.thickness, input.value);
+      const cell = input.closest('.material-price-cell');
+      if(cell) cell.classList.toggle('edited', materialBookOverrideValue(input.dataset.material, input.dataset.thickness) != null);
+      repriceBlocksFromBook();
+      requestRender();
+    });
+    document.getElementById('materialPriceList')?.addEventListener('click', e=>{
+      const btn = e.target.closest('[data-remove-material]');
+      if(!btn) return;
+      const name = btn.dataset.removeMaterial;
+      if(!confirm('Remove "'+name+'" from the material list?')) return;
+      removeMaterialFromBook(name);
+      renderMaterialPriceList(document.getElementById('materialPriceSearch')?.value || '');
+      repriceBlocksFromBook();
+      requestRender();
+    });
+    document.getElementById('addMaterialPriceBtn')?.addEventListener('click', ()=>{
+      const nameInput = document.getElementById('newMaterialName');
+      const name = nameInput ? nameInput.value : '';
+      if(!addCustomMaterial(name)){ showMessage('Enter a new, unique material name.', 'error'); return; }
+      if(nameInput) nameInput.value = '';
+      renderMaterialPriceList('');
+      const search = document.getElementById('materialPriceSearch');
+      if(search) search.value = '';
+      requestRender();
+    });
+    document.getElementById('resetMaterialPriceBtn')?.addEventListener('click', ()=>{
+      if(!confirm('Reset all material prices and remove custom/hidden materials back to defaults?')) return;
+      materialBook = {prices:{}, custom:[], removed:[]};
+      saveMaterialBook();
+      renderMaterialPriceList(document.getElementById('materialPriceSearch')?.value || '');
+      repriceBlocksFromBook();
+      requestRender();
+    });
     document.querySelectorAll('.command-menu').forEach(menu=>{
       menu.addEventListener('toggle', ()=>{ if(menu.open) closeCommandMenus(menu); });
     });
