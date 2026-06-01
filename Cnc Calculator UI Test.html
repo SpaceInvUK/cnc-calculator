@@ -94,7 +94,7 @@
     .control-row .field.inline-control .wide-control{min-width:0;width:9ch;max-width:9ch;text-align:center}
     .control-row .field.inline-control .door-type-select{width:132px;max-width:132px;text-align:left}
     .control-row .field.inline-control .frameSize{width:7ch;max-width:7ch}
-    .control-row .field.inline-control .backFrameSize{width:7ch;max-width:7ch}
+    .control-row .field.inline-control .backFrameSize{width:9ch;max-width:9ch}
     .back-frame-field{border:1.5px solid #fecaca;background:#fff7f7;border-radius:10px;padding:6px 8px}
     .back-frame-field label{color:#991b1b}
     .control-row .field.inline-control .reededSpacing{width:7ch;max-width:7ch}
@@ -270,7 +270,7 @@
     .pocket-panel-row .field.inline-control{display:flex;gap:7px;align-items:center;justify-content:flex-start}
     .pocket-lines{display:flex;flex-wrap:wrap;gap:10px 14px}
     .pocket-line-item{display:flex;align-items:center;gap:7px;min-width:0}
-    .pocket-line-item .pocket-line-offset{width:8ch;max-width:8ch}
+    .pocket-line-item .pocket-line-offset{width:9ch;max-width:9ch}
     .swatch{display:inline-block;width:10px;height:10px;border-radius:2px;border:1px solid rgba(17,24,39,.22);flex:0 0 auto}
     @media (max-width:760px){
       .control-row.primary,.control-row.process,.control-row.biding-row,.reeded-row.show{display:grid;grid-template-columns:1fr!important;gap:10px}
@@ -554,10 +554,11 @@
     .selected-hinge-options,.selected-pocket-options,.selected-panel-options{display:none}
     .selected-hinge-options.show,.selected-pocket-options.show,.selected-panel-options.show{display:grid}
     .selected-pocket-options.show{gap:8px}
-    .selected-pocket-options .selected-editor-subgrid{grid-template-columns:minmax(180px,.8fr) minmax(130px,.55fr);gap:8px;max-width:460px}
-    .selected-pocket-lines{margin-top:2px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px}
-    .selected-pocket-lines .pocket-line-item{grid-template-columns:12px minmax(74px,1fr) minmax(58px,.58fr) 28px;gap:6px}
+    .selected-pocket-options .selected-editor-subgrid{grid-template-columns:minmax(180px,.8fr) minmax(150px,.6fr);gap:8px;max-width:500px}
+    .selected-pocket-lines{margin-top:2px;display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:6px}
+    .selected-pocket-lines .pocket-line-item{grid-template-columns:12px minmax(86px,1fr) minmax(66px,.6fr) 28px;gap:6px}
     .selected-pocket-lines .pocket-line-item{background:#f8fafc}
+    .selectedPartBackFrameSize{width:9ch!important;max-width:9ch!important}
     .sheet-caption{font-size:10px;font-weight:700;margin-top:5px;color:#111}
     .sheet-caption-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
     .sheet-help-note{margin:8px 0 2px;font-size:10px;line-height:1.35;color:#64748b;font-weight:650}
@@ -692,9 +693,9 @@
     .editor-section .pocket-panel{border:0;border-radius:0;background:#fff;padding:0;gap:0}
     .editor-section .pocket-panel-head{padding:12px;border-bottom:1px solid var(--block-line,#e6ebf1);background:#fff}
     .editor-section .pocket-options.show{display:grid;padding:12px;gap:14px}
-    .editor-section .pocket-panel-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,auto));gap:10px 14px;align-items:end;justify-content:start}
-    .editor-section .pocket-lines{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
-    .editor-section .pocket-line-item{display:grid;grid-template-columns:12px minmax(82px,1fr) minmax(58px,.55fr) 28px;border:1px solid #e2e8f0;border-radius:8px;padding:7px 8px;background:#f8fafc}
+    .editor-section .pocket-panel-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,auto));gap:10px 14px;align-items:end;justify-content:start}
+    .editor-section .pocket-lines{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:8px}
+    .editor-section .pocket-line-item{display:grid;grid-template-columns:12px minmax(88px,1fr) minmax(66px,.6fr) 28px;border:1px solid #e2e8f0;border-radius:8px;padding:7px 8px;background:#f8fafc}
     .ui-test .dimensions-wrap{margin:0;padding:12px;border-top:1px solid var(--block-line,#e2e8f0);background:color-mix(in srgb, var(--block-tint,#fbfdff) 58%, #fff);overflow-x:auto}
     .ui-test .dimension-head,.ui-test .dimension-item{grid-template-columns:minmax(68px,.75fr) minmax(48px,.52fr) minmax(72px,.9fr) minmax(72px,.9fr) minmax(96px,.95fr) minmax(58px,.6fr) minmax(70px,.75fr) minmax(70px,.75fr) minmax(120px,1.2fr) minmax(56px,.55fr) 34px}
     .ui-test .sheet-visual{width:min(100%,var(--sheet-visual-width,300px));padding:7px;margin:6px 7px 0 0}
@@ -812,7 +813,7 @@
                 <summary>View</summary>
                 <div class="command-menu-panel">
                   <button class="command-hide-values" id="hideValuesBtn" type="button" aria-pressed="false">Hide Values</button>
-                  <button class="active" id="showBackPocketingBtn" type="button" aria-pressed="true">Back Side Pocketing</button>
+                  <button class="active" id="showBackPocketingBtn" type="button" aria-pressed="true">Back Side Offset</button>
                   <button type="button" id="showLabelsSettingsBtn">Label Settings</button>
                   <button type="button" id="viewDxfTemplatesBtn">DXF Templates</button>
                 </div>
@@ -1262,7 +1263,7 @@
             <div class="field"><label>Size</label><select class="size"><option value="8x4">8x4 -> 2440mm x 1220mm</option><option value="10x4">10x4 -> 3050mm x 1220mm</option><option value="10x5">10x5 -> 3050mm x 1525mm</option><option value="jumbo">Jumbo -> 2800mm x 2070mm</option></select><div class="hint">The chosen X size is now respected in the calculation.</div></div>
             <div class="field price-only"><label>Material Cost (&pound;)</label><input class="materialCost" type="text" value="15"><div class="hint materialCostHint">Editable. You can overwrite the automatic price.</div></div>
             <div class="field price-only"><label>CNC Service (&pound;)</label><input class="cncServiceCost" type="number" min="0" step="1" value="85"><div class="hint">Editable cutting/service charge for this material block.</div></div>
-            <div class="field price-only"><label>CNC With Pocket (&pound;)</label><input class="effectiveCncServiceCost" type="text" value="85" readonly><div class="hint">Shows CNC after extra processes, drilling, and pocketing.</div></div>
+            <div class="field price-only"><label>CNC With Offset (&pound;)</label><input class="effectiveCncServiceCost" type="text" value="85" readonly><div class="hint">Shows CNC after extra processes, drilling, and offset.</div></div>
             <div class="field inline-control price-only"><label>Quantity Discount (%)</label><input class="quantityDiscountPct" type="number" min="0" max="100" step="0.1" value="0"><div class="hint">Editable. Hidden from totals when 0%.</div></div>
             <div class="field inline-control price-only"><label>Time (&pound;250/hr)</label><input class="timeMinutes" type="number" min="0" step="1" value="0"></div>
             <div class="sheet-price-editor price-only"></div>
@@ -1364,35 +1365,35 @@
         </div>
 
         <div class="editor-section pocketing-section">
-          <div class="editor-section-head"><div class="editor-section-title">Pocketing</div></div>
+          <div class="editor-section-head"><div class="editor-section-title">Offset</div></div>
           <div class="pocket-panel">
             <div class="pocket-panel-head">
-              <button class="pocket-title-toggle pocketingTitleToggle" type="button" aria-pressed="false" title="Turn pocketing on or off.">Pocketing</button>
-              <select class="pocketingEnabled sr-only" aria-label="Pocketing"><option>No</option><option>Yes</option></select>
+              <button class="pocket-title-toggle pocketingTitleToggle" type="button" aria-pressed="false" title="Turn offset on or off.">Offset</button>
+              <select class="pocketingEnabled sr-only" aria-label="Offset"><option>No</option><option>Yes</option></select>
               <div class="pocket-head-actions">
                 <button class="round-corner-toggle roundCornerToggle" type="button" aria-pressed="false" title="Round inner frame corners to 2.5mm radius.">
                   <svg class="cornerIcon squareCornerIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18V8c0-1.1.9-2 2-2h10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   <svg class="cornerIcon roundCornerIcon" viewBox="0 0 24 24" aria-hidden="true" style="display:none"><path d="M6 18v-6a6 6 0 0 1 6-6h6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
                 </button>
                 <select class="pocketRoundCorners sr-only" aria-label="Round pocket corners"><option>No</option><option>Yes</option></select>
-                <span class="info-dot" tabindex="0" data-tip="Enables pocket machining for the inner framed area. Pocketing cost is added as a percentage of CNC Service only." aria-label="Pocketing info">i</span>
+                <span class="info-dot" tabindex="0" data-tip="Enables offset machining for the inner framed area. Offset cost is added as a percentage of CNC Service only." aria-label="Offset info">i</span>
               </div>
             </div>
             <div class="pocket-options">
               <div class="pocket-panel-row">
-                <div class="field inline-control"><label>Pocket Min</label><div class="control-with-info"><input class="pocketingMinutes" type="number" min="0" step="0.1" value="0" title="Automatic pocketing time based on inner frame area. 1 m² is treated as 12 minutes. You can override the value manually."><span class="info-dot" tabindex="0" data-tip="Automatic pocketing time based on inner frame area. 1 m² is treated as 12 minutes. You can override the value manually." aria-label="Pocket minutes info">i</span></div></div>
-                <div class="field inline-control"><label>Sides</label><select class="pocketSideMode sr-only"><option value="front">Front</option><option value="front-back">Front+Back</option></select><div class="segmented pocketSideControl" title="Choose whether pocketing is for the front only or both front and back faces."><button type="button" data-value="front">Front</button><button type="button" data-value="front-back">Front+Back</button></div></div>
+                <div class="field inline-control"><label>Offset Min</label><div class="control-with-info"><input class="pocketingMinutes" type="number" min="0" step="0.1" value="0" title="Automatic offset time based on inner frame area. 1 m² is treated as 12 minutes. You can override the value manually."><span class="info-dot" tabindex="0" data-tip="Automatic offset time based on inner frame area. 1 m² is treated as 12 minutes. You can override the value manually." aria-label="Offset minutes info">i</span></div></div>
+                <div class="field inline-control"><label>Sides</label><select class="pocketSideMode sr-only"><option value="front">Front</option><option value="front-back">Front+Back</option></select><div class="segmented pocketSideControl" title="Choose whether offset is for the front only or both front and back faces."><button type="button" data-value="front">Front</button><button type="button" data-value="front-back">Front+Back</button></div></div>
                 <select class="flatFrameToggle sr-only"><option>No</option><option>Yes</option></select>
                 <div class="field inline-control back-frame-field"><label>Back Frame</label><input class="backFrameSize digits-2" type="number" min="1" step="1" value="50" title="Back face frame width in millimetres. This can be different from the front frame."></div>
               </div>
               <div class="pocket-lines">
-                <div class="pocket-line-item"><span class="swatch" style="background:#b45309"></span><select class="pocketLinePocketEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocketControl" type="button" style="--line-color:#b45309" aria-pressed="true">Pocket</button><input class="pocketLinePocketOffset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocketRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocketRoundControl" type="button" style="--line-color:#b45309" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#dc2626"></span><select class="pocketLine6Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLine6Control" type="button" style="--line-color:#dc2626" aria-pressed="false">6mm</button><input class="pocketLine6Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLine6RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLine6RoundControl" type="button" style="--line-color:#dc2626" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#2563eb"></span><select class="pocketLine2Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLine2Control" type="button" style="--line-color:#2563eb" aria-pressed="false">2mm</button><input class="pocketLine2Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLine2RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLine2RoundControl" type="button" style="--line-color:#2563eb" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#7c3aed"></span><select class="pocketLineChamferEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLineChamferControl" type="button" style="--line-color:#7c3aed" aria-pressed="false">Chamfer</button><input class="pocketLineChamferOffset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLineChamferRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLineChamferRoundControl" type="button" style="--line-color:#7c3aed" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#0f766e"></span><select class="pocketLineProfileEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLineProfileControl" type="button" style="--line-color:#0f766e" aria-pressed="false">Profile Tool</button><input class="pocketLineProfileOffset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLineProfileRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLineProfileRoundControl" type="button" style="--line-color:#0f766e" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#f97316"></span><select class="pocketLinePocket2Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocket2Control" type="button" style="--line-color:#f97316" aria-pressed="false">Pocket 2</button><input class="pocketLinePocket2Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocket2RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocket2RoundControl" type="button" style="--line-color:#f97316" title="Round this pocket line corners."></button></div>
-                <div class="pocket-line-item"><span class="swatch" style="background:#a16207"></span><select class="pocketLinePocket3Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocket3Control" type="button" style="--line-color:#a16207" aria-pressed="false">Pocket 3</button><input class="pocketLinePocket3Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocket3RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocket3RoundControl" type="button" style="--line-color:#a16207" title="Round this pocket line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#b45309"></span><select class="pocketLinePocketEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocketControl" type="button" style="--line-color:#b45309" aria-pressed="true">Offset A</button><input class="pocketLinePocketOffset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocketRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocketRoundControl" type="button" style="--line-color:#b45309" title="Round this offset line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#dc2626"></span><select class="pocketLine6Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLine6Control" type="button" style="--line-color:#dc2626" aria-pressed="false">Offset B</button><input class="pocketLine6Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLine6RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLine6RoundControl" type="button" style="--line-color:#dc2626" title="Round this offset line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#2563eb"></span><select class="pocketLine2Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLine2Control" type="button" style="--line-color:#2563eb" aria-pressed="false">Offset C</button><input class="pocketLine2Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLine2RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLine2RoundControl" type="button" style="--line-color:#2563eb" title="Round this offset line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#7c3aed"></span><select class="pocketLineChamferEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLineChamferControl" type="button" style="--line-color:#7c3aed" aria-pressed="false">Offset D</button><input class="pocketLineChamferOffset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLineChamferRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLineChamferRoundControl" type="button" style="--line-color:#7c3aed" title="Round this offset line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#0f766e"></span><select class="pocketLineProfileEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLineProfileControl" type="button" style="--line-color:#0f766e" aria-pressed="false">Offset E</button><input class="pocketLineProfileOffset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLineProfileRoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLineProfileRoundControl" type="button" style="--line-color:#0f766e" title="Round this offset line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#f97316"></span><select class="pocketLinePocket2Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocket2Control" type="button" style="--line-color:#f97316" aria-pressed="false">Offset F</button><input class="pocketLinePocket2Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocket2RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocket2RoundControl" type="button" style="--line-color:#f97316" title="Round this offset line corners."></button></div>
+                <div class="pocket-line-item"><span class="swatch" style="background:#a16207"></span><select class="pocketLinePocket3Enabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle pocket-line-toggle pocketLinePocket3Control" type="button" style="--line-color:#a16207" aria-pressed="false">Offset G</button><input class="pocketLinePocket3Offset pocket-line-offset" type="number" min="0" step="0.1" value="0" title="Inset from the inner frame edge toward the centre."><select class="pocketLinePocket3RoundCorners sr-only"><option>No</option><option>Yes</option></select><button class="line-radius-toggle pocketLinePocket3RoundControl" type="button" style="--line-color:#a16207" title="Round this offset line corners."></button></div>
               </div>
             </div>
           </div>
@@ -1465,13 +1466,13 @@
     const QUOTE_FILE_VERSION = 1;
     const VAT_RATE = 20;
     const POCKET_LINE_CONFIGS = [
-      {key:'pocketLinePocket', label:'Pocket', layer:'POCKET_10MM', color:'#b45309'},
-      {key:'pocketLine6', label:'6mm', layer:'POCKET_6MM', color:'#dc2626'},
-      {key:'pocketLine2', label:'2mm', layer:'POCKET_2MM', color:'#2563eb'},
-      {key:'pocketLineChamfer', label:'Chamfer', layer:'CHAMFER', color:'#7c3aed'},
-      {key:'pocketLineProfile', label:'Profile Tool', layer:'PROFILE_TOOL', color:'#0f766e'},
-      {key:'pocketLinePocket2', label:'Pocket 2', layer:'POCKET_2', color:'#f97316'},
-      {key:'pocketLinePocket3', label:'Pocket 3', layer:'POCKET_3', color:'#a16207'}
+      {key:'pocketLinePocket', label:'Offset A', layer:'POCKET_10MM', color:'#b45309'},
+      {key:'pocketLine6', label:'Offset B', layer:'POCKET_6MM', color:'#dc2626'},
+      {key:'pocketLine2', label:'Offset C', layer:'POCKET_2MM', color:'#2563eb'},
+      {key:'pocketLineChamfer', label:'Offset D', layer:'CHAMFER', color:'#7c3aed'},
+      {key:'pocketLineProfile', label:'Offset E', layer:'PROFILE_TOOL', color:'#0f766e'},
+      {key:'pocketLinePocket2', label:'Offset F', layer:'POCKET_2', color:'#f97316'},
+      {key:'pocketLinePocket3', label:'Offset G', layer:'POCKET_3', color:'#a16207'}
     ];
     const SPRAY_PROFILE_CONFIGS = [
       {key:'endPanels', label:'End Panels', rate:50},
@@ -1576,9 +1577,9 @@
         bidingThickness:'beading thickness',
         extraProcess:'extra processes',
         drillings:'drilling',
-        pocketingEnabled:'pocketing',
-        pocketSideMode:'pocket sides',
-        pocketingMinutes:'pocket minutes',
+        pocketingEnabled:'offset',
+        pocketSideMode:'offset sides',
+        pocketingMinutes:'offset minutes',
         quantityDiscountPct:'quantity discount',
         grainDirectionEnabled:'grain direction',
         grainDirection:'part grain direction',
@@ -3266,7 +3267,7 @@
     function materialBlockSummary(block){
       const validParts = expandBlockParts(block).filter(p=>Number(p.width)>0 && Number(p.height)>0);
       const sheetText = Number(block.sheetQuantity || 0) > 0 ? ' • '+block.sheetQuantity+' sheet'+(Number(block.sheetQuantity)===1?'':'s') : '';
-      const pocketText = block.pocketingEnabled === 'Yes' ? ' • Pocketing' : '';
+      const pocketText = block.pocketingEnabled === 'Yes' ? ' • Offset' : '';
       const reededText = block.globalShakerType === 'reeded' ? ' • Reeded '+normalizeReededDirection(block.reededDirection)+' '+normalizeReededSpacing(block.reededSpacing)+'mm' : '';
       const bidingText = blockUsesBiding(block) ? ' • Beading' : '';
       return [block.material, block.thickness, block.size].filter(Boolean).join(' ') + ' • ' + validParts.length + ' part' + (validParts.length===1?'':'s') + sheetText + pocketText + reededText + bidingText;
@@ -4216,7 +4217,7 @@
       }[char]));
     }
     const INFO_TIP_MAP = {
-      material:'Choose the board material for this block. Pocketing can auto-switch to moisture-resistant MDF until you manually choose another material.',
+      material:'Choose the board material for this block. Offset can auto-switch to moisture-resistant MDF until you manually choose another material.',
       thickness:'Board thickness used for pricing, nesting, DXF and NC setup.',
       size:'Sheet size used for nesting. Manual sheet choices are respected when the part fits.',
       'material cost':'Material cost for this block. Changing this resets individual sheet prices.',
@@ -4238,7 +4239,7 @@
       'time (&pound;250/hr)':'Manual machining time charged at the hourly rate.',
       'time (£250/hr)':'Manual machining time charged at the hourly rate.',
       'door type':'Default door/profile type for this block. Individual parts can override it.',
-      'frame (mm)':'Frame/rail/stile width. Inner lines, inserts, beading and pocketing follow this value.',
+      'frame (mm)':'Frame/rail/stile width. Inner lines, inserts, beading and offset follow this value.',
       beading:'Glass parts automatically create beading. Beading is offset from the inside frame by the configured clearance.',
       direction:'Panel orientation. Vertical mode turns the wall/panel preview upright.',
       rows:'Number of horizontal panel rows.',
@@ -4258,9 +4259,9 @@
       'left side':'Left edge rule for the selected panel or wall section.',
       'extra processes':'Manual extra process percentage applied to CNC service, not sheet material.',
       'drillings (+5%)':'Adds drilling operations and applies the drilling charge to CNC service only.',
-      pocketing:'Enables pocket machining for inner framed areas.',
-      'pocket min':'Estimated pocketing time. It can be edited manually.',
-      sides:'Front only or Front+Back pocketing. Front+Back doubles pocketing time.',
+      pocketing:'Enables offset machining for inner framed areas.',
+      'pocket min':'Estimated offset time. It can be edited manually.',
+      sides:'Front only or Front+Back offset. Front+Back doubles offset time.',
       'back frame':'Separate back-frame size shown on the red back preview only.',
       'label size':'Physical label size for CNC or spray labels.',
       rotation:'Label print rotation.',
@@ -6723,7 +6724,7 @@
       const specs = [
         ['Frame width', frameTxt],
         ['Material thickness', formatMm(rule.materialThickness || 22) + ' mm'],
-        ['Pocketing', frontOnly ? 'Front only' : 'Front + Back']
+        ['Offset', frontOnly ? 'Front only' : 'Front + Back']
       ].map(([k, v])=>'<div class="profile-spec-row"><span class="profile-spec-k">'+escapeHtml(k)+'</span><span class="profile-spec-v">'+escapeHtml(v)+'</span></div>').join('');
       return '<div class="dxf-template-view-card profile-view-card">'
         + '<div class="profile-view-head"><span class="template-name">'+escapeHtml(template.name)+'</span><span class="profile-view-badge">'+(frontOnly ? 'Front only' : 'Front + Back')+'</span></div>'
@@ -11962,11 +11963,11 @@
         flatFrameToggle:'Flat Frame',
         extraProcess:'Extra Process',
         drillings:'Drillings',
-        pocketingEnabled:'Pocketing',
-        pocketRoundCorners:'Pocket Round Corners',
-        pocketSideMode:'Pocket Sides',
-        pocketingMinutes:'Pocket Minutes',
-        pocketingManualOverride:'Pocket Override',
+        pocketingEnabled:'Offset',
+        pocketRoundCorners:'Offset Round Corners',
+        pocketSideMode:'Offset Sides',
+        pocketingMinutes:'Offset Minutes',
+        pocketingManualOverride:'Offset Override',
         sheetSizeOverrides:'Sheet Overrides',
         sheetPriceOverrides:'Sheet Prices',
         sheetChargeOverrides:'Sheet Charge Rules',
@@ -12896,9 +12897,9 @@
             </div>
             <div class="selected-editor-section selected-pocket-section">
               <div class="selected-editor-section-title">
-                <span>Pocket</span>
+                <span>Offset</span>
                 <div class="selected-editor-actions">
-                  <button class="pocket-title-toggle tiny-toggle selectedPartPocketing ${pocketOn ? '' : 'off'}" type="button" aria-pressed="${pocketOn ? 'true' : 'false'}">Pocketing</button>
+                  <button class="pocket-title-toggle tiny-toggle selectedPartPocketing ${pocketOn ? '' : 'off'}" type="button" aria-pressed="${pocketOn ? 'true' : 'false'}">Offset</button>
                   <button class="line-radius-toggle selectedPartPocketRoundCorners ${pocketRoundOn ? 'active' : ''}" type="button" style="--line-color:#111" aria-pressed="${pocketRoundOn ? 'true' : 'false'}" title="Round inner frame corners to 2.5mm radius."></button>
                 </div>
               </div>
@@ -12914,7 +12915,7 @@
               <div class="selected-editor-section-title"><span>Spray Finish</span><button class="pocket-title-toggle tiny-toggle selectedPartSprayFinish ${String(part.sprayFinish || 'No') === 'Yes' ? '' : 'off'}" type="button" aria-pressed="${String(part.sprayFinish || 'No') === 'Yes' ? 'true' : 'false'}">Spray Finish</button></div>
             </div>
           </div>
-          <div class="sheet-part-editor-note"${hingeWarning ? ' style="color:#991b1b;font-weight:900"' : ''}>${escapeHtml(hingeWarning || (panelEditor ? 'Panel sides use the same rules as Panel Setup. Pocketing follows each internal panel opening.' : 'Sloped / Loft uses different left and right heights. The part still nests by its maximum rectangle, while the visible/DXF outside cut follows the angled shape.'))}</div>
+          <div class="sheet-part-editor-note"${hingeWarning ? ' style="color:#991b1b;font-weight:900"' : ''}>${escapeHtml(hingeWarning || (panelEditor ? 'Panel sides use the same rules as Panel Setup. Offset follows each internal panel opening.' : 'Sloped / Loft uses different left and right heights. The part still nests by its maximum rectangle, while the visible/DXF outside cut follows the angled shape.'))}</div>
           <div class="sheet-part-editor-note">Spray Finish ON: click the selected piece edges on the sheet to mark painted sides. Selected sides: ${escapeHtml(normalizeSpraySides(part.spraySides).join(', ') || 'none')}.</div>
         </div>`;
     }
@@ -14013,7 +14014,7 @@
             if(showBackFace){
               html += renderSheet(backSheet, sheetSizeKey, {
                 editable:false,
-                faceLabel:'Back side pocketing',
+                faceLabel:'Back side offset',
                 roomName,
                 variant:'back'
               });
@@ -15237,7 +15238,7 @@
         html += '<div class="row"><div class="label">Base CNC service</div><div class="value">'+money(price.cncPrice)+'</div></div>';
         if(price.extraAmount>0) html += '<div class="row"><div class="label">Extra processes <span class="pill">+'+price.extraPct+'%</span></div><div class="value">'+money(price.extraAmount)+'</div></div>';
         if(price.drillingAmount>0) html += '<div class="row"><div class="label">Drillings <span class="pill">+'+price.drillingPct+'%</span></div><div class="value">'+money(price.drillingAmount)+'</div></div>';
-        if(price.pocketAmount>0) html += '<div class="row"><div class="label">Pocketing <span class="pill">'+displayPocketMinutes(price.pocketMinutes)+' min / +'+price.pocketPct.toFixed(0)+'%</span></div><div class="value">'+money(price.pocketAmount)+'</div></div>';
+        if(price.pocketAmount>0) html += '<div class="row"><div class="label">Offset <span class="pill">'+displayPocketMinutes(price.pocketMinutes)+' min / +'+price.pocketPct.toFixed(0)+'%</span></div><div class="value">'+money(price.pocketAmount)+'</div></div>';
         const cncLines = Array.isArray(price.cncSheetLines) ? price.cncSheetLines : [];
         const sameCnc = cncLines.length ? cncLines.every(line=>Math.abs(Number(line.amount || 0) - Number(cncLines[0].amount || 0)) < 0.001) : true;
         const cncPerSheetLabel = sameCnc ? money(cncLines[0]?.amount ?? price.adjustedCncPrice) : 'varies';
@@ -15267,7 +15268,7 @@
             const showBackFace = showBackSidePocketingMode && backSheet.placements.length > 0;
             dh += renderSheet(sheet, sizeKey, {faceLabel:showBackFace ? 'Front' : ''});
             if(showBackFace){
-              dh += renderSheet(backSheet, sizeKey, {variant:'back', faceLabel:'Back side pocketing'});
+              dh += renderSheet(backSheet, sizeKey, {variant:'back', faceLabel:'Back side offset'});
             }
           });
         } else {
@@ -16057,7 +16058,7 @@
       if(btn){
         btn.classList.toggle('active', showBackSidePocketingMode);
         btn.setAttribute('aria-pressed', showBackSidePocketingMode ? 'true' : 'false');
-        btn.textContent = showBackSidePocketingMode ? 'Back Side Pocketing' : 'Back Pocketing Hidden';
+        btn.textContent = showBackSidePocketingMode ? 'Back Side Offset' : 'Back Offset Hidden';
       }
     }
     function syncToolbarState(){
