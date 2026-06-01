@@ -8341,7 +8341,9 @@
         wallWindowHeight:layout?.window?.height ?? '',
         wallWindowX:layout?.window?.x ?? '',
         wallWindowBottom:layout?.window?.bottom ?? '',
-        wallOpenings:Array.isArray(layout?.openings) ? layout.openings.map(opening=>({...opening})) : [],
+        wallOpenings:(item?.emptyTopPanel === true || item?.objectLowerPanel === true || item?.section?.emptyTopPanel === true || item?.section?.objectLowerPanel === true)
+          ? []
+          : (Array.isArray(layout?.openings) ? layout.openings.map(opening=>({...opening})) : []),
         pocketSideMode:partPocketSideMode(part, block),
         pocketRoundCorners:partPocketRoundCornersValue(part, block) === 'Yes',
         pocketLines:partPocketOn ? (panelProfileRule ? profilePocketLineSettings(panelProfileRule) : pocketLineSettingsForPart(part, block)) : [],
