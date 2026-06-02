@@ -7164,6 +7164,9 @@
         const override = sectionIndex == null ? null : wallSectionOverride(part, sectionIndex);
         const explicit = override ? override[panelVirtualOverrideKey('panelDirection', '')] : '';
         if(explicit === 'vertical' || explicit === 'horizontal') return explicit;
+        // On a vertical wall, object-top panels follow the wall and stay vertical instead of
+        // flipping to horizontal based on cap height alone (keeps P5 consistent with P1V-P4V).
+        if(block?.wallEnabled === 'Yes' && panelWallOrientation(part) === 'vertical') return 'vertical';
         const capHeight = Math.max(0, Number(section?.heightOverride || 0));
         return capHeight > PANEL_OBJECT_TOP_VERTICAL_THRESHOLD ? 'vertical' : 'horizontal';
       }
