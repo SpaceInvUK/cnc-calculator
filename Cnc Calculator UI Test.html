@@ -143,6 +143,10 @@
     .material-block[data-calc-mode="panel"] .machining-section{display:none!important}
     .panel-shaker-setup-section .editor-section-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
     .panel-shaker-setup-section .panel-shaker-process-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+    .shaker-grid-group{grid-column:1/-1;display:grid;gap:8px;padding:9px 10px;border:1px solid #bfdbfe;border-radius:8px;background:#f8fbff}
+    .shaker-grid-group .panel-mini-title{font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.04em;color:#1e3a8a}
+    .shaker-grid-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end}
+    @media (max-width:560px){.shaker-grid-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .selected-irregular-field{display:none!important}
     .selected-irregular-field.show{display:flex!important}
     .panel-setup-title,.panel-side-title{grid-column:1/-1;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
@@ -155,6 +159,8 @@
     .shaker-auto-btn.active{background:#111;color:#fff;border-color:#111}
     .panel-shaker-lock-options{display:none}
     .panel-shaker-lock-options.show{display:block}
+    .material-block[data-calc-mode="panel"] .field.inline-control.panel-shaker-lock-options{display:none!important}
+    .material-block[data-calc-mode="panel"] .field.inline-control.panel-shaker-lock-options.show{display:flex!important}
     .panel-shaker-note{grid-column:1/-1;font-size:11px;line-height:1.35;color:#166534;font-weight:800}
     .selected-editor-section.panel-selected-setup{grid-column:1/-1}
     .selected-wall-door-options{display:none!important}
@@ -1286,13 +1292,24 @@
           <div class="editor-section-grid">
             <div class="field inline-control"><label>Shaker Type</label><select class="panelGlobalShakerType door-type-select" title="Panel shaker machining style"><option value="no">Flat</option><option value="traditional">Traditional</option><option value="flushback">Flushback</option><option value="reeded">Reeded</option></select></div>
             <div class="field inline-control"><label>Frame (mm) <span class="panelFrameWarnMark"></span></label><input class="panelFrameSize digits-2" type="number" min="1" step="1" value="50" title="Panel shaker rail/stile width in millimetres"></div>
+            <div class="field inline-control panel-only panel-shaker-mode-field"><label>Shaker Size</label><select class="panelShakerMode sr-only"><option value="auto">Auto</option><option value="locked">Locked</option></select><div class="segmented panelShakerModeControl" title="Auto balances shakers. Locked keeps the main shaker size across the job."><button type="button" data-value="auto">Auto</button><button type="button" data-value="locked">Lock</button></div></div>
+            <div class="field inline-control panel-only panel-shaker-lock-options"><label>Locked Shaker</label><input class="panelShakerSize" type="number" min="1" step="1" placeholder="Auto"></div>
+            <div class="shaker-grid-group">
+              <div class="panel-mini-title">Shaker grid &mdash; leave Auto to balance, or force rows / columns</div>
+              <div class="shaker-grid-fields">
+                <div class="field inline-control"><label>Horizontal &ndash; Rows</label><input class="panelHorizontalRows" type="number" min="1" step="1" placeholder="Auto"></div>
+                <div class="field inline-control"><label>Horizontal &ndash; Columns</label><input class="panelHorizontalColumns" type="number" min="1" step="1" placeholder="Auto"></div>
+                <div class="field inline-control"><label>Vertical &ndash; Rows</label><input class="panelVerticalRows" type="number" min="1" step="1" placeholder="Auto"></div>
+                <div class="field inline-control"><label>Vertical &ndash; Columns</label><input class="panelVerticalColumns" type="number" min="1" step="1" placeholder="Auto"></div>
+              </div>
+            </div>
             <div class="field inline-control"><label>Reeded Direction</label><select class="panelReededDirection sr-only"><option value="vertical">Vertical</option><option value="horizontal">Horizontal</option></select><div class="segmented panelReededDirectionControl" title="Choose the direction of the reeded lines."><button type="button" data-value="vertical">Vertical</button><button type="button" data-value="horizontal">Horizontal</button></div></div>
             <div class="field inline-control"><label>Spacing</label><input class="panelReededSpacing digits-2" type="number" min="1" step="0.5" value="12.5" title="Target distance between each reeded line in millimetres."></div>
             <div class="panel-shaker-process-row">
               <div class="field inline-control"><label>Extra Processes</label><input class="panelExtraProcess digits-2" type="number" min="0" max="999" step="1" value="0" title="Number of additional machining processes. Each adds 10%."></div>
               <div class="field inline-control"><label>Drillings (+5%)</label><select class="panelDrillings sr-only"><option>No</option><option>Yes</option></select><div class="control-with-info"><button class="pocket-title-toggle tiny-toggle panelDrillingsControl off" type="button" aria-pressed="false" title="Adds drilling operations and applies the drilling charge to CNC Service only.">Drillings</button><span class="info-dot" tabindex="0" data-tip="Adds drilling operations and applies the drilling charge to CNC Service only." aria-label="Drillings info">i</span></div></div>
             </div>
-            <div class="hint">This setup is shared by every shaker in every panel, room, and wall.</div>
+            <div class="hint">This setup is shared by every shaker in every panel, room, and wall. Per-wall and per-panel edits still override it.</div>
           </div>
         </div>
 
@@ -1314,18 +1331,12 @@
               <div class="field inline-control panel-only"><label>Window Sill Height</label><input class="panelWindowSillHeight" type="number" min="0" step="1" value="22"></div>
               <div class="field inline-control panel-only"><label>H Panel H</label><input class="panelHorizontalHeight" type="number" min="1" step="1" value="1030"></div>
               <div class="field inline-control panel-only"><label>V Panel H</label><input class="panelVerticalHeight" type="number" min="1" step="1" value="3000"></div>
-              <div class="field inline-control panel-only panel-shaker-mode-field"><label>Shaker Size</label><select class="panelShakerMode sr-only"><option value="auto">Auto</option><option value="locked">Locked</option></select><div class="segmented panelShakerModeControl" title="Auto balances shakers. Locked keeps the main shaker size across the job."><button type="button" data-value="auto">Auto</button><button type="button" data-value="locked">Lock</button></div></div>
-              <div class="field inline-control panel-only panel-shaker-lock-options"><label>Locked Shaker</label><input class="panelShakerSize" type="number" min="1" step="1" placeholder="Auto"></div>
               <div class="hint frameHint">Frame is used for door profiles. Recommended minimum: 50 mm.</div>
             </div>
             <div class="panel-setup-grid panel-only">
               <div class="panel-setup-title">Panel Setup</div>
               <input class="panelRows sr-only" type="number" min="1" step="1" aria-hidden="true" tabindex="-1">
               <input class="panelColumns sr-only" type="number" min="1" step="1" aria-hidden="true" tabindex="-1">
-              <div class="field inline-control"><label>H Rows</label><input class="panelHorizontalRows" type="number" min="1" step="1" placeholder="Auto"></div>
-              <div class="field inline-control"><label>H Columns</label><input class="panelHorizontalColumns" type="number" min="1" step="1" placeholder="Auto"></div>
-              <div class="field inline-control"><label>V Rows</label><input class="panelVerticalRows" type="number" min="1" step="1" placeholder="Auto"></div>
-              <div class="field inline-control"><label>V Columns</label><input class="panelVerticalColumns" type="number" min="1" step="1" placeholder="Auto"></div>
               <div class="panel-over-object-group">
                 <div class="panel-mini-title">Panel over Object</div>
                 <div class="field inline-control"><label>Bottom to Shaker</label><input class="panelObjectBottomFrame" type="number" min="0" step="1" placeholder="Auto"></div>
@@ -1333,7 +1344,6 @@
               <div class="field inline-control"><select class="panelSkirtingEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle panelSkirtingControl off" type="button" aria-pressed="false">Skirting</button></div>
               <div class="field inline-control"><button class="pocket-title-toggle panelSideRulesControl off" type="button" aria-pressed="false">Side Rules</button></div>
               <div class="field inline-control panel-skirting-options"><label>Skirting Height</label><input class="panelSkirtingHeight" type="number" min="0" step="1" value="225"></div>
-              <div class="panel-shaker-note">H/V rows and columns can stay Auto or force the shaker grid. Per-wall and per-panel edits still override the global setup.</div>
               <div class="panel-rule-size-grid">
                 <div class="field"><label>Normal</label><input class="panelRuleNormalSize" type="number" min="0" step="1"></div>
                 <div class="field"><label>Joint</label><input class="panelRuleJointSize" type="number" min="0" step="1"></div>
