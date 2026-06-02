@@ -292,6 +292,7 @@
       .pocket-panel-row,.pocket-lines{display:grid;grid-template-columns:1fr}
       .material-block[data-calc-mode="panel"] .panel-wrap-row{grid-template-columns:1fr}
       .room-toolbar,.panel-setup-grid,.panel-side-grid,.panel-side-grid.compact,.wall-setup-grid,.manual-grid,.manual-card{grid-template-columns:1fr}
+      .panel-over-object-group{grid-template-columns:1fr!important}
       .wall-config-row,.wall-config-extra.show{grid-template-columns:1fr}
       .manual-card svg{width:100%;height:130px}
     }
@@ -668,8 +669,10 @@
     .material-block[data-calc-mode="panel"] .panel-wrap-title,
     .material-block[data-calc-mode="panel"] .panel-shaker-note,
     .material-block[data-calc-mode="panel"] .frameHint{grid-column:1/-1}
-    .material-block[data-calc-mode="panel"] .panel-setup-grid{display:grid;grid-template-columns:max-content max-content minmax(150px,max-content) 1fr;align-items:end}
+    .material-block[data-calc-mode="panel"] .panel-setup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));align-items:end}
     .material-block[data-calc-mode="panel"] .panel-setup-grid>.panel-side-grid.panel-only{display:none!important}
+    .panel-over-object-group{grid-column:1/-1;display:grid;grid-template-columns:minmax(140px,1.2fr) minmax(120px,1fr);gap:8px;align-items:end;padding:8px;border:1px solid #bfdbfe;border-radius:8px;background:#f8fbff}
+    .panel-over-object-group .panel-mini-title{font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.04em;color:#1e3a8a}
     .panel-rule-size-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,minmax(92px,1fr));gap:8px;align-items:end}
     .panel-rule-size-grid .field label{font-size:9.5px}
     .panel-rule-size-grid input{min-width:0}
@@ -1319,10 +1322,18 @@
               <div class="panel-setup-title">Panel Setup</div>
               <input class="panelRows sr-only" type="number" min="1" step="1" aria-hidden="true" tabindex="-1">
               <input class="panelColumns sr-only" type="number" min="1" step="1" aria-hidden="true" tabindex="-1">
+              <div class="field inline-control"><label>H Rows</label><input class="panelHorizontalRows" type="number" min="1" step="1" placeholder="Auto"></div>
+              <div class="field inline-control"><label>H Columns</label><input class="panelHorizontalColumns" type="number" min="1" step="1" placeholder="Auto"></div>
+              <div class="field inline-control"><label>V Rows</label><input class="panelVerticalRows" type="number" min="1" step="1" placeholder="Auto"></div>
+              <div class="field inline-control"><label>V Columns</label><input class="panelVerticalColumns" type="number" min="1" step="1" placeholder="Auto"></div>
+              <div class="panel-over-object-group">
+                <div class="panel-mini-title">Panel over Object</div>
+                <div class="field inline-control"><label>Bottom to Shaker</label><input class="panelObjectBottomFrame" type="number" min="0" step="1" placeholder="Auto"></div>
+              </div>
               <div class="field inline-control"><select class="panelSkirtingEnabled sr-only"><option>No</option><option>Yes</option></select><button class="pocket-title-toggle panelSkirtingControl off" type="button" aria-pressed="false">Skirting</button></div>
               <div class="field inline-control"><button class="pocket-title-toggle panelSideRulesControl off" type="button" aria-pressed="false">Side Rules</button></div>
               <div class="field inline-control panel-skirting-options"><label>Skirting Height</label><input class="panelSkirtingHeight" type="number" min="0" step="1" value="225"></div>
-              <div class="panel-shaker-note">Shaker count is controlled per wall or per panel. Auto starts around 350mm and keeps main shakers equal; edge shakers beside wall, door, window, object, corner, or column may adjust.</div>
+              <div class="panel-shaker-note">H/V rows and columns can stay Auto or force the shaker grid. Per-wall and per-panel edits still override the global setup.</div>
               <div class="panel-rule-size-grid">
                 <div class="field"><label>Normal</label><input class="panelRuleNormalSize" type="number" min="0" step="1"></div>
                 <div class="field"><label>Joint</label><input class="panelRuleJointSize" type="number" min="0" step="1"></div>
@@ -1471,8 +1482,8 @@
     let hideValuesMode = false;
     let showBackSidePocketingMode = true;
     let selectedWallOpening = null;
-    const PART_DEFAULTS = {width:'',height:'',doorType:'',shaker:'No',panels:1,panelSize:'',grainDirection:'',panelDirection:'',wallPanelDirection:'',panelRows:'',panelColumns:'',panelIrregularShape:'Yes',wallPanelOverrides:[],panelSideTop:'',panelSideRight:'',panelSideBottom:'',panelSideLeft:'',wallWidth:'',wallHeight:'',wallSections:'',panelHorizontalHeight:'',panelVerticalHeight:'',wallOpenings:[],wallDoorEnabled:'',wallDoorWidth:'',wallDoorHeight:'',wallDoorX:'',wallWindowEnabled:'',wallWindowWidth:'',wallWindowHeight:'',wallWindowX:'',wallWindowBottom:'',shapeType:'rectangle',leftHeight:'',rightHeight:'',frameTop:'',frameRight:'',frameBottom:'',frameLeft:'',frameMiddle:'',frameEditZone:'left',hinges:'No',hingeSide:'auto',hingeOffset:100,hingeSpacing:'',pocketingEnabled:'',pocketRoundCorners:'',pocketSideMode:'',backFrameSize:'',sprayFinish:'No',spraySides:[],manualSheetIndex:'',manualSheetSize:'',manualX:'',manualY:'',manualRotated:'No',manualRotationAngle:0,text:'',quantity:1};
-    const FOCUSABLE_FIELD_CLASSES = new Set(['smartTakeoffText','material','thickness','size','materialCost','cncServiceCost','quantityDiscountPct','globalShakerType','panelGlobalShakerType','frameSize','panelFrameSize','reededDirection','reededSpacing','panelReededDirection','panelReededSpacing','bidingMode','bidingSize','bidingClearance','bidingThickness','panelRows','panelColumns','panelShakerMode','panelShakerSize','panelHorizontalHeight','panelVerticalHeight','panelWindowSillHeight','wallWidth','wallHeight','wallPartWidth','wallPartHeight','wallPartShakers','wallPartHorizontalPanelHeight','wallPartVerticalPanelHeight','wallPartSkirtingEnabled','wallPartSkirtingHeight','wallOpeningName','wallOpeningWidth','wallOpeningHeight','wallOpeningX','wallOpeningXFrom','wallOpeningBottom','wallSections','wallDoorWidth','wallDoorHeight','wallDoorX','wallWindowWidth','wallWindowHeight','wallWindowX','wallWindowBottom','panelDoorAllowance','panelSkirtingHeight','panelSideTop','panelSideRight','panelSideBottom','panelSideLeft','backFrameSize','extraProcess','panelExtraProcess','pocketingMinutes','pocketLinePocketOffset','pocketLine6Offset','pocketLine2Offset','pocketLinePocket3Offset','pocketLineChamferOffset','pocketLineProfileOffset','pocketLinePocket2Offset','pocketLinePocket3Offset','timeMinutes','partWidth','partHeight','partDoorType','partPanelDirection','partPanels','partPanelRows','partPanelSize','partText','partQuantity','selectedPartDoorType','selectedPartPanelDirection','selectedPartLeftHeight','selectedPartRightHeight','selectedPartPanelRows','selectedPartPanelIrregular','selectedPartPanelSize','selectedPartPanels','selectedPartFrameZoneSize','selectedPartHingeOffset','selectedPartHingeSpacing','selectedPartBackFrameSize','selectedWallWidth','selectedWallHeight','selectedWallSections','selectedWallDoorWidth','selectedWallDoorHeight','selectedWallDoorX','selectedWallWindowWidth','selectedWallWindowHeight','selectedWallWindowX','selectedWallWindowBottom']);
+    const PART_DEFAULTS = {width:'',height:'',doorType:'',shaker:'No',panels:1,panelSize:'',grainDirection:'',panelDirection:'',wallPanelDirection:'',panelRows:'',panelColumns:'',panelHorizontalRows:'',panelHorizontalColumns:'',panelVerticalRows:'',panelVerticalColumns:'',panelObjectBottomFrame:'',panelIrregularShape:'Yes',wallPanelOverrides:[],panelSideTop:'',panelSideRight:'',panelSideBottom:'',panelSideLeft:'',wallWidth:'',wallHeight:'',wallSections:'',panelHorizontalHeight:'',panelVerticalHeight:'',wallOpenings:[],wallDoorEnabled:'',wallDoorWidth:'',wallDoorHeight:'',wallDoorX:'',wallWindowEnabled:'',wallWindowWidth:'',wallWindowHeight:'',wallWindowX:'',wallWindowBottom:'',shapeType:'rectangle',leftHeight:'',rightHeight:'',frameTop:'',frameRight:'',frameBottom:'',frameLeft:'',frameMiddle:'',frameEditZone:'left',hinges:'No',hingeSide:'auto',hingeOffset:100,hingeSpacing:'',pocketingEnabled:'',pocketRoundCorners:'',pocketSideMode:'',backFrameSize:'',sprayFinish:'No',spraySides:[],manualSheetIndex:'',manualSheetSize:'',manualX:'',manualY:'',manualRotated:'No',manualRotationAngle:0,text:'',quantity:1};
+    const FOCUSABLE_FIELD_CLASSES = new Set(['smartTakeoffText','material','thickness','size','materialCost','cncServiceCost','quantityDiscountPct','globalShakerType','panelGlobalShakerType','frameSize','panelFrameSize','reededDirection','reededSpacing','panelReededDirection','panelReededSpacing','bidingMode','bidingSize','bidingClearance','bidingThickness','panelRows','panelColumns','panelHorizontalRows','panelHorizontalColumns','panelVerticalRows','panelVerticalColumns','panelObjectBottomFrame','panelShakerMode','panelShakerSize','panelHorizontalHeight','panelVerticalHeight','panelWindowSillHeight','wallWidth','wallHeight','wallPartWidth','wallPartHeight','wallPartShakers','wallPartHorizontalPanelHeight','wallPartVerticalPanelHeight','wallPartSkirtingEnabled','wallPartSkirtingHeight','wallOpeningName','wallOpeningWidth','wallOpeningHeight','wallOpeningX','wallOpeningXFrom','wallOpeningBottom','wallSections','wallDoorWidth','wallDoorHeight','wallDoorX','wallWindowWidth','wallWindowHeight','wallWindowX','wallWindowBottom','panelDoorAllowance','panelSkirtingHeight','panelSideTop','panelSideRight','panelSideBottom','panelSideLeft','backFrameSize','extraProcess','panelExtraProcess','pocketingMinutes','pocketLinePocketOffset','pocketLine6Offset','pocketLine2Offset','pocketLinePocket3Offset','pocketLineChamferOffset','pocketLineProfileOffset','pocketLinePocket2Offset','pocketLinePocket3Offset','timeMinutes','partWidth','partHeight','partDoorType','partPanelDirection','partPanels','partPanelRows','partPanelSize','partText','partQuantity','selectedPartDoorType','selectedPartPanelDirection','selectedPartLeftHeight','selectedPartRightHeight','selectedPartPanelRows','selectedPartPanelIrregular','selectedPartPanelSize','selectedPartPanels','selectedPartFrameZoneSize','selectedPartHingeOffset','selectedPartHingeSpacing','selectedPartBackFrameSize','selectedWallWidth','selectedWallHeight','selectedWallSections','selectedWallDoorWidth','selectedWallDoorHeight','selectedWallDoorX','selectedWallWindowWidth','selectedWallWindowHeight','selectedWallWindowX','selectedWallWindowBottom']);
     const DOOR_TYPE_OPTIONS = [
       {value:'no', label:'Flat'},
       {value:'traditional', label:'Traditional'},
@@ -1553,6 +1564,11 @@
         panelDirection:'panel direction',
         panelRows:'panel rows',
         panelColumns:'panel columns',
+        panelHorizontalRows:'horizontal panel rows',
+        panelHorizontalColumns:'horizontal panel columns',
+        panelVerticalRows:'vertical panel rows',
+        panelVerticalColumns:'vertical panel columns',
+        panelObjectBottomFrame:'panel over object bottom',
         panelHorizontalHeight:'horizontal panel height',
         panelVerticalHeight:'vertical panel height',
         frameTop:'top frame',
@@ -2439,6 +2455,11 @@
         panelDirection:'horizontal',
         panelRows:'',
         panelColumns:'',
+        panelHorizontalRows:'',
+        panelHorizontalColumns:'',
+        panelVerticalRows:'',
+        panelVerticalColumns:'',
+        panelObjectBottomFrame:'',
         panelHorizontalHeight:PANEL_HORIZONTAL_DEFAULT_HEIGHT,
         panelVerticalHeight:PANEL_VERTICAL_DEFAULT_HEIGHT,
         panelShakerMode:'auto',
@@ -2543,6 +2564,11 @@
       block.panelSideRulesOpen = yesNoValue(block.panelSideRulesOpen, 'No');
       block.panelShakerMode = String(block.panelShakerMode || 'auto') === 'locked' ? 'locked' : 'auto';
       block.panelShakerSize = block.panelShakerSize === '' || block.panelShakerSize == null ? '' : Math.max(1, Number(block.panelShakerSize || 1));
+      block.panelHorizontalRows = panelCountSettingValue(block.panelHorizontalRows);
+      block.panelHorizontalColumns = panelCountSettingValue(block.panelHorizontalColumns);
+      block.panelVerticalRows = panelCountSettingValue(block.panelVerticalRows);
+      block.panelVerticalColumns = panelCountSettingValue(block.panelVerticalColumns);
+      block.panelObjectBottomFrame = panelNonnegativeSettingValue(block.panelObjectBottomFrame);
       block.panelWindowSillHeight = block.panelWindowSillHeight === '' || block.panelWindowSillHeight == null ? 22 : Math.max(0, Number(block.panelWindowSillHeight || 0));
       block.panelHorizontalHeight = block.panelHorizontalHeight === '' || block.panelHorizontalHeight == null ? PANEL_HORIZONTAL_DEFAULT_HEIGHT : Math.max(1, Number(block.panelHorizontalHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT));
       block.panelVerticalHeight = block.panelVerticalHeight === '' || block.panelVerticalHeight == null ? PANEL_VERTICAL_DEFAULT_HEIGHT : Math.max(1, Number(block.panelVerticalHeight || PANEL_VERTICAL_DEFAULT_HEIGHT));
@@ -2580,6 +2606,11 @@
         part.panelIrregularShape = yesNoValue(part.panelIrregularShape, 'Yes');
         part.wallWidth = part.wallWidth === '' || part.wallWidth == null ? '' : Math.max(0, Number(part.wallWidth || 0));
         part.wallHeight = part.wallHeight === '' || part.wallHeight == null ? '' : Math.max(0, Number(part.wallHeight || 0));
+        part.panelHorizontalRows = panelCountSettingValue(part.panelHorizontalRows);
+        part.panelHorizontalColumns = panelCountSettingValue(part.panelHorizontalColumns);
+        part.panelVerticalRows = panelCountSettingValue(part.panelVerticalRows);
+        part.panelVerticalColumns = panelCountSettingValue(part.panelVerticalColumns);
+        part.panelObjectBottomFrame = panelNonnegativeSettingValue(part.panelObjectBottomFrame);
         part.panelHorizontalHeight = part.panelHorizontalHeight === '' || part.panelHorizontalHeight == null ? '' : Math.max(1, Number(part.panelHorizontalHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT));
         part.panelVerticalHeight = part.panelVerticalHeight === '' || part.panelVerticalHeight == null ? '' : Math.max(1, Number(part.panelVerticalHeight || PANEL_VERTICAL_DEFAULT_HEIGHT));
         part.wallOpenings = normalizeWallOpeningsForPart(block, part);
@@ -3539,6 +3570,11 @@
           panelDirection:part.panelDirection || block.panelDirection,
           panelRows:block.panelRows,
           panelColumns:block.panelColumns,
+          panelHorizontalRows:block.panelHorizontalRows,
+          panelHorizontalColumns:block.panelHorizontalColumns,
+          panelVerticalRows:block.panelVerticalRows,
+          panelVerticalColumns:block.panelVerticalColumns,
+          panelObjectBottomFrame:block.panelObjectBottomFrame,
           panelSkirtingEnabled:block.panelSkirtingEnabled,
           panelSkirtingHeight:block.panelSkirtingHeight,
           panelDoorAllowance:block.panelDoorAllowance,
@@ -7368,20 +7404,58 @@
       const skirtingBase = Math.max(0, panelSkirtingHeightForPart(block, part));
       return Math.max(base, skirtingBase + Math.max(0, Number(frame || 0)));
     }
+    function panelBottomFrameForSection(block, part, section, frame, thickness, doorAllowance){
+      const base = panelSideFrameValue(effectivePanelSideRule(block, part, 'bottom'), frame, thickness, doorAllowance);
+      if(section?.emptyTopPanel === true){
+        const objectBottom = panelObjectBottomFrameForPart(block, part);
+        return objectBottom === '' ? base : objectBottom;
+      }
+      return panelBottomFrameWithSkirting(block, frame, base, part);
+    }
     function horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame){
       const frame = Math.max(1, Number(layout?.frame || block?.frameSize || 80));
-      const rows = 1;
+      const rows = panelHorizontalRowsForPart(block, part) || 1;
       const resolvedBottomFrame = panelBottomFrameWithSkirting(block, frame, bottomFrame, part);
       const innerH = Math.max(1, Number(layout?.panelHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT) - Number(topFrame || 0) - resolvedBottomFrame);
       const openH = Math.max(1, innerH - frame * Math.max(0, rows - 1));
       return roundPanelMm(openH / rows);
     }
-    function panelRequestedShakerCount(block, part){
-      const partColumns = part?.panelRows === '' || part?.panelRows == null ? '' : Number(part.panelRows);
-      if(Number.isFinite(partColumns) && partColumns > 0) return Math.max(1, Math.round(partColumns));
-      const blockColumns = block?.panelRows === '' || block?.panelRows == null ? '' : Number(block.panelRows);
-      if(Number.isFinite(blockColumns) && blockColumns > 0) return Math.max(1, Math.round(blockColumns));
+    function panelCountSettingValue(value){
+      if(value === '' || value == null) return '';
+      const number = Number(value);
+      return Number.isFinite(number) && number > 0 ? Math.max(1, Math.round(number)) : '';
+    }
+    function panelNonnegativeSettingValue(value){
+      if(value === '' || value == null) return '';
+      const number = Number(value);
+      return Number.isFinite(number) && number >= 0 ? Math.max(0, number) : '';
+    }
+    function firstPanelCountSetting(...values){
+      for(const value of values){
+        const count = panelCountSettingValue(value);
+        if(count !== '') return count;
+      }
       return 0;
+    }
+    function panelHorizontalRowsForPart(block, part){
+      return firstPanelCountSetting(part?.panelHorizontalRows, block?.panelHorizontalRows);
+    }
+    function panelHorizontalColumnsForPart(block, part){
+      return firstPanelCountSetting(part?.panelHorizontalColumns, part?.panelRows, block?.panelHorizontalColumns, block?.panelRows);
+    }
+    function panelVerticalRowsForPart(block, part){
+      return firstPanelCountSetting(part?.panelVerticalRows, block?.panelVerticalRows);
+    }
+    function panelVerticalColumnsForPart(block, part){
+      return firstPanelCountSetting(part?.panelVerticalColumns, block?.panelVerticalColumns);
+    }
+    function panelObjectBottomFrameForPart(block, part){
+      const partValue = panelNonnegativeSettingValue(part?.panelObjectBottomFrame);
+      if(partValue !== '') return partValue;
+      return panelNonnegativeSettingValue(block?.panelObjectBottomFrame);
+    }
+    function panelRequestedShakerCount(block, part){
+      return panelHorizontalColumnsForPart(block, part);
     }
     function distributeFixedCountShakersForSpan(spanWidth, count, frame, leftFrame, rightFrame){
       count = Math.max(1, Math.round(Number(count || 1)));
@@ -7391,6 +7465,17 @@
       count = Math.min(count, maxFeasibleCount);
       const open = inner - frameValue * Math.max(0, count - 1);
       if(!(open > 0)) return [roundPanelMm(Math.max(1, inner))];
+      const each = roundPanelMm(open / count);
+      return Array.from({length:count}, ()=>each);
+    }
+    function distributeFixedCountRowsForPanel(panelHeight, count, frame, topFrame, bottomFrame){
+      count = Math.max(1, Math.round(Number(count || 1)));
+      const inner = Math.max(0, Number(panelHeight || 0) - Number(topFrame || 0) - Number(bottomFrame || 0));
+      const frameValue = Math.max(0, Number(frame || 0));
+      const maxFeasibleCount = frameValue > 0 ? Math.max(1, Math.floor(inner / frameValue)) : count;
+      count = Math.min(count, maxFeasibleCount);
+      const open = inner - frameValue * Math.max(0, count - 1);
+      if(!(open > 0)) return inner > 0 ? [roundPanelMm(Math.max(1, inner))] : [];
       const each = roundPanelMm(open / count);
       return Array.from({length:count}, ()=>each);
     }
@@ -7950,7 +8035,8 @@
         }));
         let verticalPlan = makeVerticalPlan(rightRuleForPlan, adjacency.right && !hasResidualProbe);
         if(wallForcesVertical && manualVerticalWidth === '' && logicalWidth <= panelVerticalWidthLimit(block) + 0.5){
-          const targetColumnCount = Math.max(1, (Array.isArray(section.shakerColumnWidths) && section.shakerColumnWidths.length) ? section.shakerColumnWidths.length : (verticalPlan.columnWidths || []).length || 1);
+          const requestedVerticalColumns = panelVerticalColumnsForPart(block, part);
+          const targetColumnCount = Math.max(1, requestedVerticalColumns || ((Array.isArray(section.shakerColumnWidths) && section.shakerColumnWidths.length) ? section.shakerColumnWidths.length : (verticalPlan.columnWidths || []).length || 1));
           verticalPlan = {
             ...verticalPlan,
             width:roundPanelMm(logicalWidth),
@@ -7961,7 +8047,7 @@
         let verticalWidth = verticalPlan.width;
         const sourceShakerSizes = Array.isArray(section.shakerColumnWidths) ? section.shakerColumnWidths.map(roundPanelMm).filter(value=>value > 0) : [];
         const topFrame = panelSideFrameValue(effectivePanelSideRule(block, part, 'top'), frame, layout.thickness, layout.doorAllowance);
-        const bottomFrame = panelBottomFrameWithSkirting(block, frame, panelSideFrameValue(effectivePanelSideRule(block, part, 'bottom'), frame, layout.thickness, layout.doorAllowance), part);
+        const bottomFrame = panelBottomFrameForSection(block, part, section, frame, layout.thickness, layout.doorAllowance);
         const sharedTarget = Math.max(
           PANEL_SHAKER_MIN,
           Math.min(PANEL_SHAKER_MAX, averagePositive(sourceShakerSizes, Number(panelShakerPlan(block, part, layout.frame, Math.max(1, logicalWidth)).target || PANEL_SHAKER_MAX)))
@@ -7973,7 +8059,7 @@
         const horizontalShakerHeight = horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame);
         const rowOverride = wallSectionOverride(part, sectionIndex);
         const rawVerticalRows = panelVirtualManualValue(part, sectionIndex, 'v', 'panelRows', undefined);
-        const verticalRowCount = rawVerticalRows === '' || rawVerticalRows == null ? 2 : Math.max(1, Math.round(Number(rawVerticalRows || 2)));
+        const verticalRowCount = rawVerticalRows === '' || rawVerticalRows == null ? (panelVerticalRowsForPart(block, part) || 2) : Math.max(1, Math.round(Number(rawVerticalRows || 2)));
         const rowSizes = verticalPanelTwoRowSizes(verticalHeight, layout.frame, topFrame, bottomFrame, horizontalShakerHeight, verticalRowCount);
         let hasResidual = !wallForcesVertical && logicalWidth - verticalPlan.lowerWidth > minResidual;
         if(hasResidual && (verticalPlan.rightRule !== 'joint' || verticalPlan.stepRight === false)){
@@ -7984,7 +8070,10 @@
         verticalResidualByIndex.set(sectionIndex, hasResidual);
         const verticalLeftRule = sharedLeftJoint ? 'joint' : normalizePanelSideRule(section.panelSideLeft || part?.panelSideLeft || block?.panelSideLeft);
         const verticalRightRule = hasResidual || adjacency.right ? 'joint' : normalizePanelSideRule(section.panelSideRight || part?.panelSideRight || block?.panelSideRight);
-        const verticalColumnWidths = verticalPlan.columnWidths.length ? verticalPlan.columnWidths : distributeShakersForSpan(verticalWidth, {target:sharedTarget, equal:true}, layout.frame, verticalPlan.leftFrame, verticalPlan.rightFrame);
+        const verticalColumnOverride = panelVerticalColumnsForPart(block, part);
+        const verticalColumnWidths = verticalColumnOverride > 0
+          ? distributeFixedCountShakersForSpan(verticalWidth, verticalColumnOverride, layout.frame, verticalPlan.leftFrame, verticalPlan.rightFrame)
+          : (verticalPlan.columnWidths.length ? verticalPlan.columnWidths : distributeShakersForSpan(verticalWidth, {target:sharedTarget, equal:true}, layout.frame, verticalPlan.leftFrame, verticalPlan.rightFrame));
         const verticalSection = {
           ...section,
           width:verticalWidth,
@@ -8071,9 +8160,12 @@
             const residualVerticalHeight = manualResidualHeight !== '' ? Math.max(1, Number(manualResidualHeight || 0)) : panelVerticalHeightForPart(block, part);
             const residualDisplayHeight = Math.max(displayHeight, residualVerticalHeight);
             const rawResidualRows = panelVirtualManualValue(part, sectionIndex, 'r', 'panelRows', undefined);
-            const residualRowCount = rawResidualRows === '' || rawResidualRows == null ? 2 : Math.max(1, Math.round(Number(rawResidualRows || 2)));
+            const residualRowCount = rawResidualRows === '' || rawResidualRows == null ? (panelVerticalRowsForPart(block, part) || 2) : Math.max(1, Math.round(Number(rawResidualRows || 2)));
             const residualRowSizes = verticalPanelTwoRowSizes(residualVerticalHeight, layout.frame, topFrame, bottomFrame, horizontalShakerHeight, residualRowCount);
-            const residualColumnWidths = residualVerticalPlan.columnWidths.length ? residualVerticalPlan.columnWidths : distributeShakersForSpan(residualVerticalPlan.width, {target:sharedTarget, equal:true}, layout.frame, residualVerticalPlan.leftFrame, residualVerticalPlan.rightFrame);
+            const residualColumnOverride = panelVerticalColumnsForPart(block, part);
+            const residualColumnWidths = residualColumnOverride > 0
+              ? distributeFixedCountShakersForSpan(residualVerticalPlan.width, residualColumnOverride, layout.frame, residualVerticalPlan.leftFrame, residualVerticalPlan.rightFrame)
+              : (residualVerticalPlan.columnWidths.length ? residualVerticalPlan.columnWidths : distributeShakersForSpan(residualVerticalPlan.width, {target:sharedTarget, equal:true}, layout.frame, residualVerticalPlan.leftFrame, residualVerticalPlan.rightFrame));
             const residualVerticalSection = {
               ...residualSection,
               width:residualVerticalPlan.width,
@@ -8235,7 +8327,7 @@
           return distributeFixedCountShakersForSpan(physical.width, overrideCount, frame, leftFrame, rightFrame);
         }
         const topFrame = panelSideFrameValue(effectivePanelSideRule(block, part, 'top'), frame, thickness, doorAllowance);
-        const bottomFrame = panelBottomFrameWithSkirting(block, frame, panelSideFrameValue(effectivePanelSideRule(block, part, 'bottom'), frame, thickness, doorAllowance), part);
+        const bottomFrame = panelBottomFrameForSection(block, part, section, frame, thickness, doorAllowance);
         const bottomTarget = horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame);
         return verticalPanelTwoRowSizes(physical.height, frame, topFrame, bottomFrame, bottomTarget, overrideCount);
       }
@@ -8244,6 +8336,26 @@
       }
       if(axis === 'y' && Array.isArray(item?.rowHeights) && item.rowHeights.length){
         return item.rowHeights.map(roundPanelMm).filter(value=>value > 0);
+      }
+      const gridCount = axis === 'x'
+        ? (physical.direction === 'vertical' ? panelVerticalColumnsForPart(block, part) : panelHorizontalColumnsForPart(block, part))
+        : (physical.direction === 'vertical' ? panelVerticalRowsForPart(block, part) : panelHorizontalRowsForPart(block, part));
+      if(gridCount > 0){
+        const frame = Math.max(1, Number(layout?.frame || block?.frameSize || 80));
+        const thickness = Math.max(0, Number(layout?.thickness || parseThicknessMm(block?.thickness || '18mm')));
+        const doorAllowance = Math.max(0, Number(layout?.doorAllowance || block?.panelDoorAllowance || 175));
+        if(axis === 'x'){
+          const leftFrame = panelSideFrameValue(section.panelSideLeft || part?.panelSideLeft || block?.panelSideLeft, frame, thickness, doorAllowance);
+          const rightFrame = panelSideFrameValue(section.panelSideRight || part?.panelSideRight || block?.panelSideRight, frame, thickness, doorAllowance);
+          return distributeFixedCountShakersForSpan(physical.width, gridCount, frame, leftFrame, rightFrame);
+        }
+        const topFrame = panelSideFrameValue(effectivePanelSideRule(block, part, 'top'), frame, thickness, doorAllowance);
+        const bottomFrame = panelBottomFrameForSection(block, part, section, frame, thickness, doorAllowance);
+        if(physical.direction === 'vertical'){
+          const bottomTarget = horizontalPanelShakerHeight(block, part, layout, topFrame, bottomFrame);
+          return verticalPanelTwoRowSizes(physical.height, frame, topFrame, bottomFrame, bottomTarget, gridCount);
+        }
+        return distributeFixedCountRowsForPanel(physical.height, gridCount, frame, topFrame, bottomFrame);
       }
       if(axis === 'x'){
         if(Array.isArray(section.shakerColumnWidths) && section.shakerColumnWidths.length){
@@ -8283,6 +8395,7 @@
       const isVerticalPanel = physical.direction === 'vertical';
       const generatedPrimaryShakers = isVerticalPanel ? customRows.length : customColumns.length;
       const primaryShakers = generatedPrimaryShakers || requestedShakers;
+      const isObjectTopPanel = item?.emptyTopPanel === true || item?.section?.emptyTopPanel === true;
       const panelDoorType = normalizeDoorTypeValue(block?.globalShakerType || 'no', 'no');
       const panelProfileRule = profileTemplateRule(panelDoorType);
       const partPocketOn = partPocketingValue(part, block) === 'Yes' || block?.pocketingEnabled === 'Yes' || panelDoorType !== 'no';
@@ -8319,8 +8432,9 @@
         panelUpperStepBaseOffsetLeft:physical?.upperStepBaseOffsetLeft ?? 0,
         panelUpperStepBaseWidth:physical?.upperStepBaseWidth ?? physical.width,
         panelIrregularShape:item?.irregularShape === false ? 'No' : 'Yes',
-        panelSkirtingEnabled:panelSkirtingEnabledForPart(block, part),
+        panelSkirtingEnabled:isObjectTopPanel ? 'No' : panelSkirtingEnabledForPart(block, part),
         panelSkirtingHeight:panelSkirtingHeightForPart(block, part),
+        panelObjectBottomFrame:panelObjectBottomFrameForPart(block, part),
         panelDoorAllowance:Math.max(0, Number(block?.panelDoorAllowance || 175)),
         panelSideTop:normalizePanelSideRule(sideRuleFor('panelSideTop') || effectivePanelSideRule(block, part, 'top')),
         panelSideRight:normalizePanelSideRule(sideRuleFor('panelSideRight')),
@@ -8533,6 +8647,7 @@
                 panelIrregularShape:panelData.panelIrregularShape,
                 panelSkirtingEnabled:panelData.panelSkirtingEnabled,
                 panelSkirtingHeight:panelData.panelSkirtingHeight,
+                panelObjectBottomFrame:panelData.panelObjectBottomFrame,
                 panelDoorAllowance:panelData.panelDoorAllowance,
                 panelSideTop:panelData.panelSideTop,
                 panelSideRight:panelData.panelSideRight,
@@ -9288,6 +9403,11 @@
         const panelShakerSizeInput = node.querySelector('.panelShakerSize');
         const panelHorizontalHeightInput = node.querySelector('.panelHorizontalHeight');
         const panelVerticalHeightInput = node.querySelector('.panelVerticalHeight');
+        const panelHorizontalRowsInput = node.querySelector('.panelHorizontalRows');
+        const panelHorizontalColumnsInput = node.querySelector('.panelHorizontalColumns');
+        const panelVerticalRowsInput = node.querySelector('.panelVerticalRows');
+        const panelVerticalColumnsInput = node.querySelector('.panelVerticalColumns');
+        const panelObjectBottomFrameInput = node.querySelector('.panelObjectBottomFrame');
         const wallEnabledSelect = node.querySelector('.wallEnabled');
         const wallEnabledControl = node.querySelector('.wallEnabledControl');
         const wallWidthInput = node.querySelector('.wallWidth');
@@ -9372,6 +9492,11 @@
           panelColumnsInput.value = block.panelColumns || '';
           if(panelHorizontalHeightInput) panelHorizontalHeightInput.value = Number(block.panelHorizontalHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT);
           if(panelVerticalHeightInput) panelVerticalHeightInput.value = Number(block.panelVerticalHeight || PANEL_VERTICAL_DEFAULT_HEIGHT);
+          if(panelHorizontalRowsInput) panelHorizontalRowsInput.value = block.panelHorizontalRows || '';
+          if(panelHorizontalColumnsInput) panelHorizontalColumnsInput.value = block.panelHorizontalColumns || '';
+          if(panelVerticalRowsInput) panelVerticalRowsInput.value = block.panelVerticalRows || '';
+          if(panelVerticalColumnsInput) panelVerticalColumnsInput.value = block.panelVerticalColumns || '';
+          if(panelObjectBottomFrameInput) panelObjectBottomFrameInput.value = block.panelObjectBottomFrame === '' || block.panelObjectBottomFrame == null ? '' : Number(block.panelObjectBottomFrame || 0);
           panelShakerModeSelect.value = String(block.panelShakerMode || 'auto') === 'locked' ? 'locked' : 'auto';
           panelShakerSizeInput.value = block.panelShakerSize === '' || block.panelShakerSize == null ? '' : Number(block.panelShakerSize || 0);
           wallSectionsInput.value = block.wallSections || '';
@@ -9574,6 +9699,11 @@
           panelColumnsInput.value = block.panelColumns || '';
           if(panelHorizontalHeightInput) panelHorizontalHeightInput.value = Number(block.panelHorizontalHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT);
           if(panelVerticalHeightInput) panelVerticalHeightInput.value = Number(block.panelVerticalHeight || PANEL_VERTICAL_DEFAULT_HEIGHT);
+          if(panelHorizontalRowsInput) panelHorizontalRowsInput.value = block.panelHorizontalRows || '';
+          if(panelHorizontalColumnsInput) panelHorizontalColumnsInput.value = block.panelHorizontalColumns || '';
+          if(panelVerticalRowsInput) panelVerticalRowsInput.value = block.panelVerticalRows || '';
+          if(panelVerticalColumnsInput) panelVerticalColumnsInput.value = block.panelVerticalColumns || '';
+          if(panelObjectBottomFrameInput) panelObjectBottomFrameInput.value = block.panelObjectBottomFrame === '' || block.panelObjectBottomFrame == null ? '' : Number(block.panelObjectBottomFrame || 0);
           panelShakerModeSelect.value = String(block.panelShakerMode || 'auto') === 'locked' ? 'locked' : 'auto';
           setSegmentedValue(panelShakerModeControl, panelShakerModeSelect.value);
           panelShakerSizeInput.value = block.panelShakerSize === '' || block.panelShakerSize == null ? '' : Number(block.panelShakerSize || 0);
@@ -9858,6 +9988,24 @@
             updatePreview();
           });
           panelColumnsInput.addEventListener('change', ()=>requestRender());
+          const bindPanelCountInput = (input, key)=>{
+            input?.addEventListener('input', e=>{
+              const raw = e.target.value;
+              setBlockValue(block, key, panelCountSettingValue(raw));
+              updatePreview();
+            });
+            input?.addEventListener('change', ()=>requestRender());
+          };
+          bindPanelCountInput(panelHorizontalRowsInput, 'panelHorizontalRows');
+          bindPanelCountInput(panelHorizontalColumnsInput, 'panelHorizontalColumns');
+          bindPanelCountInput(panelVerticalRowsInput, 'panelVerticalRows');
+          bindPanelCountInput(panelVerticalColumnsInput, 'panelVerticalColumns');
+          panelObjectBottomFrameInput?.addEventListener('input', e=>{
+            const raw = e.target.value;
+            setBlockValue(block, 'panelObjectBottomFrame', panelNonnegativeSettingValue(raw));
+            updatePreview();
+          });
+          panelObjectBottomFrameInput?.addEventListener('change', ()=>requestRender());
           panelHorizontalHeightInput?.addEventListener('input', e=>{
             const raw = e.target.value;
             setBlockValue(block, 'panelHorizontalHeight', raw === '' ? '' : Math.max(1, Number(raw || PANEL_HORIZONTAL_DEFAULT_HEIGHT)));
@@ -10916,14 +11064,20 @@
         bottom:panelSideFrameValue(p?.panelSideBottom, frame, thickness, doorAllowance),
         left:panelSideFrameValue(p?.panelSideLeft, frame, thickness, doorAllowance)
       };
-      sides.bottom = panelBottomFrameWithSkirting(
-        {panelSkirtingEnabled:p?.panelSkirtingEnabled, panelSkirtingHeight:p?.panelSkirtingHeight},
-        frame,
-        sides.bottom
-      );
       const width = Math.max(0, Number(p?.w || p?.width || p?.origW || 0));
       const height = Math.max(0, Number(p?.h || p?.height || p?.origH || 0));
-      if(p?.emptyTopPanel === true || p?.emptyTopPanel === 'Yes'){
+      const isObjectTopPanel = p?.emptyTopPanel === true || p?.emptyTopPanel === 'Yes';
+      if(isObjectTopPanel){
+        const objectBottom = panelNonnegativeSettingValue(p?.panelObjectBottomFrame);
+        if(objectBottom !== '') sides.bottom = objectBottom;
+      } else {
+        sides.bottom = panelBottomFrameWithSkirting(
+          {panelSkirtingEnabled:p?.panelSkirtingEnabled, panelSkirtingHeight:p?.panelSkirtingHeight},
+          frame,
+          sides.bottom
+        );
+      }
+      if(isObjectTopPanel){
         const fitPair = (firstKey, secondKey, span)=>{
           const total = Number(sides[firstKey] || 0) + Number(sides[secondKey] || 0);
           const minOpen = Math.max(1, Math.min(PANEL_SHAKER_MIN, span * 0.35));
@@ -11432,7 +11586,7 @@
         const frame = Number(part.frame || block.frameSize || 50);
         const backFrame = Number(part.backFrame || block.backFrameSize || frame);
         const angle = normalizeRotationAngle(best.rotationAngle ?? (best.rotated ? 90 : 0));
-        const placed = {...best, sizeKey:sheet.sizeKey, sheetSizeKey:sheet.sizeKey, rotationAngle:angle, id:part.id, origW:part.width, origH:part.height, shaker:part.shaker, shakerType:part.shakerType, insertKind:part.insertKind, glassBeading:!!part.glassBeading, assemblyGroup:part.assemblyGroup || '', assemblyRole:part.assemblyRole || '', assemblyPanelIndex:part.assemblyPanelIndex ?? '', assemblyPanelCount:part.assemblyPanelCount ?? '', parentBlockId:part.parentBlockId ?? '', parentPartIndex:part.parentPartIndex ?? '', beadingFrame:part.beadingFrame, beadingClearance:part.beadingClearance, beadingGuideOffset:part.beadingGuideOffset, beadingRoundCorners:beadingRoundCornersForPart(part), panels:part.panels, panelSize:part.panelSize || '', panelMode:part.panelMode || '', calcMode:part.calcMode || '', panelDirection:part.panelDirection || '', panelRows:part.panelRows ?? '', panelColumns:part.panelColumns ?? '', shakerColumnWidths:Array.isArray(part.shakerColumnWidths) ? deepCopy(part.shakerColumnWidths) : [], shakerRowHeights:Array.isArray(part.shakerRowHeights) ? deepCopy(part.shakerRowHeights) : [], panelVerticalStepFrame:part.panelVerticalStepFrame === true, panelVerticalStepHeight:part.panelVerticalStepHeight ?? '', panelVerticalStepLeft:part.panelVerticalStepLeft === true, panelVerticalStepRight:part.panelVerticalStepRight === true, panelVerticalStepInsetLeft:part.panelVerticalStepInsetLeft ?? 0, panelVerticalStepInsetRight:part.panelVerticalStepInsetRight ?? 0, panelUpperStepFrame:part.panelUpperStepFrame === true, panelUpperStepLowerHeight:part.panelUpperStepLowerHeight ?? '', panelUpperStepLeft:part.panelUpperStepLeft === true, panelUpperStepRight:part.panelUpperStepRight === true, panelUpperStepInsetLeft:part.panelUpperStepInsetLeft ?? 0, panelUpperStepInsetRight:part.panelUpperStepInsetRight ?? 0, panelUpperStepBaseOffsetLeft:part.panelUpperStepBaseOffsetLeft ?? 0, panelUpperStepBaseWidth:part.panelUpperStepBaseWidth ?? part.width, panelIrregularShape:part.panelIrregularShape || 'Yes', emptyTopPanel:part.emptyTopPanel === true || part.emptyTopPanel === 'Yes', objectLowerPanel:part.objectLowerPanel === true || part.objectLowerPanel === 'Yes', panelSkirtingEnabled:part.panelSkirtingEnabled || 'No', panelSkirtingHeight:part.panelSkirtingHeight ?? '', panelDoorAllowance:part.panelDoorAllowance ?? '', panelSideTop:part.panelSideTop || 'normal', panelSideRight:part.panelSideRight || 'normal', panelSideBottom:part.panelSideBottom || 'normal', panelSideLeft:part.panelSideLeft || 'normal', wallSectionIndex:part.wallSectionIndex ?? '', wallSectionCount:part.wallSectionCount ?? '', wallXStart:part.wallXStart ?? 0, wallTotalWidth:part.wallTotalWidth ?? part.width, wallDoorEnabled:part.wallDoorEnabled || 'No', wallDoorWidth:part.wallDoorWidth ?? '', wallDoorHeight:part.wallDoorHeight ?? '', wallDoorX:part.wallDoorX ?? '', wallWindowEnabled:part.wallWindowEnabled || 'No', wallWindowWidth:part.wallWindowWidth ?? '', wallWindowHeight:part.wallWindowHeight ?? '', wallWindowX:part.wallWindowX ?? '', wallWindowBottom:part.wallWindowBottom ?? '', wallOpenings:Array.isArray(part.wallOpenings) ? deepCopy(part.wallOpenings) : [], profileRule:part.profileRule ? deepCopy(part.profileRule) : null, materialThicknessMm:part.materialThicknessMm || parseThicknessMm(block.thickness), shapePoints:Array.isArray(part.shapePoints) ? deepCopy(part.shapePoints) : undefined, shapeType:normalizePartShape(part.shapeType), leftHeight:part.leftHeight, rightHeight:part.rightHeight, frame, backFrame, frameTop:part.frameTop ?? '', frameRight:part.frameRight ?? '', frameBottom:part.frameBottom ?? '', frameLeft:part.frameLeft ?? '', frameMiddle:part.frameMiddle ?? '', frameEditZone:normalizeFrameZone(part.frameEditZone || 'left'), framePocket:!!part.framePocket, pocketSideMode:part.pocketSideMode || 'front', pocketRoundCorners:part.pocketRoundCorners === true || part.pocketRoundCorners === 'Yes', pocketLines:Array.isArray(part.pocketLines) ? deepCopy(part.pocketLines) : pocketLineSettingsForPart(part, block), reededDirection:normalizeReededDirection(part.reededDirection || block.reededDirection), reededSpacing:normalizeReededSpacing(part.reededSpacing || block.reededSpacing), hinges:part.hinges, hingeSide:normalizeHingeSide(part.hingeSide), hingeOffset:part.hingeOffset, hingeSpacing:part.hingeSpacing || '', sprayFinish:part.sprayFinish || 'No', spraySides:normalizeSpraySides(part.spraySides), grainDirection:partGrainDirectionValue(part, block), text:part.text||'', sourceBlockId:part.sourceBlockId, sourcePartIndex:part.sourcePartIndex, sourceInstanceIndex:part.sourceInstanceIndex};
+        const placed = {...best, sizeKey:sheet.sizeKey, sheetSizeKey:sheet.sizeKey, rotationAngle:angle, id:part.id, origW:part.width, origH:part.height, shaker:part.shaker, shakerType:part.shakerType, insertKind:part.insertKind, glassBeading:!!part.glassBeading, assemblyGroup:part.assemblyGroup || '', assemblyRole:part.assemblyRole || '', assemblyPanelIndex:part.assemblyPanelIndex ?? '', assemblyPanelCount:part.assemblyPanelCount ?? '', parentBlockId:part.parentBlockId ?? '', parentPartIndex:part.parentPartIndex ?? '', beadingFrame:part.beadingFrame, beadingClearance:part.beadingClearance, beadingGuideOffset:part.beadingGuideOffset, beadingRoundCorners:beadingRoundCornersForPart(part), panels:part.panels, panelSize:part.panelSize || '', panelMode:part.panelMode || '', calcMode:part.calcMode || '', panelDirection:part.panelDirection || '', panelRows:part.panelRows ?? '', panelColumns:part.panelColumns ?? '', shakerColumnWidths:Array.isArray(part.shakerColumnWidths) ? deepCopy(part.shakerColumnWidths) : [], shakerRowHeights:Array.isArray(part.shakerRowHeights) ? deepCopy(part.shakerRowHeights) : [], panelVerticalStepFrame:part.panelVerticalStepFrame === true, panelVerticalStepHeight:part.panelVerticalStepHeight ?? '', panelVerticalStepLeft:part.panelVerticalStepLeft === true, panelVerticalStepRight:part.panelVerticalStepRight === true, panelVerticalStepInsetLeft:part.panelVerticalStepInsetLeft ?? 0, panelVerticalStepInsetRight:part.panelVerticalStepInsetRight ?? 0, panelUpperStepFrame:part.panelUpperStepFrame === true, panelUpperStepLowerHeight:part.panelUpperStepLowerHeight ?? '', panelUpperStepLeft:part.panelUpperStepLeft === true, panelUpperStepRight:part.panelUpperStepRight === true, panelUpperStepInsetLeft:part.panelUpperStepInsetLeft ?? 0, panelUpperStepInsetRight:part.panelUpperStepInsetRight ?? 0, panelUpperStepBaseOffsetLeft:part.panelUpperStepBaseOffsetLeft ?? 0, panelUpperStepBaseWidth:part.panelUpperStepBaseWidth ?? part.width, panelIrregularShape:part.panelIrregularShape || 'Yes', emptyTopPanel:part.emptyTopPanel === true || part.emptyTopPanel === 'Yes', objectLowerPanel:part.objectLowerPanel === true || part.objectLowerPanel === 'Yes', panelSkirtingEnabled:part.panelSkirtingEnabled || 'No', panelSkirtingHeight:part.panelSkirtingHeight ?? '', panelObjectBottomFrame:part.panelObjectBottomFrame ?? '', panelDoorAllowance:part.panelDoorAllowance ?? '', panelSideTop:part.panelSideTop || 'normal', panelSideRight:part.panelSideRight || 'normal', panelSideBottom:part.panelSideBottom || 'normal', panelSideLeft:part.panelSideLeft || 'normal', wallSectionIndex:part.wallSectionIndex ?? '', wallSectionCount:part.wallSectionCount ?? '', wallXStart:part.wallXStart ?? 0, wallTotalWidth:part.wallTotalWidth ?? part.width, wallDoorEnabled:part.wallDoorEnabled || 'No', wallDoorWidth:part.wallDoorWidth ?? '', wallDoorHeight:part.wallDoorHeight ?? '', wallDoorX:part.wallDoorX ?? '', wallWindowEnabled:part.wallWindowEnabled || 'No', wallWindowWidth:part.wallWindowWidth ?? '', wallWindowHeight:part.wallWindowHeight ?? '', wallWindowX:part.wallWindowX ?? '', wallWindowBottom:part.wallWindowBottom ?? '', wallOpenings:Array.isArray(part.wallOpenings) ? deepCopy(part.wallOpenings) : [], profileRule:part.profileRule ? deepCopy(part.profileRule) : null, materialThicknessMm:part.materialThicknessMm || parseThicknessMm(block.thickness), shapePoints:Array.isArray(part.shapePoints) ? deepCopy(part.shapePoints) : undefined, shapeType:normalizePartShape(part.shapeType), leftHeight:part.leftHeight, rightHeight:part.rightHeight, frame, backFrame, frameTop:part.frameTop ?? '', frameRight:part.frameRight ?? '', frameBottom:part.frameBottom ?? '', frameLeft:part.frameLeft ?? '', frameMiddle:part.frameMiddle ?? '', frameEditZone:normalizeFrameZone(part.frameEditZone || 'left'), framePocket:!!part.framePocket, pocketSideMode:part.pocketSideMode || 'front', pocketRoundCorners:part.pocketRoundCorners === true || part.pocketRoundCorners === 'Yes', pocketLines:Array.isArray(part.pocketLines) ? deepCopy(part.pocketLines) : pocketLineSettingsForPart(part, block), reededDirection:normalizeReededDirection(part.reededDirection || block.reededDirection), reededSpacing:normalizeReededSpacing(part.reededSpacing || block.reededSpacing), hinges:part.hinges, hingeSide:normalizeHingeSide(part.hingeSide), hingeOffset:part.hingeOffset, hingeSpacing:part.hingeSpacing || '', sprayFinish:part.sprayFinish || 'No', spraySides:normalizeSpraySides(part.spraySides), grainDirection:partGrainDirectionValue(part, block), text:part.text||'', sourceBlockId:part.sourceBlockId, sourcePartIndex:part.sourcePartIndex, sourceInstanceIndex:part.sourceInstanceIndex};
         sheet.placements.push(placed);
         slopedVoidFreeRectsForPlacement(placed).forEach(r=>{
           if(r.w>0 && r.h>0) sheet.freeRects.unshift(r);
@@ -11794,6 +11948,11 @@
         wallPanelDirection:String(p.wallPanelDirection ?? ''),
         panelRows:String(p.panelRows ?? ''),
         panelColumns:String(p.panelColumns ?? ''),
+        panelHorizontalRows:String(p.panelHorizontalRows ?? ''),
+        panelHorizontalColumns:String(p.panelHorizontalColumns ?? ''),
+        panelVerticalRows:String(p.panelVerticalRows ?? ''),
+        panelVerticalColumns:String(p.panelVerticalColumns ?? ''),
+        panelObjectBottomFrame:String(p.panelObjectBottomFrame ?? ''),
         panelHorizontalHeight:String(p.panelHorizontalHeight ?? ''),
         panelVerticalHeight:String(p.panelVerticalHeight ?? ''),
         wallOpenings:Array.isArray(p.wallOpenings) ? JSON.stringify(p.wallOpenings) : '',
@@ -11853,6 +12012,11 @@
       block.panelDirection = String(data.panelDirection || block.panelDirection) === 'vertical' ? 'vertical' : 'horizontal';
       block.panelRows = data.panelRows === '' || data.panelRows == null ? '' : Math.max(1, Math.round(Number(data.panelRows || 1)));
       block.panelColumns = data.panelColumns === '' || data.panelColumns == null ? '' : Math.max(1, Math.round(Number(data.panelColumns || 1)));
+      block.panelHorizontalRows = panelCountSettingValue(data.panelHorizontalRows);
+      block.panelHorizontalColumns = panelCountSettingValue(data.panelHorizontalColumns);
+      block.panelVerticalRows = panelCountSettingValue(data.panelVerticalRows);
+      block.panelVerticalColumns = panelCountSettingValue(data.panelVerticalColumns);
+      block.panelObjectBottomFrame = panelNonnegativeSettingValue(data.panelObjectBottomFrame);
       block.panelHorizontalHeight = data.panelHorizontalHeight === '' || data.panelHorizontalHeight == null ? PANEL_HORIZONTAL_DEFAULT_HEIGHT : Math.max(1, Number(data.panelHorizontalHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT));
       block.panelVerticalHeight = data.panelVerticalHeight === '' || data.panelVerticalHeight == null ? PANEL_VERTICAL_DEFAULT_HEIGHT : Math.max(1, Number(data.panelVerticalHeight || PANEL_VERTICAL_DEFAULT_HEIGHT));
       block.panelWindowSillHeight = data.panelWindowSillHeight === '' || data.panelWindowSillHeight == null ? 22 : Math.max(0, Number(data.panelWindowSillHeight || 0));
@@ -11953,6 +12117,11 @@
           part.hinges = 'No';
           part.panelDirection = String(part.panelDirection || block.panelDirection || 'horizontal') === 'vertical' ? 'vertical' : 'horizontal';
           part.wallPanelDirection = String(part.wallPanelDirection || 'horizontal') === 'vertical' ? 'vertical' : 'horizontal';
+          part.panelHorizontalRows = panelCountSettingValue(part.panelHorizontalRows);
+          part.panelHorizontalColumns = panelCountSettingValue(part.panelHorizontalColumns);
+          part.panelVerticalRows = panelCountSettingValue(part.panelVerticalRows);
+          part.panelVerticalColumns = panelCountSettingValue(part.panelVerticalColumns);
+          part.panelObjectBottomFrame = panelNonnegativeSettingValue(part.panelObjectBottomFrame);
           part.panelHorizontalHeight = part.panelHorizontalHeight === '' || part.panelHorizontalHeight == null ? '' : Math.max(1, Number(part.panelHorizontalHeight || PANEL_HORIZONTAL_DEFAULT_HEIGHT));
           part.panelVerticalHeight = part.panelVerticalHeight === '' || part.panelVerticalHeight == null ? '' : Math.max(1, Number(part.panelVerticalHeight || PANEL_VERTICAL_DEFAULT_HEIGHT));
           part.panelSkirtingEnabled = part.panelSkirtingEnabled === 'Yes' || part.panelSkirtingEnabled === 'No' ? part.panelSkirtingEnabled : '';
@@ -12067,6 +12236,11 @@
         panelDirection:String(block.panelDirection ?? 'horizontal'),
         panelRows:String(block.panelRows ?? ''),
         panelColumns:String(block.panelColumns ?? ''),
+        panelHorizontalRows:String(block.panelHorizontalRows ?? ''),
+        panelHorizontalColumns:String(block.panelHorizontalColumns ?? ''),
+        panelVerticalRows:String(block.panelVerticalRows ?? ''),
+        panelVerticalColumns:String(block.panelVerticalColumns ?? ''),
+        panelObjectBottomFrame:String(block.panelObjectBottomFrame ?? ''),
         panelHorizontalHeight:String(block.panelHorizontalHeight ?? PANEL_HORIZONTAL_DEFAULT_HEIGHT),
         panelVerticalHeight:String(block.panelVerticalHeight ?? PANEL_VERTICAL_DEFAULT_HEIGHT),
         wallEnabled:String(block.wallEnabled ?? 'No'),
@@ -14012,7 +14186,7 @@
           html += '<rect class="panel-side-hit" data-side="left"'+sideAttrs+' x="'+px+'" y="'+py+'" width="'+sideHit+'" height="'+ph+'"/>';
           html += '<rect class="panel-side-hit" data-side="right"'+sideAttrs+' x="'+(px+pw-sideHit)+'" y="'+py+'" width="'+sideHit+'" height="'+ph+'"/>';
         }
-        if(String(panel.panelSkirtingEnabled || 'No') === 'Yes'){
+        if(String(panel.panelSkirtingEnabled || 'No') === 'Yes' && !(panel.emptyTopPanel === true || panel.emptyTopPanel === 'Yes')){
           const skirtingGuide = Math.max(0, Number(panel.panelSkirtingHeight || PANEL_SKIRTING_DEFAULT_HEIGHT));
           const yLine = (panel.y + panel.h - skirtingGuide) * sy;
           html += '<line x1="'+(panel.x*sx)+'" y1="'+yLine+'" x2="'+((panel.x+panel.w)*sx)+'" y2="'+yLine+'" stroke="#64748b" stroke-width="1" stroke-dasharray="5 3"/>';
