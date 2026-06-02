@@ -12977,7 +12977,7 @@
       const layers = [
         {name:'OUT', color:150},
         {name:'IN', color:5},
-        {name:'POCKET_10MM', color:6},
+        {name:'OFFSET_A', color:6},
         {name:'hinges', color:7}
       ];
       const rect = (layer,x,y,w,h)=>{
@@ -12991,7 +12991,7 @@
       pushPair(0,'ENDTAB'); pushPair(0,'ENDSEC'); pushPair(0,'SECTION'); pushPair(2,'ENTITIES');
       rect('OUT',0,0,600,800);
       rect('IN',55,55,490,690);
-      rect('POCKET_10MM',68,68,464,664);
+      rect('OFFSET_A',68,68,464,664);
       circle('hinges',28,160,17.5);
       circle('hinges',28,640,17.5);
       pushPair(0,'ENDSEC'); pushPair(0,'EOF');
@@ -15004,16 +15004,11 @@
         {name:'POKET_INSERT', color:30},
         {name:'SHADOW', color:105},
         ...POCKET_LINE_CONFIGS.map(config=>({name:config.layer, color:config.dxfColor || 7})),
-        {name:'POCKET_10MM', color:6},
-        {name:'POCKET_6MM', color:1},
-        {name:'POCKET_2MM', color:5},
         {name:'CHAMFER', color:210},
         {name:'PROFILE_TOOL', color:4},
-        {name:'POCKET_2', color:30},
-        {name:'POCKET_3', color:32},
         {name:'OUT_10MM', color:105},
         {name:'IN_22MM', color:5},
-        {name:'POCKET_5MM', color:30},
+        {name:'OFFSET_5MM', color:30},
         {name:'OUT_INSERT_15MM', color:7},
         {name:'REEDED', color:132},
         {name:'hinges', color:7},
@@ -15156,9 +15151,9 @@
             const pocket10Pts = (expandedCavityPoints(c, 7) || []).map(pt=>({x:ox+pt.x, y:oy+pt.y}));
             writeProfile('SHADOW', shadowPts, true, 2.5);
             writeProfile('POKET_INSERT', pocketInsertPts, true, 2.5);
-            writeProfile('POCKET_10MM', pocket10Pts, true, 2.5);
+            writeProfile('OFFSET_A', pocket10Pts, true, 2.5);
             writeProfile('OUT', innerPts, true, 2.5);
-            writeProfile('POCKET_10MM', innerPts, true, 2.5);
+            writeProfile('OFFSET_A', innerPts, true, 2.5);
             writeProfile('OUT_10MM', innerPts, true, 2.5);
             writeProfile('IN_22MM', innerPts, true, 2.5);
           });
@@ -15169,11 +15164,11 @@
           const cx = ox + c.x;
           const cy = oy + c.y;
           roundedRect('OUT', cx, cy, c.w, c.h);
-          roundedRect('POCKET_10MM', cx, cy, c.w, c.h);
+          roundedRect('OFFSET_A', cx, cy, c.w, c.h);
           roundedRect('OUT_10MM', cx, cy, c.w, c.h);
           roundedRect('IN_22MM', cx, cy, c.w, c.h);
           roundedRect('POKET_INSERT', cx-7, cy-7, c.w+14, c.h+14);
-          roundedRect('POCKET_10MM', cx-7, cy-7, c.w+14, c.h+14);
+          roundedRect('OFFSET_A', cx-7, cy-7, c.w+14, c.h+14);
           roundedRect('POKET_INSERT', cx-14, cy-14, c.w+28, c.h+28);
           roundedRect('SHADOW', cx-16, cy-16, c.w+32, c.h+32);
         });
@@ -15190,9 +15185,9 @@
             const pocket10Pts = (expandedCavityPoints(c, 7) || []).map(pt=>({x:ox+pt.x, y:oy+pt.y}));
             writeProfile('SHADOW', shadowPts, true, 2.5);
             writeProfile('POKET_INSERT', pocketInsertPts, true, 2.5);
-            writeProfile('POCKET_10MM', pocket10Pts, true, 2.5);
+            writeProfile('OFFSET_A', pocket10Pts, true, 2.5);
             writeProfile('OUT', innerPts, true, 2.5);
-            writeProfile('POCKET_10MM', innerPts, true, 2.5);
+            writeProfile('OFFSET_A', innerPts, true, 2.5);
             writeProfile('OUT_10MM', innerPts, true, 2.5);
             writeProfile('IN_22MM', innerPts, true, 2.5);
             reededLineSegmentsInPolygon(innerPtsRaw, p.reededDirection, p.reededSpacing, {zigzag:true}).forEach(seg=>{
@@ -15206,11 +15201,11 @@
           const cx = ox + c.x;
           const cy = oy + c.y;
           roundedRect('OUT', cx, cy, c.w, c.h);
-          roundedRect('POCKET_10MM', cx, cy, c.w, c.h);
+          roundedRect('OFFSET_A', cx, cy, c.w, c.h);
           roundedRect('OUT_10MM', cx, cy, c.w, c.h);
           roundedRect('IN_22MM', cx, cy, c.w, c.h);
           roundedRect('POKET_INSERT', cx-7, cy-7, c.w+14, c.h+14);
-          roundedRect('POCKET_10MM', cx-7, cy-7, c.w+14, c.h+14);
+          roundedRect('OFFSET_A', cx-7, cy-7, c.w+14, c.h+14);
           roundedRect('POKET_INSERT', cx-14, cy-14, c.w+28, c.h+28);
           roundedRect('SHADOW', cx-16, cy-16, c.w+32, c.h+32);
         });
@@ -15218,8 +15213,8 @@
       function drawFlushbackInsertPanel(p, ox, oy){
         if(normalizePartShape(p.shapeType) === 'sloped'){
           slopedInsetPolyline('OUT_INSERT_15MM', p, 0.05, ox, oy, true);
-          slopedInsetPolyline('POCKET_5MM', p, 6.95, ox, oy, true);
-          slopedInsetPolyline('POCKET_5MM', p, 14.05, ox, oy, true);
+          slopedInsetPolyline('OFFSET_5MM', p, 6.95, ox, oy, true);
+          slopedInsetPolyline('OFFSET_5MM', p, 14.05, ox, oy, true);
           return;
         }
         const x = ox + p.x;
@@ -15229,8 +15224,8 @@
         if(!(openingW > 0 && openingH > 0)){roundedRect('OUT_INSERT_15MM', x, y, p.w, p.h); return;}
         const paths = [
           {layer:'OUT_INSERT_15MM', w:openingW + 27.9, h:openingH + 27.9},
-          {layer:'POCKET_5MM', w:openingW + 14.1, h:openingH + 14.1},
-          {layer:'POCKET_5MM', w:openingW - 0.1, h:openingH - 0.1}
+          {layer:'OFFSET_5MM', w:openingW + 14.1, h:openingH + 14.1},
+          {layer:'OFFSET_5MM', w:openingW - 0.1, h:openingH - 0.1}
         ];
         paths.forEach(path=>{
           if(!(path.w > 0 && path.h > 0)) return;
