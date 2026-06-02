@@ -11090,19 +11090,10 @@
           sides.bottom
         );
       }
-      if(isObjectTopPanel){
-        const fitPair = (firstKey, secondKey, span)=>{
-          const total = Number(sides[firstKey] || 0) + Number(sides[secondKey] || 0);
-          const minOpen = Math.max(1, Math.min(PANEL_SHAKER_MIN, span * 0.35));
-          if(!(span > 0) || !(total > 0) || span - total >= minOpen) return;
-          const allowed = Math.max(0, span - minOpen);
-          const scale = allowed / total;
-          sides[firstKey] = roundPanelMm(Number(sides[firstKey] || 0) * scale);
-          sides[secondKey] = roundPanelMm(Number(sides[secondKey] || 0) * scale);
-        };
-        fitPair('top', 'bottom', height);
-        fitPair('left', 'right', width);
-      }
+      // Object-top panel frames stay locked to their rule value (Normal=frame, Joint=half, Door=Door Side).
+      // We intentionally do NOT auto-scale the frame to fit a short cap: a frame set to 80 must never
+      // shrink on its own. If a cap is too short, the shaker opening absorbs the shortfall (or the panel
+      // renders solid); the layout already drops caps that are <= 2 frames, so geometry stays valid.
       const autoVertical = String(p?.panelDirection || 'horizontal') === 'vertical';
       const columnWidths = Array.isArray(p?.shakerColumnWidths)
         ? p.shakerColumnWidths.map(value=>Number(value || 0)).filter(value=>value > 0)
