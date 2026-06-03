@@ -22,7 +22,14 @@
     padding:0 16px;border-bottom:1px solid var(--bd)}
   .logo{font-weight:900;letter-spacing:.5px;font-size:15px;display:flex;align-items:center;gap:8px}
   .logo .dot{width:11px;height:11px;border-radius:3px;background:var(--accent)}
-  .menu{display:flex;gap:14px;font-size:13px;opacity:.85}.menu span{cursor:pointer}
+  .menu{display:flex;gap:4px;font-size:13px}
+  .mtop{position:relative}
+  .mtop>span{cursor:pointer;padding:4px 8px;border-radius:6px;display:inline-block}
+  .mtop.open>span,.mtop>span:hover{background:var(--soft)}
+  .mdrop{position:absolute;top:130%;left:0;display:none;background:var(--panel);border:1px solid var(--bd);border-radius:8px;box-shadow:var(--shadow);min-width:158px;padding:6px;z-index:60}
+  .mtop.open .mdrop{display:block}
+  .mdrop button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--text);padding:7px 10px;border-radius:6px;font-size:12.5px;cursor:pointer}
+  .mdrop button:hover{background:var(--hover)}
   .topbar .spacer{flex:1}
   .ttool{display:flex;gap:6px;align-items:center}
   .ttool button{display:flex;align-items:center;gap:6px;border:0;border-radius:8px;padding:7px 12px;font-weight:700;
@@ -341,7 +348,9 @@
 
   // ===== chrome / status / crumbs =====
   function renderChrome(){
-    menu.innerHTML=['m_file','m_edit','m_view','m_insert','m_export'].map(k=>`<span>${t(k)}</span>`).join('');
+    menu.innerHTML=MENU.map((m,mi)=>`<div class="mtop" data-mi="${mi}"><span>${t('m_'+m[0].toLowerCase())}</span><div class="mdrop">${m[1].map((it,ii)=>`<button data-mi="${mi}" data-ii="${ii}">${it[0]}</button>`).join('')}</div></div>`).join('');
+    menu.querySelectorAll('.mtop>span').forEach(sp=>sp.onclick=ev=>{ev.stopPropagation();const top=sp.parentNode,was=top.classList.contains('open');menu.querySelectorAll('.mtop').forEach(z=>z.classList.remove('open'));if(!was)top.classList.add('open');});
+    menu.querySelectorAll('.mdrop button').forEach(b=>b.onclick=ev=>{ev.stopPropagation();menu.querySelectorAll('.mtop').forEach(z=>z.classList.remove('open'));MENU[+b.dataset.mi][1][+b.dataset.ii][1]();});
     rail.innerHTML=TOOLGROUPS.map(g=>g.map(x=>{const on=(x[1]==='measure'&&measureMode)||(x[1]==='select'&&!measureMode);return `<div class="tool ${on?'on':''}" data-act="${x[1]}" title="${t('tool_'+x[1])}"><span class="ti">${svgIcon(x[0])}</span><span class="tl">${t('tool_'+x[1])}</span></div>`;}).join('')).join('<div class="sep"></div>');
     rail.querySelectorAll('.tool[data-act]').forEach(el=>el.onclick=()=>toolAction(el.dataset.act));
     exportBtn.textContent='⬇ '+t('exportdxf');
@@ -397,6 +406,14 @@
     const mmx=(p.x-canvasXf.X)/canvasXf.sx,mmh=(canvasXf.floorY-p.y)/canvasXf.sy;
     if(!measurePt){measurePt={x:mmx,h:mmh};renderCanvas();}
     else{(wall.dims=wall.dims||[]).push({x1:measurePt.x,h1:measurePt.h,x2:mmx,h2:mmh});measurePt=null;renderCanvas();saveModel();}}
+  function newProject(){pushHistory();const id='r'+(++uid),wid='w'+(++uid);MODEL.rooms=[{id,name:'Room 1',material:'MDF',thickness:'18mm',frame:80,doorAllow:175,skirting:'no',skirtingH:225,sheets:1,matCost:70,cncCost:330,walls:[{id:wid,name:'Wall 1',width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]}]}];view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};renderAll();}
+  const MENU=[
+    ['File',[['New',()=>newProject()],['Open…',()=>document.getElementById('fileInput').click()],['Save',()=>saveProject()]]],
+    ['Edit',[['Undo',()=>undo()],['Redo',()=>redo()]]],
+    ['View',[['Light / Dark',()=>setTheme(theme==='dark'?'light':'dark')],['Fit',()=>fitView()]]],
+    ['Insert',[['Wall',()=>addWall()],['Door',()=>addOpening('door')],['Window',()=>addOpening('window')],['Object',()=>addOpening('object')]]],
+    ['Export',[['DXF',()=>exportDXF()]]]
+  ];
   function addRoom(){pushHistory();const id='r'+(++uid),wid='w'+(++uid);
     MODEL.rooms.push({id,name:'New room',material:'MDF',thickness:'18mm',frame:80,doorAllow:175,skirting:'no',skirtingH:225,sheets:1,matCost:70,cncCost:330,
       walls:[{id:wid,name:'Wall 1',width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]}]});
@@ -479,7 +496,7 @@
   function setTheme(th){theme=th;app.classList.toggle('dark',th==='dark');renderChrome();renderCanvas();}
   function setLang(l){lang=l;document.documentElement.lang=l;renderAll();}
   function toggleOpt(e){if(e)e.stopPropagation();optpop.classList.toggle('show');}
-  document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');});
+  document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');if(!(e.target.closest&&e.target.closest('.menu')))menu.querySelectorAll('.mtop').forEach(z=>z.classList.remove('open'));});
   (()=>{const cv=document.getElementById('canvas');let pan=null;
     cv.addEventListener('mousedown',e=>{pan={sx:e.clientX,sy:e.clientY,vx:vb.x,vy:vb.y,moved:false};});
     window.addEventListener('mousemove',e=>{if(!pan)return;if(Math.abs(e.clientX-pan.sx)+Math.abs(e.clientY-pan.sy)>3)pan.moved=true;const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();vb.x=pan.vx-(e.clientX-pan.sx)*(vb.w/rc.width);vb.y=pan.vy-(e.clientY-pan.sy)*(vb.h/rc.height);applyVB();});
