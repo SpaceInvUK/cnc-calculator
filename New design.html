@@ -241,7 +241,7 @@
         const cols=balancedCount(inner,frame,target);
         pid++;panels.push({id:'p'+pid,label:'P'+pid,x0:px0,x1:px0+ew,y0,y1,lf,rf,cols:Math.max(1,cols),cap:!!cap,leftRule:l,rightRule:r});}}
     spans.forEach(sp=>addPanel(sp.x0,sp.x1,sp.lr,sp.rr,0,H,false));
-    ops.forEach(o=>{const top=o.bottom+o.height;if(top<H-1)addPanel(o.x,o.x+o.width,'joint','joint',top,H,true);
+    ops.forEach(o=>{const top=o.bottom+o.height;if(top<H-1&&o.topPanel!=='no')addPanel(o.x,o.x+o.width,'joint','joint',top,H,true);
       if(o.type==='window'&&o.bottom>1)addPanel(o.x,o.x+o.width,'joint','joint',0,o.bottom,true);});
     return {W,H,frame,ops,panels};
   }
@@ -265,7 +265,7 @@
     if(sel.kind==='opening'){const o=sel.op;
       if(o.type==='door')return SEC(t('s_door'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_posx'),'x',o.x))+SEC(t('s_siderule'),RO(t('f_panelsbeside'),'Door = '+((+sel.room.doorAllow)||175)));
       if(o.type==='window')return SEC(t('s_window'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_sill'),'bottom',o.bottom)+NUM(t('f_posx'),'x',o.x));
-      return SEC(t('s_object'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_base'),'bottom',o.bottom))+SEC(t('s_toppanel'),RO(t('f_createtop'),t('v_yes')));}
+      return SEC(t('s_object'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_base'),'bottom',o.bottom))+SEC(t('s_toppanel'),SEGE(t('f_createtop'),'topPanel',[['yes',t('v_yes')],['no',t('v_no')]],o.topPanel||'yes'));}
     const p=selPanel(),w=view.wall;
     return SEC(t('s_shaker'),SEGE(t('f_type'),'shakerType',[['shaker','Shaker'],['flat','Flat'],['reeded','Reeded']],w.shakerType||'shaker')+RO(t('f_columns'),p?p.cols:'—')+NUM(t('f_size'),'colTarget',w.colTarget)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir))
       +SEC(t('s_siderules'),RO(t('f_left'),p?ruleName(p.leftRule):'—')+RO(t('f_right'),p?ruleName(p.rightRule):'—'))
@@ -313,13 +313,13 @@
     s+=`<line x1="${X-10}" y1="${floorY}" x2="${X+drawW+10}" y2="${floorY}" stroke="${P.floor}" stroke-width="2"/>`;
     s+=`<text x="${X+drawW/2}" y="${Yt-18}" text-anchor="middle" font-size="12" fill="${P.dim}">${W} mm</text>`;
     s+=`<text x="${X-26}" y="${Yt+drawH/2}" text-anchor="middle" font-size="12" fill="${P.dim}" transform="rotate(-90 ${X-26} ${Yt+drawH/2})">${H} mm</text>`;
-    const tf=L.frame*sy,bf=(room.skirting==='yes'?(+room.skirtingH+L.frame):L.frame)*sy,gap=L.frame*sx;
+    const tf=L.frame*sy,bf=(room.skirting==='yes'?(+room.skirtingH+L.frame):L.frame)*sy,gap=L.frame*sx,ptype=(wall.shakerType||'shaker');
     L.panels.forEach(p=>{const x=MX(p.x0),w=(p.x1-p.x0)*sx,yTop=MY(p.y1),h=(p.y1-p.y0)*sy;
       const stroke=p.cap?P.capBd:P.pBd,fill=p.cap?P.capFill:P.pFill,selp=sel.kind==='panel'&&sel.panelId===p.id;
       s+=`<g class="pk" data-k="panel" data-id="${p.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
       const ix=x+p.lf*sx,iw=Math.max(0,w-(p.lf+p.rf)*sx),iy=yTop+tf,ih=Math.max(0,h-tf-bf),cols=p.cols,cw=(iw-gap*(cols-1))/cols;
-      for(let i=0;i<cols;i++){const cx=ix+i*(cw+gap);s+=`<rect x="${cx}" y="${iy}" width="${Math.max(0,cw)}" height="${ih}" rx="2" fill="${P.cell}" stroke="${stroke}" stroke-width="1"/>`;
-        for(let rr=1;rr<3;rr++){const lx=cx+cw*rr/3;s+=`<line x1="${lx}" y1="${iy+3}" x2="${lx}" y2="${iy+ih-3}" stroke="${stroke}" stroke-opacity=".4"/>`;}}
+      if(ptype!=='flat')for(let i=0;i<cols;i++){const cx=ix+i*(cw+gap);s+=`<rect x="${cx}" y="${iy}" width="${Math.max(0,cw)}" height="${ih}" rx="2" fill="${P.cell}" stroke="${stroke}" stroke-width="1"/>`;
+        if(ptype==='reeded'){const n=Math.max(2,Math.round(cw/11));for(let k=1;k<n;k++){const lx=cx+cw*k/n;s+=`<line x1="${lx}" y1="${iy+3}" x2="${lx}" y2="${iy+ih-3}" stroke="${stroke}" stroke-opacity=".5"/>`;}}}
       s+=`<text x="${x+w/2}" y="${yTop-5}" text-anchor="middle" font-size="10" font-weight="700" fill="${selp?P.sel:P.lab}">${p.label}</text>`;
       if(selp)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" rx="5" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
       s+='</g>';});
