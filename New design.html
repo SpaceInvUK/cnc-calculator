@@ -79,7 +79,7 @@
   .ihead{padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
   .ihead .pic{width:34px;height:34px;border-radius:9px;background:color-mix(in srgb,var(--accent) 18%,transparent);display:flex;align-items:center;justify-content:center;color:var(--accent)}
   .ihead .t{font-weight:800;font-size:14px}.ihead .s{font-size:11px;color:var(--muted)}
-  .ihead .rm{margin-left:auto;border:1px solid var(--bd);background:var(--soft);color:var(--muted);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:13px}
+  .ihead .rm{border:1px solid var(--bd);background:var(--soft);color:var(--muted);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:13px}
   .ihead .rm:hover{color:#dc2626;border-color:#dc2626}
   .sec{padding:12px 16px;border-bottom:1px solid var(--bd)}
   .sec .lab{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800;margin-bottom:10px}
@@ -260,7 +260,7 @@
         +SEC(t('s_finish'),SEGE(t('f_skirting'),'skirting',[['yes',t('v_yes')],['no',t('v_no')]],r.skirting)+NUM(t('f_skirtingh'),'skirtingH',r.skirtingH))
         +SEC(t('s_pricing'),NUM(t('f_sheets'),'sheets',r.sheets)+NUM(t('f_matcost'),'matCost',r.matCost)+NUM(t('f_cnccost'),'cncCost',r.cncCost)+RO(t('f_roomtotal'),money(roomTotal(r))));}
     if(sel.kind==='wall'){const w=sel.wall;
-      return SEC(t('s_wall'),NUM(t('f_width'),'width',w.width)+NUM(t('f_height'),'height',w.height)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir)+NUM(t('f_panelheight'),'panelHeight',w.panelHeight))
+      return SEC(t('s_wall'),TXT(t('f_name'),'name',w.name)+NUM(t('f_width'),'width',w.width)+NUM(t('f_height'),'height',w.height)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir)+NUM(t('f_panelheight'),'panelHeight',w.panelHeight))
         +SEC(t('s_shaker'),NUM(t('f_size'),'colTarget',w.colTarget));}
     if(sel.kind==='opening'){const o=sel.op;
       if(o.type==='door')return SEC(t('s_door'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_posx'),'x',o.x))+SEC(t('s_siderule'),RO(t('f_panelsbeside'),'Door = '+((+sel.room.doorAllow)||175)));
@@ -279,7 +279,7 @@
     return rn+' · '+wn;}
   function inspIcon(){if(sel.kind==='room')return 'panel';if(sel.kind==='wall')return 'wall';if(sel.kind==='opening')return sel.op.type;return 'panel';}
   function renderInspector(){const rm=(sel.kind==='opening'||sel.kind==='wall'||sel.kind==='room');
-    insp.innerHTML=`<div class="ihead"><div class="pic">${svgIcon(inspIcon(),1.7)}</div><div style="flex:1"><div class="t">${titleFor()}</div><div class="s">${subFor()}</div></div>${rm?'<button class="rm" onclick="removeSel()" title="Remove">🗑</button>':''}</div>`+inspectorBody();}
+    insp.innerHTML=`<div class="ihead"><div class="pic">${svgIcon(inspIcon(),1.7)}</div><div style="flex:1"><div class="t">${titleFor()}</div><div class="s">${subFor()}</div></div>${rm?'<button class="rm" onclick="dupSel()" title="Duplicate">⧉</button><button class="rm" onclick="removeSel()" title="Remove">🗑</button>':''}</div>`+inspectorBody();}
 
   // ===== tree =====
   function renderTree(){let h=`<h4>${t('project')}</h4>`;
@@ -386,6 +386,14 @@
     if(sel.kind==='opening'){const w=view.wall;w.openings=w.openings.filter(o=>o!==sel.op);selectWall(view.room.id,w.id);}
     else if(sel.kind==='wall'){const r=view.room;if(r.walls.length<=1)return;r.walls=r.walls.filter(w=>w!==sel.wall);selectRoom(r.id);}
     else if(sel.kind==='room'){if(MODEL.rooms.length<=1)return;MODEL.rooms=MODEL.rooms.filter(x=>x!==sel.room);selectRoom(MODEL.rooms[0].id);}}
+  function dupSel(){
+    if(sel.kind==='room'){const c=JSON.parse(JSON.stringify(sel.room));c.id='r'+(++uid);c.name=(c.name||'Room')+' copy';
+      (c.walls||[]).forEach(w=>{w.id='w'+(++uid);(w.openings||[]).forEach(o=>o.id='o'+(++uid));});
+      MODEL.rooms.splice(MODEL.rooms.indexOf(sel.room)+1,0,c);selectRoom(c.id);}
+    else if(sel.kind==='wall'){const r=view.room;const c=JSON.parse(JSON.stringify(sel.wall));c.id='w'+(++uid);c.name=(c.name||'Wall')+' copy';
+      (c.openings||[]).forEach(o=>o.id='o'+(++uid));r.walls.splice(r.walls.indexOf(sel.wall)+1,0,c);selectWall(r.id,c.id);}
+    else if(sel.kind==='opening'){const w=view.wall;const c=JSON.parse(JSON.stringify(sel.op));c.id='o'+(++uid);c.x=(+c.x||0)+200;c.name=(c.name||'')+' copy';
+      w.openings.splice(w.openings.indexOf(sel.op)+1,0,c);sel={kind:'opening',room:view.room,wall:w,op:c,panelId:null};refresh();}}
 
   // ===== import a saved .fastcnc.json quote =====
   function importQuote(data){
