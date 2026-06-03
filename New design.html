@@ -143,7 +143,7 @@
       project:'Project',addroom:'+ Add room',sheets:'sheets',exportdxf:'Export DXF',
       soon_tip:'Coming soon (not programmed yet)',phase1:'Phase 2a · live editing — exact balancing, nesting & DXF next',
       options:'Options',theme:'Theme',light:'Light',dark:'Dark',language:'Language',
-      st_panels:'panels',st_shaker:'Shaker',
+      st_panels:'panels',st_shaker:'Shaker',st_total:'Total',s_pricing:'Pricing',f_sheets:'Sheets',f_matcost:'Material £/sheet',f_cnccost:'CNC £/sheet',f_roomtotal:'Room total',
       s_shaker:'Shaker',s_siderules:'Side rules',s_offset:'Offset / Pocketing',s_material:'Material',s_door:'Door',
       s_siderule:'Side rule',s_window:'Window',s_object:'Object',s_toppanel:'Top panel',s_wall:'Wall',s_finish:'Finish',s_room:'Room',
       f_type:'Type',f_frame:'Frame (mm)',f_size:'Shaker target (mm)',f_columns:'Columns',f_rows:'Rows',f_top:'Top',f_right:'Right',f_bottom:'Bottom',f_left:'Left',
@@ -157,7 +157,7 @@
       project:'Projeto',addroom:'+ Adicionar room',sheets:'chapas',exportdxf:'Exportar DXF',
       soon_tip:'Em breve (ainda não programado)',phase1:'Fase 2a · edição ao vivo — balanceamento exato, nesting e DXF a seguir',
       options:'Opções',theme:'Tema',light:'Claro',dark:'Escuro',language:'Idioma',
-      st_panels:'painéis',st_shaker:'Shaker',
+      st_panels:'painéis',st_shaker:'Shaker',st_total:'Total',s_pricing:'Preço',f_sheets:'Chapas',f_matcost:'Material £/chapa',f_cnccost:'CNC £/chapa',f_roomtotal:'Total do room',
       s_shaker:'Shaker',s_siderules:'Regras de lado',s_offset:'Offset / Pocketing',s_material:'Material',s_door:'Porta',
       s_siderule:'Regra do lado',s_window:'Janela',s_object:'Objeto',s_toppanel:'Painel em cima',s_wall:'Parede',s_finish:'Acabamento',s_room:'Room',
       f_type:'Tipo',f_frame:'Frame (mm)',f_size:'Alvo do shaker (mm)',f_columns:'Colunas',f_rows:'Linhas',f_top:'Topo',f_right:'Direita',f_bottom:'Baixo',f_left:'Esquerda',
@@ -195,6 +195,7 @@
       walls:[{id:'w3',name:'Wall 1',width:3500,height:3200,panelDir:'vertical',panelHeight:3000,colTarget:340,openings:[
         {id:'o3',type:'object',name:'Bed',width:2000,height:1600,x:750,bottom:0}]}]}
   ]};
+  MODEL.rooms.forEach(r=>{if(r.matCost==null)r.matCost=70;if(r.cncCost==null)r.cncCost=330;});
   let sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};
   let view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};
 
@@ -248,7 +249,8 @@
   function inspectorBody(){
     if(sel.kind==='room'){const r=sel.room;
       return SEC(t('s_room'),TXT(t('f_name'),'name',r.name)+NUM(t('f_frame'),'frame',r.frame)+TXT(t('f_material'),'material',r.material)+TXT(t('f_thickness'),'thickness',r.thickness))
-        +SEC(t('s_finish'),SEGE(t('f_skirting'),'skirting',[['yes',t('v_yes')],['no',t('v_no')]],r.skirting)+NUM(t('f_skirtingh'),'skirtingH',r.skirtingH));}
+        +SEC(t('s_finish'),SEGE(t('f_skirting'),'skirting',[['yes',t('v_yes')],['no',t('v_no')]],r.skirting)+NUM(t('f_skirtingh'),'skirtingH',r.skirtingH))
+        +SEC(t('s_pricing'),NUM(t('f_sheets'),'sheets',r.sheets)+NUM(t('f_matcost'),'matCost',r.matCost)+NUM(t('f_cnccost'),'cncCost',r.cncCost)+RO(t('f_roomtotal'),money(roomTotal(r))));}
     if(sel.kind==='wall'){const w=sel.wall;
       return SEC(t('s_wall'),NUM(t('f_width'),'width',w.width)+NUM(t('f_height'),'height',w.height)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir)+NUM(t('f_panelheight'),'panelHeight',w.panelHeight))
         +SEC(t('s_shaker'),NUM(t('f_size'),'colTarget',w.colTarget));}
@@ -331,10 +333,12 @@
     thLight.textContent=t('light');thDark.textContent=t('dark');
     thLight.className=theme==='light'?'on':'';thDark.className=theme==='dark'?'on':'';
     lgEn.className=lang==='en'?'on':'';lgPt.className=lang==='pt'?'on':'';}
+  const money=n=>'£'+Math.round(+n||0).toLocaleString();
+  const roomTotal=r=>(+r.sheets||0)*((+r.matCost||0)+(+r.cncCost||0));
+  const projectTotal=()=>MODEL.rooms.reduce((s,r)=>s+roomTotal(r),0);
   function renderStatus(){const w=view.wall,r=view.room,L=w?layoutWall(w,r):{panels:[]};
     let area=0;L.panels.forEach(p=>{area+=Math.max(0,p.x1-p.x0)*Math.max(0,p.y1-p.y0);});area=area/1e6;
-    const perSheet=2.4384*1.2192*0.62; const sheets=area>0?Math.max(1,Math.ceil(area/perSheet)):0; const price=sheets*400;
-    document.getElementById('status').innerHTML=`<span class="pill">${r?r.name:''}</span><span class="pill">${L.panels.length} ${t('st_panels')}</span>`+(w?`<span>${w.width} × ${w.height} mm</span>`:'')+`<div class="spacer"></div><span>≈ ${area.toFixed(2)} m²</span><span class="pill">~${sheets} ${t('sheets')}</span><span>~£${price.toLocaleString()}</span>`;}
+    document.getElementById('status').innerHTML=`<span class="pill">${r?r.name:''}</span><span class="pill">${L.panels.length} ${t('st_panels')}</span>`+(w?`<span>${w.width} × ${w.height} mm · ≈ ${area.toFixed(2)} m²</span>`:'')+`<div class="spacer"></div><span class="pill">${t('st_total')}: ${money(projectTotal())}</span>`;}
   function renderCrumbs(){crumbs.innerHTML=`${view.room?view.room.name:''} › ${view.wall?view.wall.name:''} › <b>${titleFor()}</b>`;}
 
   // ===== interactions =====
@@ -358,7 +362,7 @@
     if(act==='wall')return addWall();
     if(act==='door'||act==='window'||act==='object')return addOpening(act);}
   function addRoom(){const id='r'+(++uid),wid='w'+(++uid);
-    MODEL.rooms.push({id,name:'New room',material:'MDF',thickness:'18mm',frame:80,doorAllow:175,skirting:'no',skirtingH:225,sheets:1,
+    MODEL.rooms.push({id,name:'New room',material:'MDF',thickness:'18mm',frame:80,doorAllow:175,skirting:'no',skirtingH:225,sheets:1,matCost:70,cncCost:330,
       walls:[{id:wid,name:'Wall 1',width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]}]});
     selectRoom(id);}
   function addWall(){const r=view.room||sel.room;if(!r)return;const wid='w'+(++uid);
@@ -391,7 +395,7 @@
       if(!walls.length)walls.push({id:'w'+(++uid),name:'Wall 1',width:+b.wallWidth||3000,height:+b.wallHeight||3200,panelDir:'vertical',panelHeight:3000,colTarget:340,openings:[]});
       rooms.push({id:'r'+(++uid),name:b.roomName||('Room '+(++rn)),material:b.material||'MDF',thickness:b.thickness||'18mm',
         frame:+b.frameSize||80,doorAllow:+b.panelDoorAllowance||175,skirting:b.panelSkirtingEnabled==='Yes'?'yes':'no',
-        skirtingH:+b.panelSkirtingHeight||225,sheets:+b.sheetQuantity||1,walls});
+        skirtingH:+b.panelSkirtingHeight||225,sheets:+b.sheetQuantity||1,matCost:+b.materialCost||70,cncCost:+b.cncServiceCost||330,walls});
     });
     if(!rooms.length)throw new Error('no panel rooms found');
     MODEL.rooms=rooms;view={room:rooms[0],wall:rooms[0].walls[0]};sel={kind:'wall',room:rooms[0],wall:rooms[0].walls[0],op:null,panelId:null};
