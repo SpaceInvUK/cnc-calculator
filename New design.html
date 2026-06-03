@@ -109,7 +109,8 @@
       <div class="spacer"></div>
       <div class="ttool">
         <input type="file" id="fileInput" accept=".json" style="display:none">
-        <button class="icobtn" id="openBtn" title="Open quote (.json)" onclick="document.getElementById('fileInput').click()">📂</button>
+        <button class="icobtn" id="openBtn" title="Open quote / project (.json)" onclick="document.getElementById('fileInput').click()">📂</button>
+        <button class="icobtn" id="saveBtn" title="Save project (.json)" onclick="saveProject()">💾</button>
         <button class="icobtn" id="gear" title="Options" onclick="toggleOpt(event)">⚙</button>
         <button>↶</button><button>↷</button>
         <button class="primary" id="exportBtn">⬇ Export DXF</button>
@@ -435,12 +436,21 @@
     const blob=new Blob([buildDXF(w,r)],{type:'application/dxf'}),a=document.createElement('a');
     a.href=URL.createObjectURL(blob);a.download=((r.name||'room')+'_'+(w.name||'wall')).replace(/[^A-Za-z0-9_-]+/g,'_')+'.dxf';
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+
+  // ===== save / load project (.json round-trip) =====
+  function downloadJSON(obj,name){const blob=new Blob([JSON.stringify(obj,null,1)],{type:'application/json'}),a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+  function saveProject(){downloadJSON({app:'fast-cnc-newdesign',version:1,rooms:MODEL.rooms},'fastcnc-project.json');}
+  function loadProject(data){if(!data||!Array.isArray(data.rooms)||!data.rooms.length)throw new Error('no rooms in project');
+    MODEL.rooms=data.rooms;MODEL.rooms.forEach(r=>{if(r.matCost==null)r.matCost=70;if(r.cncCost==null)r.cncCost=330;});
+    view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};renderAll();}
   function setTheme(th){theme=th;app.classList.toggle('dark',th==='dark');renderChrome();renderCanvas();}
   function setLang(l){lang=l;document.documentElement.lang=l;renderAll();}
   function toggleOpt(e){if(e)e.stopPropagation();optpop.classList.toggle('show');}
   document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');});
   document.getElementById('fileInput').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;
-    try{importQuote(JSON.parse(await f.text()));}catch(err){alert('Could not load this file: '+(err&&err.message||err));}e.target.value='';});
+    try{const data=JSON.parse(await f.text());if(Array.isArray(data.blocks))importQuote(data);else if(Array.isArray(data.rooms))loadProject(data);else throw new Error('unrecognized file');}
+    catch(err){alert('Could not load this file: '+(err&&err.message||err));}e.target.value='';});
   document.getElementById('exportBtn').onclick=exportDXF;
 
   renderAll();
