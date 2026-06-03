@@ -395,12 +395,36 @@
     MODEL.rooms=rooms;view={room:rooms[0],wall:rooms[0].walls[0]};sel={kind:'wall',room:rooms[0],wall:rooms[0].walls[0],op:null,panelId:null};
     renderAll();
   }
+
+  // ===== basic DXF export (current wall) =====
+  function dxfRect(layer,x0,y0,x1,y1){
+    return `0\nLWPOLYLINE\n8\n${layer}\n90\n4\n70\n1\n10\n${x0}\n20\n${y0}\n10\n${x1}\n20\n${y0}\n10\n${x1}\n20\n${y1}\n10\n${x0}\n20\n${y1}\n`;
+  }
+  function buildDXF(wall,room){
+    const L=layoutWall(wall,room),frame=L.frame,bottomF=room.skirting==='yes'?((+room.skirtingH||0)+frame):frame;
+    let ent='';
+    L.panels.forEach(p=>{
+      ent+=dxfRect('PANEL',p.x0,p.y0,p.x1,p.y1);
+      const innerX=p.x0+p.lf,innerW=(p.x1-p.x0)-p.lf-p.rf,cols=p.cols,cy0=p.y0+bottomF,cy1=p.y1-frame;
+      if(innerW>0&&cy1>cy0){const cw=(innerW-frame*(cols-1))/cols;
+        for(let i=0;i<cols;i++){const cx0=innerX+i*(cw+frame);ent+=dxfRect('SHAKER',cx0,cy0,cx0+cw,cy1);}}
+    });
+    L.ops.forEach(o=>{ent+=dxfRect('OPENING',o.x,o.bottom,o.x+o.width,o.bottom+o.height);});
+    const tables='0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n3\n'+
+      ['PANEL','SHAKER','OPENING'].map((n,i)=>`0\nLAYER\n2\n${n}\n70\n0\n62\n${[7,3,1][i]}\n6\nCONTINUOUS\n`).join('')+'0\nENDTAB\n0\nENDSEC\n';
+    return '0\nSECTION\n2\nHEADER\n0\nENDSEC\n'+tables+'0\nSECTION\n2\nENTITIES\n'+ent+'0\nENDSEC\n0\nEOF\n';
+  }
+  function exportDXF(){const w=view.wall,r=view.room;if(!w)return;
+    const blob=new Blob([buildDXF(w,r)],{type:'application/dxf'}),a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download=((r.name||'room')+'_'+(w.name||'wall')).replace(/[^A-Za-z0-9_-]+/g,'_')+'.dxf';
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
   function setTheme(th){theme=th;app.classList.toggle('dark',th==='dark');renderChrome();renderCanvas();}
   function setLang(l){lang=l;document.documentElement.lang=l;renderAll();}
   function toggleOpt(e){if(e)e.stopPropagation();optpop.classList.toggle('show');}
   document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');});
   document.getElementById('fileInput').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;
     try{importQuote(JSON.parse(await f.text()));}catch(err){alert('Could not load this file: '+(err&&err.message||err));}e.target.value='';});
+  document.getElementById('exportBtn').onclick=exportDXF;
 
   renderAll();
 </script>
