@@ -332,7 +332,9 @@
     thLight.className=theme==='light'?'on':'';thDark.className=theme==='dark'?'on':'';
     lgEn.className=lang==='en'?'on':'';lgPt.className=lang==='pt'?'on':'';}
   function renderStatus(){const w=view.wall,r=view.room,L=w?layoutWall(w,r):{panels:[]};
-    status.innerHTML=`<span class="pill">${r?r.name:''}</span><span class="pill">${L.panels.length} ${t('st_panels')}</span>`+(w?`<span>${w.width} × ${w.height} mm</span>`:'')+`<div class="spacer"></div><span>${r?r.sheets:0} ${t('sheets')}</span>`;}
+    let area=0;L.panels.forEach(p=>{area+=Math.max(0,p.x1-p.x0)*Math.max(0,p.y1-p.y0);});area=area/1e6;
+    const perSheet=2.4384*1.2192*0.62; const sheets=area>0?Math.max(1,Math.ceil(area/perSheet)):0; const price=sheets*400;
+    document.getElementById('status').innerHTML=`<span class="pill">${r?r.name:''}</span><span class="pill">${L.panels.length} ${t('st_panels')}</span>`+(w?`<span>${w.width} × ${w.height} mm</span>`:'')+`<div class="spacer"></div><span>≈ ${area.toFixed(2)} m²</span><span class="pill">~${sheets} ${t('sheets')}</span><span>~£${price.toLocaleString()}</span>`;}
   function renderCrumbs(){crumbs.innerHTML=`${view.room?view.room.name:''} › ${view.wall?view.wall.name:''} › <b>${titleFor()}</b>`;}
 
   // ===== interactions =====
