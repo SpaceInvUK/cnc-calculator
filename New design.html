@@ -301,6 +301,7 @@
     dark:{wall:'#11151c',wallBd:'#3a424e',floor:'#6b7686',dim:'#9aa3b2',pFill:'#15311f',pBd:'#22c55e',cell:'#525c6b',capFill:'#1f3a63',capBd:'#3b82f6',obj:'#202632',objBd:'#3a424e',door:'#371728',doorBd:'#ec4899',lab:'#c3cad6',sel:'#60a5fa'}};
   const pal=()=>PAL[theme];
   let vb={x:0,y:0,w:880,h:400};
+  let measureMode=false,measurePt=null,canvasXf=null;
   function applyVB(){const svg=document.getElementById('canvas').querySelector('svg');if(svg)svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);}
   function zoomAt(f,px,py){const nw=Math.max(140,Math.min(8000,vb.w*f)),r=nw/vb.w;vb.x=px-(px-vb.x)*r;vb.y=py-(py-vb.y)*r;vb.w=nw;vb.h=vb.h*r;applyVB();}
   function zoomBy(f){zoomAt(f,vb.x+vb.w/2,vb.y+vb.h/2);}
@@ -308,7 +309,7 @@
   function renderCanvas(){const P=pal(),wall=view.wall,room=view.room;if(!wall){canvas.innerHTML='';return;}
     const L=layoutWall(wall,room),W=L.W,H=L.H;
     const VB_W=880,VB_H=400,X=36,Yt=30,drawW=VB_W-X-18,drawH=VB_H-Yt-30,floorY=Yt+drawH;
-    const sx=drawW/W,sy=drawH/H,MX=x=>X+x*sx,MY=hh=>floorY-hh*sy;
+    const sx=drawW/W,sy=drawH/H,MX=x=>X+x*sx,MY=hh=>floorY-hh*sy;canvasXf={X,sx,floorY,sy};
     let s=`<svg viewBox="${vb.x} ${vb.y} ${vb.w} ${vb.h}">`;
     s+=`<rect x="${X}" y="${Yt}" width="${drawW}" height="${drawH}" fill="${P.wall}" stroke="${P.wallBd}" stroke-width="1.5"/>`;
     s+=`<line x1="${X-10}" y1="${floorY}" x2="${X+drawW+10}" y2="${floorY}" stroke="${P.floor}" stroke-width="2"/>`;
@@ -331,13 +332,17 @@
       s+=`<text x="${x+w/2}" y="${yTop+h/2+4}" text-anchor="middle" font-size="12" font-weight="800" fill="${bd}">${o.name}</text>`;
       if(selo)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
       s+='</g>';});
+    (wall.dims||[]).forEach((d,i)=>{const x1=MX(d.x1),y1=MY(d.h1),x2=MX(d.x2),y2=MY(d.h2),len=Math.round(Math.hypot(d.x2-d.x1,d.h2-d.h1)),mx=(x1+x2)/2,my=(y1+y2)/2;
+      s+=`<g class="dim" data-i="${i}" style="cursor:pointer"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${P.sel}" stroke-width="1.5"/><circle cx="${x1}" cy="${y1}" r="3" fill="${P.sel}"/><circle cx="${x2}" cy="${y2}" r="3" fill="${P.sel}"/><rect x="${mx-22}" y="${my-9}" width="44" height="15" fill="${P.wall}" stroke="${P.sel}" stroke-width=".6"/><text x="${mx}" y="${my+2}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${P.sel}">${len}</text></g>`;});
+    if(measurePt)s+=`<circle cx="${MX(measurePt.x)}" cy="${MY(measurePt.h)}" r="4" fill="none" stroke="${P.sel}" stroke-width="1.5"/>`;
     s+='</svg>';canvas.innerHTML=s;
-    canvas.querySelectorAll('.pk').forEach(g=>g.onclick=()=>{g.dataset.k==='op'?selectOpening(g.dataset.id):selectPanel(g.dataset.id);});}
+    canvas.querySelectorAll('.pk').forEach(g=>g.onclick=()=>{if(measureMode)return;g.dataset.k==='op'?selectOpening(g.dataset.id):selectPanel(g.dataset.id);});
+    document.querySelector('.stage').style.cursor=measureMode?'crosshair':'';}
 
   // ===== chrome / status / crumbs =====
   function renderChrome(){
     menu.innerHTML=['m_file','m_edit','m_view','m_insert','m_export'].map(k=>`<span>${t(k)}</span>`).join('');
-    rail.innerHTML=TOOLGROUPS.map(g=>g.map(x=>`<div class="tool ${x[2]?'on':''}" data-act="${x[1]}" title="${t('tool_'+x[1])}"><span class="ti">${svgIcon(x[0])}</span><span class="tl">${t('tool_'+x[1])}</span></div>`).join('')).join('<div class="sep"></div>');
+    rail.innerHTML=TOOLGROUPS.map(g=>g.map(x=>{const on=(x[1]==='measure'&&measureMode)||(x[1]==='select'&&!measureMode);return `<div class="tool ${on?'on':''}" data-act="${x[1]}" title="${t('tool_'+x[1])}"><span class="ti">${svgIcon(x[0])}</span><span class="tl">${t('tool_'+x[1])}</span></div>`;}).join('')).join('<div class="sep"></div>');
     rail.querySelectorAll('.tool[data-act]').forEach(el=>el.onclick=()=>toolAction(el.dataset.act));
     exportBtn.textContent='⬇ '+t('exportdxf');
     viewcube.innerHTML=`<button class="on">2D</button><button class="disabled" title="${t('soon_tip')}">2.5D</button><button class="disabled" title="${t('soon_tip')}">DXF</button>`;
@@ -381,8 +386,17 @@
     if(type==='window')return {id:'o'+(++uid),type:'window',name:'Window',width:1200,height:1100,x:cx,bottom:900};
     return {id:'o'+(++uid),type:'object',name:'Object',width:1000,height:800,x:Math.max(0,Math.round((+w.width)/2)-500),bottom:0};}
   function toolAction(act){
+    if(act==='select'){measureMode=false;measurePt=null;renderChrome();renderCanvas();return;}
+    if(act==='measure'){measureMode=!measureMode;measurePt=null;renderChrome();renderCanvas();return;}
     if(act==='wall')return addWall();
     if(act==='door'||act==='window'||act==='object')return addOpening(act);}
+  function measureClick(e){const cv=document.getElementById('canvas'),svg=cv.querySelector('svg'),wall=view.wall;if(!svg||!canvasXf||!wall)return;
+    const dimEl=e.target&&e.target.closest?e.target.closest('.dim'):null;
+    if(dimEl){(wall.dims=wall.dims||[]).splice(+dimEl.dataset.i,1);renderCanvas();saveModel();return;}
+    const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const m=svg.getScreenCTM();if(!m)return;const p=pt.matrixTransform(m.inverse());
+    const mmx=(p.x-canvasXf.X)/canvasXf.sx,mmh=(canvasXf.floorY-p.y)/canvasXf.sy;
+    if(!measurePt){measurePt={x:mmx,h:mmh};renderCanvas();}
+    else{(wall.dims=wall.dims||[]).push({x1:measurePt.x,h1:measurePt.h,x2:mmx,h2:mmh});measurePt=null;renderCanvas();saveModel();}}
   function addRoom(){pushHistory();const id='r'+(++uid),wid='w'+(++uid);
     MODEL.rooms.push({id,name:'New room',material:'MDF',thickness:'18mm',frame:80,doorAllow:175,skirting:'no',skirtingH:225,sheets:1,matCost:70,cncCost:330,
       walls:[{id:wid,name:'Wall 1',width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]}]});
@@ -467,9 +481,9 @@
   function toggleOpt(e){if(e)e.stopPropagation();optpop.classList.toggle('show');}
   document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');});
   (()=>{const cv=document.getElementById('canvas');let pan=null;
-    cv.addEventListener('mousedown',e=>{pan={sx:e.clientX,sy:e.clientY,vx:vb.x,vy:vb.y};});
-    window.addEventListener('mousemove',e=>{if(!pan)return;const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();vb.x=pan.vx-(e.clientX-pan.sx)*(vb.w/rc.width);vb.y=pan.vy-(e.clientY-pan.sy)*(vb.h/rc.height);applyVB();});
-    window.addEventListener('mouseup',()=>{pan=null;});
+    cv.addEventListener('mousedown',e=>{pan={sx:e.clientX,sy:e.clientY,vx:vb.x,vy:vb.y,moved:false};});
+    window.addEventListener('mousemove',e=>{if(!pan)return;if(Math.abs(e.clientX-pan.sx)+Math.abs(e.clientY-pan.sy)>3)pan.moved=true;const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();vb.x=pan.vx-(e.clientX-pan.sx)*(vb.w/rc.width);vb.y=pan.vy-(e.clientY-pan.sy)*(vb.h/rc.height);applyVB();});
+    window.addEventListener('mouseup',e=>{const wasClick=pan&&!pan.moved;pan=null;if(wasClick&&measureMode)measureClick(e);});
     cv.addEventListener('wheel',e=>{e.preventDefault();const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();const px=vb.x+(e.clientX-rc.left)/rc.width*vb.w,py=vb.y+(e.clientY-rc.top)/rc.height*vb.h;zoomAt(e.deltaY>0?1.12:0.89,px,py);},{passive:false});})();
   window.addEventListener('keydown',e=>{const tag=(e.target.tagName||'').toLowerCase();if(tag==='input'||tag==='textarea'||tag==='select')return;
     if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}
