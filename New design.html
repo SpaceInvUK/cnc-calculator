@@ -76,6 +76,8 @@
   .ihead{padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
   .ihead .pic{width:34px;height:34px;border-radius:9px;background:color-mix(in srgb,var(--accent) 18%,transparent);display:flex;align-items:center;justify-content:center;color:var(--accent)}
   .ihead .t{font-weight:800;font-size:14px}.ihead .s{font-size:11px;color:var(--muted)}
+  .ihead .rm{margin-left:auto;border:1px solid var(--bd);background:var(--soft);color:var(--muted);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:13px}
+  .ihead .rm:hover{color:#dc2626;border-color:#dc2626}
   .sec{padding:12px 16px;border-bottom:1px solid var(--bd)}
   .sec .lab{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800;margin-bottom:10px}
   .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
@@ -251,7 +253,8 @@
     if(sel.kind==='opening')return rn+' · '+wn+' · '+t('d_opening');
     return rn+' · '+wn;}
   function inspIcon(){if(sel.kind==='room')return 'panel';if(sel.kind==='wall')return 'wall';if(sel.kind==='opening')return sel.op.type;return 'panel';}
-  function renderInspector(){insp.innerHTML=`<div class="ihead"><div class="pic">${svgIcon(inspIcon(),1.7)}</div><div><div class="t">${titleFor()}</div><div class="s">${subFor()}</div></div></div>`+inspectorBody();}
+  function renderInspector(){const rm=(sel.kind==='opening'||sel.kind==='wall'||sel.kind==='room');
+    insp.innerHTML=`<div class="ihead"><div class="pic">${svgIcon(inspIcon(),1.7)}</div><div style="flex:1"><div class="t">${titleFor()}</div><div class="s">${subFor()}</div></div>${rm?'<button class="rm" onclick="removeSel()" title="Remove">🗑</button>':''}</div>`+inspectorBody();}
 
   // ===== tree =====
   function renderTree(){let h=`<h4>${t('project')}</h4>`;
@@ -263,7 +266,7 @@
         if(view.wall===w)(w.openings||[]).forEach(o=>{const osel=sel.kind==='opening'&&sel.op===o?'sel':'';
           h+=`<div class="node ${osel}" data-k="op" data-o="${o.id}" style="margin-left:36px"><span class="ic">${svgIcon(o.type,1.6)}</span> ${o.name}</div>`;});});
       h+='</div>';});
-    h+=`<div class="roomcard"><div class="node" style="color:var(--muted)"><span class="ic">${svgIcon('add',1.6)}</span> ${t('addroom')}</div></div>`;
+    h+=`<div class="roomcard"><div class="node" style="color:var(--muted)" onclick="addRoom()"><span class="ic">${svgIcon('add',1.6)}</span> ${t('addroom')}</div></div>`;
     tree.innerHTML=h;
     tree.querySelectorAll('.node[data-k]').forEach(n=>{const k=n.dataset.k;
       n.onclick=()=>{if(k==='room')selectRoom(n.dataset.r);else if(k==='wall')selectWall(n.dataset.r,n.dataset.w);else if(k==='op')selectOpening(n.dataset.o);};});}
@@ -304,7 +307,8 @@
   // ===== chrome / status / crumbs =====
   function renderChrome(){
     menu.innerHTML=['m_file','m_edit','m_view','m_insert','m_export'].map(k=>`<span>${t(k)}</span>`).join('');
-    rail.innerHTML=TOOLGROUPS.map(g=>g.map(x=>`<div class="tool ${x[2]?'on':''}" title="${t('tool_'+x[1])}"><span class="ti">${svgIcon(x[0])}</span><span class="tl">${t('tool_'+x[1])}</span></div>`).join('')).join('<div class="sep"></div>');
+    rail.innerHTML=TOOLGROUPS.map(g=>g.map(x=>`<div class="tool ${x[2]?'on':''}" data-act="${x[1]}" title="${t('tool_'+x[1])}"><span class="ti">${svgIcon(x[0])}</span><span class="tl">${t('tool_'+x[1])}</span></div>`).join('')).join('<div class="sep"></div>');
+    rail.querySelectorAll('.tool[data-act]').forEach(el=>el.onclick=()=>toolAction(el.dataset.act));
     exportBtn.textContent='⬇ '+t('exportdxf');
     viewcube.innerHTML=`<button class="on">2D</button><button class="disabled" title="${t('soon_tip')}">2.5D</button><button class="disabled" title="${t('soon_tip')}">DXF</button>`;
     soon.textContent=t('phase1');
@@ -327,6 +331,28 @@
   function selectWall(rid,wid){const r=MODEL.rooms.find(x=>x.id===rid),w=r.walls.find(x=>x.id===wid);view={room:r,wall:w};sel={kind:'wall',room:r,wall:w,op:null,panelId:null};renderAll();}
   function selectOpening(id){const w=view.wall,o=(w.openings||[]).find(x=>x.id===id);if(!o)return;sel={kind:'opening',room:view.room,wall:w,op:o,panelId:null};refresh();}
   function selectPanel(id){sel={kind:'panel',room:view.room,wall:view.wall,op:null,panelId:id};refresh();}
+  // ===== create / delete =====
+  let uid=100;
+  function newOpening(type,w){const cx=Math.max(0,Math.round((+w.width)/2)-410);
+    if(type==='door')return {id:'o'+(++uid),type:'door',name:'Door',width:820,height:2100,x:cx,bottom:0};
+    if(type==='window')return {id:'o'+(++uid),type:'window',name:'Window',width:1200,height:1100,x:cx,bottom:900};
+    return {id:'o'+(++uid),type:'object',name:'Object',width:1000,height:800,x:Math.max(0,Math.round((+w.width)/2)-500),bottom:0};}
+  function toolAction(act){
+    if(act==='wall')return addWall();
+    if(act==='door'||act==='window'||act==='object')return addOpening(act);}
+  function addRoom(){const id='r'+(++uid),wid='w'+(++uid);
+    MODEL.rooms.push({id,name:'New room',material:'MDF',thickness:'18mm',frame:80,doorAllow:175,skirting:'no',skirtingH:225,sheets:1,
+      walls:[{id:wid,name:'Wall 1',width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]}]});
+    selectRoom(id);}
+  function addWall(){const r=view.room||sel.room;if(!r)return;const wid='w'+(++uid);
+    r.walls.push({id:wid,name:'Wall '+(r.walls.length+1),width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]});
+    selectWall(r.id,wid);}
+  function addOpening(type){const w=view.wall;if(!w)return;const o=newOpening(type,w);(w.openings=w.openings||[]).push(o);
+    sel={kind:'opening',room:view.room,wall:w,op:o,panelId:null};refresh();}
+  function removeSel(){
+    if(sel.kind==='opening'){const w=view.wall;w.openings=w.openings.filter(o=>o!==sel.op);selectWall(view.room.id,w.id);}
+    else if(sel.kind==='wall'){const r=view.room;if(r.walls.length<=1)return;r.walls=r.walls.filter(w=>w!==sel.wall);selectRoom(r.id);}
+    else if(sel.kind==='room'){if(MODEL.rooms.length<=1)return;MODEL.rooms=MODEL.rooms.filter(x=>x!==sel.room);selectRoom(MODEL.rooms[0].id);}}
   function setTheme(th){theme=th;app.classList.toggle('dark',th==='dark');renderChrome();renderCanvas();}
   function setLang(l){lang=l;document.documentElement.lang=l;renderAll();}
   function toggleOpt(e){if(e)e.stopPropagation();optpop.classList.toggle('show');}
