@@ -198,7 +198,22 @@
   let sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};
   let view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};
 
-  // ===== layout engine (Phase 2a — model-driven geometry) =====
+  // ===== shaker balancing (ported from production equalShakersForSpan) =====
+  const SHK_MIN=150,SHK_MAX=700;
+  function balancedCount(inner,frame,target){
+    inner=Math.max(0,inner);target=Math.max(1,target||340);frame=Math.max(0,frame);
+    if(!(inner>0))return 1;
+    const maxCount=Math.min(999,Math.max(1,Math.floor((inner+frame)/Math.max(1,SHK_MIN+frame))+2));
+    let best=null;
+    for(let count=1;count<=maxCount;count++){const each=(inner-frame*Math.max(0,count-1))/count;if(!(each>0))continue;
+      const outside=each<SHK_MIN?SHK_MIN-each:(each>SHK_MAX?each-SHK_MAX:0);
+      const natural=Math.max(1,Math.round((inner+frame)/(target+frame)));
+      const splitPen=count>natural?(count-natural)*2:0;
+      const score=outside*1000+Math.abs(each-target)+splitPen+Math.abs(count-natural)*0.25;
+      if(!best||score<best.score)best={count,score};}
+    return best?best.count:1;
+  }
+  // ===== layout engine (model-driven geometry) =====
   function layoutWall(wall,room){
     const W=+wall.width,H=+wall.height,frame=+room.frame,da=+room.doorAllow||175,target=+wall.colTarget||340;
     const maxW=wall.panelDir==='vertical'?1206:2400;
@@ -215,9 +230,7 @@
       const np=Math.max(1,Math.ceil(pw/maxW)),ew=pw/np;
       for(let i=0;i<np;i++){const px0=x0+i*ew,l=i===0?lr:'joint',r=i===np-1?rr:'joint',lf=sv(l),rf=sv(r);
         const inner=Math.max(0,ew-lf-rf);
-        let cols=Math.max(1,Math.round((inner+frame)/(target+frame))),cw=(inner-frame*(cols-1))/cols;
-        while(cw>700&&cols<24){cols++;cw=(inner-frame*(cols-1))/cols;}
-        while(cw<150&&cols>1){cols--;cw=(inner-frame*(cols-1))/cols;}
+        const cols=balancedCount(inner,frame,target);
         pid++;panels.push({id:'p'+pid,label:'P'+pid,x0:px0,x1:px0+ew,y0,y1,lf,rf,cols:Math.max(1,cols),cap:!!cap,leftRule:l,rightRule:r});}}
     spans.forEach(sp=>addPanel(sp.x0,sp.x1,sp.lr,sp.rr,0,H,false));
     ops.forEach(o=>{const top=o.bottom+o.height;if(top<H-1)addPanel(o.x,o.x+o.width,'joint','joint',top,H,true);});
