@@ -70,7 +70,7 @@
   .canvas-wrap svg .pk{cursor:pointer}
   .zoombar{position:absolute;bottom:14px;left:14px;display:flex;gap:4px;z-index:2}
   .zoombar button{border:1px solid var(--bd);background:var(--panel);width:30px;height:30px;border-radius:8px;font-size:15px;font-weight:800;color:var(--muted);cursor:pointer;box-shadow:var(--shadow)}
-  .soon{position:absolute;bottom:14px;right:14px;font-size:10.5px;color:var(--muted);background:var(--panel);border:1px dashed var(--bd);padding:4px 10px;border-radius:999px;max-width:46%}
+  .soon{position:absolute;bottom:14px;right:14px;font-size:10.5px;color:var(--muted);background:var(--panel);border:1px dashed var(--bd);padding:4px 10px;border-radius:999px;max-width:50%}
 
   .insp{grid-column:3;grid-row:3;background:var(--panel);border-left:1px solid var(--bd);overflow:auto}
   .ihead{padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
@@ -82,6 +82,8 @@
   .row:last-child{margin-bottom:0}
   .row label{font-size:12.5px;color:var(--text)}
   .row .val{font-size:12.5px;font-weight:700;background:var(--soft);border:1px solid var(--bd);border-radius:8px;padding:5px 10px;min-width:64px;text-align:center}
+  .row input.val{width:80px;font-family:inherit;outline:none}
+  .row input.val:focus{border-color:var(--accent)}
   .seg{display:flex;background:var(--soft);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
   .seg span{padding:5px 11px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
   .seg span.on{background:var(--accent);color:#fff}
@@ -135,31 +137,31 @@
     en:{m_file:'File',m_edit:'Edit',m_view:'View',m_insert:'Insert',m_export:'Export',
       tool_select:'Select',tool_wall:'Wall',tool_door:'Door',tool_window:'Window',tool_object:'Object',tool_panel:'Panel',tool_measure:'Measure',tool_pan:'Pan',tool_zoom:'Zoom',tool_export:'Export',
       project:'Project',addroom:'+ Add room',sheets:'sheets',exportdxf:'Export DXF',
-      soon_tip:'Coming soon (not programmed yet)',phase1:'Phase 1 · visual shell — engine comes in Phase 2',
+      soon_tip:'Coming soon (not programmed yet)',phase1:'Phase 2a · live editing — exact balancing, nesting & DXF next',
       options:'Options',theme:'Theme',light:'Light',dark:'Dark',language:'Language',
-      st_panels:'panels',st_used:'sheets · 62.4% used',st_shaker:'Shaker',st_total:'Total',
+      st_panels:'panels',st_shaker:'Shaker',
       s_shaker:'Shaker',s_siderules:'Side rules',s_offset:'Offset / Pocketing',s_material:'Material',s_door:'Door',
       s_siderule:'Side rule',s_window:'Window',s_object:'Object',s_toppanel:'Top panel',s_wall:'Wall',s_finish:'Finish',s_room:'Room',
-      f_type:'Type',f_frame:'Frame (mm)',f_size:'Size',f_columns:'Columns',f_rows:'Rows',f_top:'Top',f_right:'Right',f_bottom:'Bottom',f_left:'Left',
+      f_type:'Type',f_frame:'Frame (mm)',f_size:'Shaker target (mm)',f_columns:'Columns',f_rows:'Rows',f_top:'Top',f_right:'Right',f_bottom:'Bottom',f_left:'Left',
       f_width:'Width (mm)',f_height:'Height (mm)',f_posx:'Position X',f_measfrom:'Measure X from',f_sill:'Sill (mm)',
       f_name:'Name',f_base:'Base (mm)',f_createtop:'Create top panel',f_bottomshaker:'Bottom to Shaker',
       f_paneldir:'Panel direction',f_panelheight:'Panel height',f_material:'Material',f_thickness:'Thickness',f_skirting:'Skirting',f_skirtingh:'Skirting height',f_panelsbeside:'Panels beside',
       v_auto:'Auto',v_lock:'Lock',v_h:'Horizontal',v_v:'Vertical',v_yes:'Yes',v_no:'No',v_left:'Left',v_right:'Right',
-      d_vertical:'vertical',d_opening:'opening',d_object:'object',d_room:'room',lab_panel:'Panel',lab_object:'Object'},
+      d_opening:'opening',d_room:'room'},
     pt:{m_file:'Arquivo',m_edit:'Editar',m_view:'Ver',m_insert:'Inserir',m_export:'Exportar',
       tool_select:'Selecionar',tool_wall:'Parede',tool_door:'Porta',tool_window:'Janela',tool_object:'Objeto',tool_panel:'Painel',tool_measure:'Medir',tool_pan:'Mover',tool_zoom:'Zoom',tool_export:'Exportar',
       project:'Projeto',addroom:'+ Adicionar room',sheets:'chapas',exportdxf:'Exportar DXF',
-      soon_tip:'Em breve (ainda não programado)',phase1:'Fase 1 · shell visual — motor entra na Fase 2',
+      soon_tip:'Em breve (ainda não programado)',phase1:'Fase 2a · edição ao vivo — balanceamento exato, nesting e DXF a seguir',
       options:'Opções',theme:'Tema',light:'Claro',dark:'Escuro',language:'Idioma',
-      st_panels:'painéis',st_used:'chapas · 62.4% usado',st_shaker:'Shaker',st_total:'Total',
+      st_panels:'painéis',st_shaker:'Shaker',
       s_shaker:'Shaker',s_siderules:'Regras de lado',s_offset:'Offset / Pocketing',s_material:'Material',s_door:'Porta',
       s_siderule:'Regra do lado',s_window:'Janela',s_object:'Objeto',s_toppanel:'Painel em cima',s_wall:'Parede',s_finish:'Acabamento',s_room:'Room',
-      f_type:'Tipo',f_frame:'Frame (mm)',f_size:'Tamanho',f_columns:'Colunas',f_rows:'Linhas',f_top:'Topo',f_right:'Direita',f_bottom:'Baixo',f_left:'Esquerda',
+      f_type:'Tipo',f_frame:'Frame (mm)',f_size:'Alvo do shaker (mm)',f_columns:'Colunas',f_rows:'Linhas',f_top:'Topo',f_right:'Direita',f_bottom:'Baixo',f_left:'Esquerda',
       f_width:'Largura (mm)',f_height:'Altura (mm)',f_posx:'Posição X',f_measfrom:'Medir X de',f_sill:'Peitoril (mm)',
       f_name:'Nome',f_base:'Base (mm)',f_createtop:'Criar painel no topo',f_bottomshaker:'Bottom to Shaker',
       f_paneldir:'Direção painel',f_panelheight:'Altura painel',f_material:'Material',f_thickness:'Espessura',f_skirting:'Skirting',f_skirtingh:'Altura skirting',f_panelsbeside:'Painéis ao lado',
       v_auto:'Auto',v_lock:'Lock',v_h:'Horizontal',v_v:'Vertical',v_yes:'Sim',v_no:'Não',v_left:'Esq',v_right:'Dir',
-      d_vertical:'vertical',d_opening:'abertura',d_object:'objeto',d_room:'cômodo',lab_panel:'Painel',lab_object:'Objeto'}
+      d_opening:'abertura',d_room:'cômodo'}
   };
   let lang='en', theme='light';
   const t=k=>(STR[lang]&&STR[lang][k])||STR.en[k]||k;
@@ -177,100 +179,154 @@
     [['ruler','measure'],['hand','pan'],['zoom','zoom']]
   ];
 
-  // ===== project data =====
-  const PROJECT=[
-    {type:'room',name:'Bedroom 2',sheets:5,open:true,children:[
-      {type:'wall',name:'Wall 1 — 5909×3200',children:[{type:'panel',name:'P1V'},{type:'panel',name:'P3V'},{type:'door',name:'Door'},{type:'object',name:'BED'}]}
-    ]},
-    {type:'room',name:'Ensuite 2',sheets:4},
-    {type:'room',name:'Principle bedroom',sheets:3}
-  ];
-  let selected={type:'panel',name:'P3V'};
+  // ===== data model =====
+  const MODEL={rooms:[
+    {id:'r1',name:'Bedroom 2',material:'MDF Hidrófugo',thickness:'22mm',frame:80,doorAllow:175,skirting:'yes',skirtingH:225,sheets:5,
+      walls:[{id:'w1',name:'Wall 1',width:5909,height:3200,panelDir:'vertical',panelHeight:2800,colTarget:340,openings:[
+        {id:'o1',type:'object',name:'BED',width:2000,height:1600,x:750,bottom:0},
+        {id:'o2',type:'door',name:'Door',width:820,height:2100,x:4134,bottom:0}]}]},
+    {id:'r2',name:'Ensuite 2',material:'MDF Hidrófugo',thickness:'22mm',frame:80,doorAllow:175,skirting:'yes',skirtingH:225,sheets:4,
+      walls:[{id:'w2',name:'Wall 1',width:1911,height:3200,panelDir:'horizontal',panelHeight:1030,colTarget:340,openings:[]}]},
+    {id:'r3',name:'Principle bedroom',material:'MDF Hidrófugo',thickness:'22mm',frame:80,doorAllow:175,skirting:'yes',skirtingH:225,sheets:3,
+      walls:[{id:'w3',name:'Wall 1',width:3500,height:3200,panelDir:'vertical',panelHeight:3000,colTarget:340,openings:[
+        {id:'o3',type:'object',name:'Bed',width:2000,height:1600,x:750,bottom:0}]}]}
+  ]};
+  let sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};
+  let view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};
 
-  // ===== inspector (one contextual panel, DRY templates) =====
-  const F=(l,v)=>`<div class="row"><label>${l}</label><div class="val">${v}</div></div>`;
-  const SEG=(l,opts,on)=>`<div class="row"><label>${l}</label><div class="seg">${opts.map((o,i)=>`<span class="${i===on?'on':''}">${o}</span>`).join('')}</div></div>`;
-  const SEC=(lab,body)=>`<div class="sec"><div class="lab">${lab}</div>${body}</div>`;
-  function inspectorBody(){
-    const ty=selected.type;
-    if(ty==='door') return SEC(t('s_door'),F(t('f_width'),'820')+F(t('f_height'),'2100')+F(t('f_posx'),'4134')+SEG(t('f_measfrom'),[t('v_left'),t('v_right')],0))+SEC(t('s_siderule'),F(t('f_panelsbeside'),'Door = 175'));
-    if(ty==='window') return SEC(t('s_window'),F(t('f_width'),'1200')+F(t('f_height'),'1100')+F(t('f_sill'),'900')+F(t('f_posx'),t('v_auto')));
-    if(ty==='object') return SEC(t('s_object'),F(t('f_name'),'BED')+F(t('f_width'),'2000')+F(t('f_height'),'1600')+F(t('f_base'),'0'))+SEC(t('s_toppanel'),SEG(t('f_createtop'),[t('v_yes'),t('v_no')],0)+F(t('f_bottomshaker'),t('v_auto')));
-    if(ty==='wall') return SEC(t('s_wall'),F(t('f_width'),'5909')+F(t('f_height'),'3200')+SEG(t('f_paneldir'),[t('v_h'),t('v_v')],1)+F(t('f_panelheight'),'2800'));
-    if(ty==='room') return SEC(t('s_room'),F(t('f_name'),selected.name)+F(t('f_material'),'MDF Hidrófugo')+F(t('f_thickness'),'22mm')+F(t('f_frame'),'80'))+SEC(t('s_finish'),SEG(t('f_skirting'),[t('v_yes'),t('v_no')],0)+F(t('f_skirtingh'),'225'));
-    return SEC(t('s_shaker'),SEG(t('f_type'),['Flat','Shaker','Reeded'],1)+F(t('f_frame'),'80')+SEG(t('f_size'),[t('v_auto'),t('v_lock')],0)+F(t('f_columns'),'2')+F(t('f_rows'),t('v_auto')))+
-      SEC(t('s_siderules'),F(t('f_top'),'Normal')+F(t('f_right'),'Joint')+F(t('f_bottom'),'Normal')+F(t('f_left'),'Joint'))+
-      SEC(t('s_offset'),'<div class="chips"><span class="chip">A 0</span><span class="chip">B 6</span><span class="chip">C 8</span><span class="chip">D 19</span><span class="chip">E 25</span><span class="chip">F 28.5</span><span class="chip warn">Back 80</span></div>')+
-      SEC(t('s_material'),F('MDF Hidrófugo','22mm'));
+  // ===== layout engine (Phase 2a — model-driven geometry) =====
+  function layoutWall(wall,room){
+    const W=+wall.width,H=+wall.height,frame=+room.frame,da=+room.doorAllow||175,target=+wall.colTarget||340;
+    const maxW=wall.panelDir==='vertical'?1206:2400;
+    const sv=r=>r==='joint'?frame/2:(r==='door'?da:frame);
+    const ops=(wall.openings||[]).map(o=>({...o,x:+o.x,width:+o.width,height:+o.height,bottom:+(o.bottom||0)})).sort((a,b)=>a.x-b.x);
+    const spans=[];let cursor=0,leftRule='normal';
+    ops.forEach(o=>{const x0=Math.max(0,Math.min(W,o.x)),x1=Math.max(x0,Math.min(W,o.x+o.width));
+      const r=o.type==='door'?'door':'normal';
+      if(x0>cursor+0.5)spans.push({x0:cursor,x1:x0,lr:leftRule,rr:r});
+      cursor=Math.max(cursor,x1);leftRule=r;});
+    if(cursor<W-0.5)spans.push({x0:cursor,x1:W,lr:leftRule,rr:'normal'});
+    const panels=[];let pid=0;
+    function addPanel(x0,x1,lr,rr,y0,y1,cap){const pw=x1-x0;if(pw<=2)return;
+      const np=Math.max(1,Math.ceil(pw/maxW)),ew=pw/np;
+      for(let i=0;i<np;i++){const px0=x0+i*ew,l=i===0?lr:'joint',r=i===np-1?rr:'joint',lf=sv(l),rf=sv(r);
+        const inner=Math.max(0,ew-lf-rf);
+        let cols=Math.max(1,Math.round((inner+frame)/(target+frame))),cw=(inner-frame*(cols-1))/cols;
+        while(cw>700&&cols<24){cols++;cw=(inner-frame*(cols-1))/cols;}
+        while(cw<150&&cols>1){cols--;cw=(inner-frame*(cols-1))/cols;}
+        pid++;panels.push({id:'p'+pid,label:'P'+pid,x0:px0,x1:px0+ew,y0,y1,lf,rf,cols:Math.max(1,cols),cap:!!cap,leftRule:l,rightRule:r});}}
+    spans.forEach(sp=>addPanel(sp.x0,sp.x1,sp.lr,sp.rr,0,H,false));
+    ops.forEach(o=>{const top=o.bottom+o.height;if(top<H-1)addPanel(o.x,o.x+o.width,'joint','joint',top,H,true);});
+    return {W,H,frame,ops,panels};
   }
-  function subFor(){const m={panel:'Bedroom 2 · Wall 1 · '+t('d_vertical'),door:'Bedroom 2 · Wall 1 · '+t('d_opening'),window:t('d_opening'),object:'Bedroom 2 · Wall 1 · '+t('d_object'),wall:'Bedroom 2',room:t('d_room')};return m[selected.type]||'';}
-  function titleFor(){const m={panel:t('lab_panel')+' '+selected.name,door:selected.name,window:t('s_window'),object:t('lab_object')+' '+selected.name,wall:selected.name,room:selected.name};return m[selected.type]||selected.name;}
-  function renderInspector(){const ic=selected.type==='room'?'wall':selected.type;
-    insp.innerHTML=`<div class="ihead"><div class="pic">${svgIcon(ic,1.7)}</div><div><div class="t">${titleFor()}</div><div class="s">${subFor()}</div></div></div>`+inspectorBody();}
+  const ruleName=r=>r==='joint'?'Joint':(r==='door'?'Door':'Normal');
+
+  // ===== inspector (one contextual panel, editable) =====
+  const SEC=(lab,body)=>`<div class="sec"><div class="lab">${lab}</div>${body}</div>`;
+  const RO=(l,v)=>`<div class="row"><label>${l}</label><div class="val">${v}</div></div>`;
+  const NUM=(l,f,v)=>`<div class="row"><label>${l}</label><input class="val" type="number" value="${v==null?'':v}" onchange="edit('${f}',this.value)"></div>`;
+  const TXT=(l,f,v)=>`<div class="row"><label>${l}</label><input class="val" type="text" value="${v==null?'':v}" onchange="edit('${f}',this.value)"></div>`;
+  const SEGE=(l,f,opts,val)=>`<div class="row"><label>${l}</label><div class="seg">${opts.map(o=>`<span class="${o[0]===val?'on':''}" onclick="editSeg('${f}','${o[0]}')">${o[1]}</span>`).join('')}</div></div>`;
+  function selPanel(){if(sel.kind!=='panel'||!view.wall)return null;return layoutWall(view.wall,view.room).panels.find(p=>p.id===sel.panelId)||null;}
+  function inspectorBody(){
+    if(sel.kind==='room'){const r=sel.room;
+      return SEC(t('s_room'),TXT(t('f_name'),'name',r.name)+NUM(t('f_frame'),'frame',r.frame)+TXT(t('f_material'),'material',r.material)+TXT(t('f_thickness'),'thickness',r.thickness))
+        +SEC(t('s_finish'),SEGE(t('f_skirting'),'skirting',[['yes',t('v_yes')],['no',t('v_no')]],r.skirting)+NUM(t('f_skirtingh'),'skirtingH',r.skirtingH));}
+    if(sel.kind==='wall'){const w=sel.wall;
+      return SEC(t('s_wall'),NUM(t('f_width'),'width',w.width)+NUM(t('f_height'),'height',w.height)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir)+NUM(t('f_panelheight'),'panelHeight',w.panelHeight))
+        +SEC(t('s_shaker'),NUM(t('f_size'),'colTarget',w.colTarget));}
+    if(sel.kind==='opening'){const o=sel.op;
+      if(o.type==='door')return SEC(t('s_door'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_posx'),'x',o.x))+SEC(t('s_siderule'),RO(t('f_panelsbeside'),'Door = '+((+sel.room.doorAllow)||175)));
+      if(o.type==='window')return SEC(t('s_window'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_sill'),'bottom',o.bottom)+NUM(t('f_posx'),'x',o.x));
+      return SEC(t('s_object'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_base'),'bottom',o.bottom))+SEC(t('s_toppanel'),RO(t('f_createtop'),t('v_yes')));}
+    const p=selPanel(),w=view.wall;
+    return SEC(t('s_shaker'),SEGE(t('f_type'),'shakerType',[['shaker','Shaker'],['flat','Flat'],['reeded','Reeded']],w.shakerType||'shaker')+RO(t('f_columns'),p?p.cols:'—')+NUM(t('f_size'),'colTarget',w.colTarget)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir))
+      +SEC(t('s_siderules'),RO(t('f_left'),p?ruleName(p.leftRule):'—')+RO(t('f_right'),p?ruleName(p.rightRule):'—'))
+      +SEC(t('s_offset'),'<div class="chips"><span class="chip">A 0</span><span class="chip">B 6</span><span class="chip">C 8</span><span class="chip">D 19</span><span class="chip">E 25</span><span class="chip">F 28.5</span><span class="chip warn">Back 80</span></div>');
+  }
+  function titleFor(){if(sel.kind==='room')return sel.room.name;if(sel.kind==='wall')return sel.wall.name;if(sel.kind==='opening')return sel.op.name;const p=selPanel();return 'Panel '+(p?p.label:'');}
+  function subFor(){const rn=view.room?view.room.name:'',wn=view.wall?view.wall.name:'';
+    if(sel.kind==='room')return t('d_room');
+    if(sel.kind==='wall')return rn;
+    if(sel.kind==='opening')return rn+' · '+wn+' · '+t('d_opening');
+    return rn+' · '+wn;}
+  function inspIcon(){if(sel.kind==='room')return 'panel';if(sel.kind==='wall')return 'wall';if(sel.kind==='opening')return sel.op.type;return 'panel';}
+  function renderInspector(){insp.innerHTML=`<div class="ihead"><div class="pic">${svgIcon(inspIcon(),1.7)}</div><div><div class="t">${titleFor()}</div><div class="s">${subFor()}</div></div></div>`+inspectorBody();}
 
   // ===== tree =====
-  function node(item,depth){const sel=item.name===selected.name?'sel':'';
-    return `<div class="node ${sel}" data-sel="1" data-type="${item.type}" data-name="${item.name}" style="margin-left:${depth*18}px">`+
-      `<span class="ic">${svgIcon(item.type==='room'?'wall':item.type,1.6)}</span> ${item.name}`+(item.sheets?`<span class="tag">${item.sheets} ${t('sheets')}</span>`:'')+`</div>`;}
   function renderTree(){let h=`<h4>${t('project')}</h4>`;
-    PROJECT.forEach(r=>{h+='<div class="roomcard">'+node(r,0);if(r.open&&r.children)r.children.forEach(w=>{h+=node(w,1);(w.children||[]).forEach(c=>h+=node(c,2));});h+='</div>';});
+    MODEL.rooms.forEach(r=>{h+='<div class="roomcard">';
+      const rsel=sel.kind==='room'&&sel.room===r?'sel':'';
+      h+=`<div class="node ${rsel}" data-k="room" data-r="${r.id}"><span class="ic">${svgIcon('panel',1.6)}</span> ${r.name}<span class="tag">${r.sheets} ${t('sheets')}</span></div>`;
+      r.walls.forEach(w=>{const wsel=sel.kind==='wall'&&sel.wall===w?'sel':'';
+        h+=`<div class="node ${wsel}" data-k="wall" data-r="${r.id}" data-w="${w.id}" style="margin-left:18px"><span class="ic">${svgIcon('wall',1.6)}</span> ${w.name} · ${w.width}×${w.height}</div>`;
+        if(view.wall===w)(w.openings||[]).forEach(o=>{const osel=sel.kind==='opening'&&sel.op===o?'sel':'';
+          h+=`<div class="node ${osel}" data-k="op" data-o="${o.id}" style="margin-left:36px"><span class="ic">${svgIcon(o.type,1.6)}</span> ${o.name}</div>`;});});
+      h+='</div>';});
     h+=`<div class="roomcard"><div class="node" style="color:var(--muted)"><span class="ic">${svgIcon('add',1.6)}</span> ${t('addroom')}</div></div>`;
-    tree.innerHTML=h;tree.querySelectorAll('.node[data-sel]').forEach(n=>n.onclick=()=>select(n.dataset.type,n.dataset.name));}
+    tree.innerHTML=h;
+    tree.querySelectorAll('.node[data-k]').forEach(n=>{const k=n.dataset.k;
+      n.onclick=()=>{if(k==='room')selectRoom(n.dataset.r);else if(k==='wall')selectWall(n.dataset.r,n.dataset.w);else if(k==='op')selectOpening(n.dataset.o);};});}
 
-  // ===== canvas elevation (theme-aware palette) =====
-  const PAL={light:{wall:'#f8fafc',wallBd:'#94a3b8',floor:'#475569',dim:'#64748b',pFill:'#dcfce7',pBd:'#16a34a',cell:'#ffffff',capFill:'#dbeafe',capBd:'#2563eb',obj:'#eef2f7',objBd:'#94a3b8',objTx:'#64748b',door:'#fde7ef',doorBd:'#db2777',lab:'#475569',sel:'#2563eb'},
-    dark:{wall:'#11151c',wallBd:'#3a424e',floor:'#6b7686',dim:'#9aa3b2',pFill:'#15311f',pBd:'#22c55e',cell:'#10151b',capFill:'#16233f',capBd:'#3b82f6',obj:'#161b22',objBd:'#3a424e',objTx:'#9aa3b2',door:'#371728',doorBd:'#ec4899',lab:'#c3cad6',sel:'#60a5fa'}};
+  // ===== canvas (theme-aware, model-driven) =====
+  const PAL={light:{wall:'#f8fafc',wallBd:'#94a3b8',floor:'#475569',dim:'#64748b',pFill:'#dcfce7',pBd:'#16a34a',cell:'#ffffff',capFill:'#dbeafe',capBd:'#2563eb',obj:'#eef2f7',objBd:'#94a3b8',door:'#fde7ef',doorBd:'#db2777',lab:'#475569',sel:'#2563eb'},
+    dark:{wall:'#11151c',wallBd:'#3a424e',floor:'#6b7686',dim:'#9aa3b2',pFill:'#15311f',pBd:'#22c55e',cell:'#10151b',capFill:'#16233f',capBd:'#3b82f6',obj:'#161b22',objBd:'#3a424e',door:'#371728',doorBd:'#ec4899',lab:'#c3cad6',sel:'#60a5fa'}};
   const pal=()=>PAL[theme];
-  function panelGroup(x,y,w,h,cols,o){o=o||{};const P=pal();const fill=o.fill||P.pFill,stroke=o.stroke||P.pBd,fr=8;
-    let s=`<g class="pk" data-type="${o.dtype||'panel'}" data-name="${o.label||''}">`;
-    s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
-    const iw=w-fr*2,cw=(iw-fr*(cols-1))/cols;
-    for(let i=0;i<cols;i++){const cx=x+fr+i*(cw+fr);
-      s+=`<rect x="${cx}" y="${y+fr}" width="${cw}" height="${h-fr*2}" rx="2" fill="${P.cell}" stroke="${stroke}" stroke-width="1"/>`;
-      for(let r=1;r<3;r++){const lx=cx+cw*r/3;s+=`<line x1="${lx}" y1="${y+fr+4}" x2="${lx}" y2="${y+h-fr-4}" stroke="${stroke}" stroke-opacity=".4"/>`;}}
-    if(o.sel){s+=`<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="5" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
-      [[x-3,y-3],[x+w+3,y-3],[x-3,y+h+3],[x+w+3,y+h+3]].forEach(p=>s+=`<rect x="${p[0]-3}" y="${p[1]-3}" width="6" height="6" fill="${P.sel}"/>`);}
-    if(o.label)s+=`<text x="${x+w/2}" y="${y-8}" text-anchor="middle" font-size="11" font-weight="700" fill="${o.sel?P.sel:P.lab}">${o.label}</text>`;
-    return s+'</g>';}
-  function wallSVG(){const P=pal(),X=40,Y=46,W=800,H=300,floor=Y+H,sel=n=>selected.name===n;
-    let s=`<svg viewBox="0 0 880 400">`;
-    s+=`<rect x="${X}" y="${Y}" width="${W}" height="${H}" fill="${P.wall}" stroke="${P.wallBd}" stroke-width="1.5"/>`;
-    s+=`<line x1="${X-10}" y1="${floor}" x2="${X+W+10}" y2="${floor}" stroke="${P.floor}" stroke-width="2"/>`;
-    s+=`<text x="${X+W/2}" y="${Y-22}" text-anchor="middle" font-size="12" fill="${P.dim}">5909 mm</text>`;
-    s+=`<text x="${X-20}" y="${Y+H/2}" text-anchor="middle" font-size="12" fill="${P.dim}" transform="rotate(-90 ${X-20} ${Y+H/2})">3200 mm</text>`;
-    s+=panelGroup(X+8,Y+10,120,H-20,2,{label:'P1V',sel:sel('P1V')});
-    const bx=X+150,bw=210,bedTop=Y+150;
-    s+=panelGroup(bx,Y+10,bw,130,4,{label:'P5V',fill:P.capFill,stroke:P.capBd,sel:sel('P5V')});
-    s+=`<g class="pk" data-type="object" data-name="BED"><rect x="${bx}" y="${bedTop}" width="${bw}" height="${floor-bedTop}" fill="${P.obj}" stroke="${P.objBd}" stroke-dasharray="5 4" stroke-width="1.3"/>`;
-    s+=`<text x="${bx+bw/2}" y="${bedTop+(floor-bedTop)/2}" text-anchor="middle" font-size="13" font-weight="800" fill="${P.objTx}">BED</text></g>`;
-    s+=panelGroup(X+372,Y+10,90,H-20,2,{label:'P2V',sel:sel('P2V')});
-    s+=panelGroup(X+470,Y+10,70,H-20,1,{label:'P3V',sel:sel('P3V')});
-    const dx=X+552,dw=90,dtop=Y+95;
-    s+=`<g class="pk" data-type="door" data-name="Door"><rect x="${dx}" y="${dtop}" width="${dw}" height="${floor-dtop}" rx="3" fill="${P.door}" stroke="${P.doorBd}" stroke-width="1.5"/>`;
-    s+=`<text x="${dx+dw/2}" y="${dtop-8}" text-anchor="middle" font-size="11" font-weight="700" fill="${P.doorBd}">DOOR</text></g>`;
-    s+=panelGroup(X+654,Y+10,138,H-20,2,{label:'P4V',sel:sel('P4V')});
-    return s+'</svg>';}
-  function renderCanvas(){canvas.innerHTML=wallSVG();canvas.querySelectorAll('.pk').forEach(g=>g.onclick=()=>select(g.dataset.type,g.dataset.name));}
+  function renderCanvas(){const P=pal(),wall=view.wall,room=view.room;if(!wall){canvas.innerHTML='';return;}
+    const L=layoutWall(wall,room),W=L.W,H=L.H;
+    const VB_W=880,VB_H=400,X=48,Yt=44,drawW=VB_W-X-34,drawH=VB_H-Yt-46,floorY=Yt+drawH;
+    const sx=drawW/W,sy=drawH/H,MX=x=>X+x*sx,MY=hh=>floorY-hh*sy;
+    let s=`<svg viewBox="0 0 ${VB_W} ${VB_H}">`;
+    s+=`<rect x="${X}" y="${Yt}" width="${drawW}" height="${drawH}" fill="${P.wall}" stroke="${P.wallBd}" stroke-width="1.5"/>`;
+    s+=`<line x1="${X-10}" y1="${floorY}" x2="${X+drawW+10}" y2="${floorY}" stroke="${P.floor}" stroke-width="2"/>`;
+    s+=`<text x="${X+drawW/2}" y="${Yt-18}" text-anchor="middle" font-size="12" fill="${P.dim}">${W} mm</text>`;
+    s+=`<text x="${X-26}" y="${Yt+drawH/2}" text-anchor="middle" font-size="12" fill="${P.dim}" transform="rotate(-90 ${X-26} ${Yt+drawH/2})">${H} mm</text>`;
+    const tf=L.frame*sy,bf=(room.skirting==='yes'?(+room.skirtingH+L.frame):L.frame)*sy,gap=L.frame*sx;
+    L.panels.forEach(p=>{const x=MX(p.x0),w=(p.x1-p.x0)*sx,yTop=MY(p.y1),h=(p.y1-p.y0)*sy;
+      const stroke=p.cap?P.capBd:P.pBd,fill=p.cap?P.capFill:P.pFill,selp=sel.kind==='panel'&&sel.panelId===p.id;
+      s+=`<g class="pk" data-k="panel" data-id="${p.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
+      const ix=x+p.lf*sx,iw=Math.max(0,w-(p.lf+p.rf)*sx),iy=yTop+tf,ih=Math.max(0,h-tf-bf),cols=p.cols,cw=(iw-gap*(cols-1))/cols;
+      for(let i=0;i<cols;i++){const cx=ix+i*(cw+gap);s+=`<rect x="${cx}" y="${iy}" width="${Math.max(0,cw)}" height="${ih}" rx="2" fill="${P.cell}" stroke="${stroke}" stroke-width="1"/>`;
+        for(let rr=1;rr<3;rr++){const lx=cx+cw*rr/3;s+=`<line x1="${lx}" y1="${iy+3}" x2="${lx}" y2="${iy+ih-3}" stroke="${stroke}" stroke-opacity=".4"/>`;}}
+      s+=`<text x="${x+w/2}" y="${yTop-5}" text-anchor="middle" font-size="10" font-weight="700" fill="${selp?P.sel:P.lab}">${p.label}</text>`;
+      if(selp)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" rx="5" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
+      s+='</g>';});
+    L.ops.forEach(o=>{const x=MX(o.x),w=o.width*sx,yTop=MY(o.bottom+o.height),h=o.height*sy;
+      const isDoor=o.type==='door',isWin=o.type==='window',fill=isDoor?P.door:(isWin?P.capFill:P.obj),bd=isDoor?P.doorBd:(isWin?P.capBd:P.objBd);
+      const selo=sel.kind==='opening'&&sel.op&&sel.op.id===o.id;
+      s+=`<g class="pk" data-k="op" data-id="${o.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="${bd}" stroke-width="1.5" ${o.type==='object'?'stroke-dasharray="5 4"':''}/>`;
+      s+=`<text x="${x+w/2}" y="${yTop+h/2+4}" text-anchor="middle" font-size="12" font-weight="800" fill="${bd}">${o.name}</text>`;
+      if(selo)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" rx="5" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
+      s+='</g>';});
+    s+='</svg>';canvas.innerHTML=s;
+    canvas.querySelectorAll('.pk').forEach(g=>g.onclick=()=>{g.dataset.k==='op'?selectOpening(g.dataset.id):selectPanel(g.dataset.id);});}
 
-  // ===== chrome (menu, rail, status, viewcube, options) =====
+  // ===== chrome / status / crumbs =====
   function renderChrome(){
     menu.innerHTML=['m_file','m_edit','m_view','m_insert','m_export'].map(k=>`<span>${t(k)}</span>`).join('');
     rail.innerHTML=TOOLGROUPS.map(g=>g.map(x=>`<div class="tool ${x[2]?'on':''}" title="${t('tool_'+x[1])}"><span class="ti">${svgIcon(x[0])}</span><span class="tl">${t('tool_'+x[1])}</span></div>`).join('')).join('<div class="sep"></div>');
     exportBtn.textContent='⬇ '+t('exportdxf');
     viewcube.innerHTML=`<button class="on">2D</button><button class="disabled" title="${t('soon_tip')}">2.5D</button><button class="disabled" title="${t('soon_tip')}">DXF</button>`;
     soon.textContent=t('phase1');
-    status.innerHTML=`<span class="pill">7 ${t('st_panels')}</span><span class="pill">5 ${t('st_used')}</span><span>${t('st_shaker')}: <b>336 × 645 mm</b></span><div class="spacer"></div><span>${t('st_total')}: <b>£2,480</b></span>`;
     optTitle.textContent=t('options');lblTheme.textContent=t('theme');lblLang.textContent=t('language');
     thLight.textContent=t('light');thDark.textContent=t('dark');
     thLight.className=theme==='light'?'on':'';thDark.className=theme==='dark'?'on':'';
-    lgEn.className=lang==='en'?'on':'';lgPt.className=lang==='pt'?'on':'';
-  }
-  function renderCrumbs(){crumbs.innerHTML=`Bedroom 2 › Wall 1 › <b>${selected.name}</b>`;}
-
-  function renderAll(){renderChrome();renderTree();renderInspector();renderCanvas();renderCrumbs();}
+    lgEn.className=lang==='en'?'on':'';lgPt.className=lang==='pt'?'on':'';}
+  function renderStatus(){const w=view.wall,r=view.room,L=w?layoutWall(w,r):{panels:[]};
+    status.innerHTML=`<span class="pill">${r?r.name:''}</span><span class="pill">${L.panels.length} ${t('st_panels')}</span>`+(w?`<span>${w.width} × ${w.height} mm</span>`:'')+`<div class="spacer"></div><span>${r?r.sheets:0} ${t('sheets')}</span>`;}
+  function renderCrumbs(){crumbs.innerHTML=`${view.room?view.room.name:''} › ${view.wall?view.wall.name:''} › <b>${titleFor()}</b>`;}
 
   // ===== interactions =====
-  function select(type,name){selected={type,name};renderTree();renderInspector();renderCanvas();renderCrumbs();}
+  function renderAll(){renderChrome();renderTree();renderInspector();renderCanvas();renderCrumbs();renderStatus();}
+  function refresh(){renderTree();renderInspector();renderCanvas();renderCrumbs();renderStatus();}
+  function curObj(){if(sel.kind==='room')return sel.room;if(sel.kind==='wall')return sel.wall;if(sel.kind==='opening')return sel.op;if(sel.kind==='panel')return sel.wall;return null;}
+  const coerce=v=>(v===''||v==null||isNaN(v))?v:Number(v);
+  window.edit=(f,v)=>{const o=curObj();if(!o)return;o[f]=coerce(v);renderTree();renderCanvas();renderCrumbs();renderStatus();};
+  window.editSeg=(f,v)=>{const o=curObj();if(!o)return;o[f]=v;refresh();};
+  function selectRoom(id){const r=MODEL.rooms.find(x=>x.id===id);if(!r)return;view={room:r,wall:r.walls[0]||null};sel={kind:'room',room:r,wall:view.wall,op:null,panelId:null};renderAll();}
+  function selectWall(rid,wid){const r=MODEL.rooms.find(x=>x.id===rid),w=r.walls.find(x=>x.id===wid);view={room:r,wall:w};sel={kind:'wall',room:r,wall:w,op:null,panelId:null};renderAll();}
+  function selectOpening(id){const w=view.wall,o=(w.openings||[]).find(x=>x.id===id);if(!o)return;sel={kind:'opening',room:view.room,wall:w,op:o,panelId:null};refresh();}
+  function selectPanel(id){sel={kind:'panel',room:view.room,wall:view.wall,op:null,panelId:id};refresh();}
   function setTheme(th){theme=th;app.classList.toggle('dark',th==='dark');renderChrome();renderCanvas();}
   function setLang(l){lang=l;document.documentElement.lang=l;renderAll();}
   function toggleOpt(e){if(e)e.stopPropagation();optpop.classList.toggle('show');}
