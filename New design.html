@@ -9,7 +9,7 @@
   body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
 
   /* LIGHT theme (default) */
-  .app{display:grid;grid-template-columns:236px 1fr 314px;grid-template-rows:50px 46px 1fr 30px;height:100vh;width:100vw;
+  .app{display:grid;grid-template-columns:236px 1fr 314px;grid-template-rows:50px 60px 1fr 30px;height:100vh;width:100vw;
     --bg:#f5f8f7;--chrome:#ffffff;--chrome-tx:#0f172a;--rail-ico:#0f766e;--accent:#0d9488;
     --panel:#ffffff;--bd:#e6ece9;--text:#0f172a;--muted:#7b8794;--canvas:#ffffff;--soft:#f1f6f4;--hover:#eef4f2;
     --radius:12px;--shadow:0 4px 16px rgba(15,40,30,.07);--disabled:#b8c2bd}
@@ -37,9 +37,11 @@
   .optrow{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px;font-size:12.5px}
   .optrow:last-child{margin-bottom:0}
 
-  .rail{grid-column:1/4;grid-row:2;background:var(--chrome);display:flex;flex-direction:row;align-items:center;gap:6px;padding:0 12px;border-bottom:1px solid var(--bd)}
-  .rail .tool{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--rail-ico)}
-  .rail .tool svg{width:21px;height:21px}
+  .rail{grid-column:1/4;grid-row:2;background:var(--chrome);display:flex;flex-direction:row;align-items:center;gap:2px;padding:0 12px;border-bottom:1px solid var(--bd)}
+  .rail .tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:52px;padding:6px 10px;border-radius:9px;cursor:pointer;color:var(--rail-ico)}
+  .rail .tool .ti{display:flex}
+  .rail .tool .ti svg{width:20px;height:20px}
+  .rail .tool .tl{font-size:9.5px;font-weight:700;line-height:1;white-space:nowrap}
   .rail .tool:hover{background:var(--hover)}
   .rail .tool.on{background:var(--accent);color:#fff}
   .rail .tool.disabled{opacity:.4;cursor:not-allowed}
@@ -169,8 +171,11 @@
     zoom:'M10 4a6 6 0 100 12 6 6 0 000-12z M20 20l-5-5',add:'M12 5v14 M5 12h14',dxf:'M6 2h9l5 5v15H6z M14 2v6h6'};
   const svgIcon=(n,sw)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw||1.7}" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n]||''}"/></svg>`;
 
-  const TOOLS=[['cursor','select',1],['wall','wall'],['door','door'],['window','window'],['object','object'],['panel','panel'],
-    ['sep'],['ruler','measure'],['hand','pan'],['zoom','zoom'],['sep'],['dxf','export']];
+  const TOOLGROUPS=[
+    [['cursor','select',1]],
+    [['wall','wall'],['door','door'],['window','window'],['object','object'],['panel','panel']],
+    [['ruler','measure'],['hand','pan'],['zoom','zoom']]
+  ];
 
   // ===== project data =====
   const PROJECT=[
@@ -250,7 +255,7 @@
   // ===== chrome (menu, rail, status, viewcube, options) =====
   function renderChrome(){
     menu.innerHTML=['m_file','m_edit','m_view','m_insert','m_export'].map(k=>`<span>${t(k)}</span>`).join('');
-    rail.innerHTML=TOOLS.map(x=>x[0]==='sep'?'<div class="sep"></div>':`<div class="tool ${x[2]?'on':''}" title="${t('tool_'+x[1])}">${svgIcon(x[0])}</div>`).join('');
+    rail.innerHTML=TOOLGROUPS.map(g=>g.map(x=>`<div class="tool ${x[2]?'on':''}" title="${t('tool_'+x[1])}"><span class="ti">${svgIcon(x[0])}</span><span class="tl">${t('tool_'+x[1])}</span></div>`).join('')).join('<div class="sep"></div>');
     exportBtn.textContent='⬇ '+t('exportdxf');
     viewcube.innerHTML=`<button class="on">2D</button><button class="disabled" title="${t('soon_tip')}">2.5D</button><button class="disabled" title="${t('soon_tip')}">DXF</button>`;
     soon.textContent=t('phase1');
