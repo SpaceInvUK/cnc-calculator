@@ -132,7 +132,7 @@
       <div class="walltabs" id="walltabs"></div>
       <div class="viewcube" id="viewcube"></div>
       <div class="canvas-wrap" id="canvas"></div>
-      <div class="zoombar"><button>+</button><button>−</button><button>⤢</button></div>
+      <div class="zoombar"><button onclick="zoomBy(0.8)" title="Zoom in">+</button><button onclick="zoomBy(1.25)" title="Zoom out">−</button><button onclick="fitView()" title="Fit">⤢</button></div>
       <div class="soon" id="soon"></div>
     </div>
 
@@ -300,11 +300,15 @@
   const PAL={light:{wall:'#f8fafc',wallBd:'#94a3b8',floor:'#475569',dim:'#64748b',pFill:'#dcfce7',pBd:'#16a34a',cell:'#ffffff',capFill:'#dbeafe',capBd:'#2563eb',obj:'#eef2f7',objBd:'#94a3b8',door:'#fde7ef',doorBd:'#db2777',lab:'#475569',sel:'#2563eb'},
     dark:{wall:'#11151c',wallBd:'#3a424e',floor:'#6b7686',dim:'#9aa3b2',pFill:'#15311f',pBd:'#22c55e',cell:'#10151b',capFill:'#16233f',capBd:'#3b82f6',obj:'#161b22',objBd:'#3a424e',door:'#371728',doorBd:'#ec4899',lab:'#c3cad6',sel:'#60a5fa'}};
   const pal=()=>PAL[theme];
+  let vb={x:0,y:0,w:880,h:400};
+  function applyVB(){const svg=document.getElementById('canvas').querySelector('svg');if(svg)svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);}
+  function zoomBy(f){const cx=vb.x+vb.w/2,cy=vb.y+vb.h/2;vb.w=Math.max(120,Math.min(3000,vb.w*f));vb.h=vb.w*(400/880);vb.x=cx-vb.w/2;vb.y=cy-vb.h/2;applyVB();}
+  function fitView(){vb={x:0,y:0,w:880,h:400};applyVB();}
   function renderCanvas(){const P=pal(),wall=view.wall,room=view.room;if(!wall){canvas.innerHTML='';return;}
     const L=layoutWall(wall,room),W=L.W,H=L.H;
     const VB_W=880,VB_H=400,X=48,Yt=44,drawW=VB_W-X-34,drawH=VB_H-Yt-46,floorY=Yt+drawH;
     const sx=drawW/W,sy=drawH/H,MX=x=>X+x*sx,MY=hh=>floorY-hh*sy;
-    let s=`<svg viewBox="0 0 ${VB_W} ${VB_H}">`;
+    let s=`<svg viewBox="${vb.x} ${vb.y} ${vb.w} ${vb.h}">`;
     s+=`<rect x="${X}" y="${Yt}" width="${drawW}" height="${drawH}" fill="${P.wall}" stroke="${P.wallBd}" stroke-width="1.5"/>`;
     s+=`<line x1="${X-10}" y1="${floorY}" x2="${X+drawW+10}" y2="${floorY}" stroke="${P.floor}" stroke-width="2"/>`;
     s+=`<text x="${X+drawW/2}" y="${Yt-18}" text-anchor="middle" font-size="12" fill="${P.dim}">${W} mm</text>`;
@@ -360,8 +364,8 @@
   const coerce=v=>(v===''||v==null||isNaN(v))?v:Number(v);
   window.edit=(f,v)=>{const o=curObj();if(!o)return;o[f]=coerce(v);renderTree();renderCanvas();renderCrumbs();renderStatus();saveModel();};
   window.editSeg=(f,v)=>{const o=curObj();if(!o)return;o[f]=v;refresh();};
-  function selectRoom(id){const r=MODEL.rooms.find(x=>x.id===id);if(!r)return;view={room:r,wall:r.walls[0]||null};sel={kind:'room',room:r,wall:view.wall,op:null,panelId:null};renderAll();}
-  function selectWall(rid,wid){const r=MODEL.rooms.find(x=>x.id===rid),w=r.walls.find(x=>x.id===wid);view={room:r,wall:w};sel={kind:'wall',room:r,wall:w,op:null,panelId:null};renderAll();}
+  function selectRoom(id){const r=MODEL.rooms.find(x=>x.id===id);if(!r)return;view={room:r,wall:r.walls[0]||null};sel={kind:'room',room:r,wall:view.wall,op:null,panelId:null};vb={x:0,y:0,w:880,h:400};renderAll();}
+  function selectWall(rid,wid){const r=MODEL.rooms.find(x=>x.id===rid),w=r.walls.find(x=>x.id===wid);view={room:r,wall:w};sel={kind:'wall',room:r,wall:w,op:null,panelId:null};vb={x:0,y:0,w:880,h:400};renderAll();}
   function selectOpening(id){const w=view.wall,o=(w.openings||[]).find(x=>x.id===id);if(!o)return;sel={kind:'opening',room:view.room,wall:w,op:o,panelId:null};refresh();}
   function selectPanel(id){sel={kind:'panel',room:view.room,wall:view.wall,op:null,panelId:id};refresh();}
   // ===== create / delete =====
@@ -456,6 +460,11 @@
   function setLang(l){lang=l;document.documentElement.lang=l;renderAll();}
   function toggleOpt(e){if(e)e.stopPropagation();optpop.classList.toggle('show');}
   document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');});
+  (()=>{const cv=document.getElementById('canvas');let pan=null;
+    cv.addEventListener('mousedown',e=>{pan={sx:e.clientX,sy:e.clientY,vx:vb.x,vy:vb.y};});
+    window.addEventListener('mousemove',e=>{if(!pan)return;const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();vb.x=pan.vx-(e.clientX-pan.sx)*(vb.w/rc.width);vb.y=pan.vy-(e.clientY-pan.sy)*(vb.h/rc.height);applyVB();});
+    window.addEventListener('mouseup',()=>{pan=null;});
+    cv.addEventListener('wheel',e=>{e.preventDefault();zoomBy(e.deltaY>0?1.1:0.9);},{passive:false});})();
   document.getElementById('fileInput').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;
     try{const data=JSON.parse(await f.text());if(Array.isArray(data.blocks))importQuote(data);else if(Array.isArray(data.rooms))loadProject(data);else throw new Error('unrecognized file');}
     catch(err){alert('Could not load this file: '+(err&&err.message||err));}e.target.value='';});
