@@ -112,7 +112,7 @@
         <button class="icobtn" id="openBtn" title="Open quote / project (.json)" onclick="document.getElementById('fileInput').click()">📂</button>
         <button class="icobtn" id="saveBtn" title="Save project (.json)" onclick="saveProject()">💾</button>
         <button class="icobtn" id="gear" title="Options" onclick="toggleOpt(event)">⚙</button>
-        <button>↶</button><button>↷</button>
+        <button onclick="undo()" title="Undo (Ctrl+Z)">↶</button><button onclick="redo()" title="Redo (Ctrl+Y)">↷</button>
         <button class="primary" id="exportBtn">⬇ Export DXF</button>
       </div>
     </div>
@@ -362,8 +362,13 @@
   function refresh(){renderTree();renderInspector();renderCanvas();renderCrumbs();renderWallTabs();renderStatus();saveModel();}
   function curObj(){if(sel.kind==='room')return sel.room;if(sel.kind==='wall')return sel.wall;if(sel.kind==='opening')return sel.op;if(sel.kind==='panel')return sel.wall;return null;}
   const coerce=v=>(v===''||v==null||isNaN(v))?v:Number(v);
-  window.edit=(f,v)=>{const o=curObj();if(!o)return;o[f]=coerce(v);renderTree();renderCanvas();renderCrumbs();renderStatus();saveModel();};
-  window.editSeg=(f,v)=>{const o=curObj();if(!o)return;o[f]=v;refresh();};
+  let undoStack=[],redoStack=[];
+  function pushHistory(){undoStack.push(JSON.stringify(MODEL.rooms));if(undoStack.length>120)undoStack.shift();redoStack.length=0;}
+  function restoreRooms(json){MODEL.rooms=JSON.parse(json);const r=MODEL.rooms[0];view={room:r,wall:r&&r.walls[0]||null};sel={kind:'wall',room:r,wall:view.wall,op:null,panelId:null};vb={x:0,y:0,w:880,h:400};renderAll();}
+  function undo(){if(!undoStack.length)return;redoStack.push(JSON.stringify(MODEL.rooms));restoreRooms(undoStack.pop());}
+  function redo(){if(!redoStack.length)return;undoStack.push(JSON.stringify(MODEL.rooms));restoreRooms(redoStack.pop());}
+  window.edit=(f,v)=>{const o=curObj();if(!o)return;pushHistory();o[f]=coerce(v);renderTree();renderCanvas();renderCrumbs();renderStatus();saveModel();};
+  window.editSeg=(f,v)=>{const o=curObj();if(!o)return;pushHistory();o[f]=v;refresh();};
   function selectRoom(id){const r=MODEL.rooms.find(x=>x.id===id);if(!r)return;view={room:r,wall:r.walls[0]||null};sel={kind:'room',room:r,wall:view.wall,op:null,panelId:null};vb={x:0,y:0,w:880,h:400};renderAll();}
   function selectWall(rid,wid){const r=MODEL.rooms.find(x=>x.id===rid),w=r.walls.find(x=>x.id===wid);view={room:r,wall:w};sel={kind:'wall',room:r,wall:w,op:null,panelId:null};vb={x:0,y:0,w:880,h:400};renderAll();}
   function selectOpening(id){const w=view.wall,o=(w.openings||[]).find(x=>x.id===id);if(!o)return;sel={kind:'opening',room:view.room,wall:w,op:o,panelId:null};refresh();}
@@ -377,20 +382,20 @@
   function toolAction(act){
     if(act==='wall')return addWall();
     if(act==='door'||act==='window'||act==='object')return addOpening(act);}
-  function addRoom(){const id='r'+(++uid),wid='w'+(++uid);
+  function addRoom(){pushHistory();const id='r'+(++uid),wid='w'+(++uid);
     MODEL.rooms.push({id,name:'New room',material:'MDF',thickness:'18mm',frame:80,doorAllow:175,skirting:'no',skirtingH:225,sheets:1,matCost:70,cncCost:330,
       walls:[{id:wid,name:'Wall 1',width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]}]});
     selectRoom(id);}
-  function addWall(){const r=view.room||sel.room;if(!r)return;const wid='w'+(++uid);
+  function addWall(){const r=view.room||sel.room;if(!r)return;pushHistory();const wid='w'+(++uid);
     r.walls.push({id:wid,name:'Wall '+(r.walls.length+1),width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]});
     selectWall(r.id,wid);}
-  function addOpening(type){const w=view.wall;if(!w)return;const o=newOpening(type,w);(w.openings=w.openings||[]).push(o);
+  function addOpening(type){const w=view.wall;if(!w)return;pushHistory();const o=newOpening(type,w);(w.openings=w.openings||[]).push(o);
     sel={kind:'opening',room:view.room,wall:w,op:o,panelId:null};refresh();}
-  function removeSel(){
+  function removeSel(){pushHistory();
     if(sel.kind==='opening'){const w=view.wall;w.openings=w.openings.filter(o=>o!==sel.op);selectWall(view.room.id,w.id);}
     else if(sel.kind==='wall'){const r=view.room;if(r.walls.length<=1)return;r.walls=r.walls.filter(w=>w!==sel.wall);selectRoom(r.id);}
     else if(sel.kind==='room'){if(MODEL.rooms.length<=1)return;MODEL.rooms=MODEL.rooms.filter(x=>x!==sel.room);selectRoom(MODEL.rooms[0].id);}}
-  function dupSel(){
+  function dupSel(){pushHistory();
     if(sel.kind==='room'){const c=JSON.parse(JSON.stringify(sel.room));c.id='r'+(++uid);c.name=(c.name||'Room')+' copy';
       (c.walls||[]).forEach(w=>{w.id='w'+(++uid);(w.openings||[]).forEach(o=>o.id='o'+(++uid));});
       MODEL.rooms.splice(MODEL.rooms.indexOf(sel.room)+1,0,c);selectRoom(c.id);}
@@ -465,6 +470,9 @@
     window.addEventListener('mousemove',e=>{if(!pan)return;const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();vb.x=pan.vx-(e.clientX-pan.sx)*(vb.w/rc.width);vb.y=pan.vy-(e.clientY-pan.sy)*(vb.h/rc.height);applyVB();});
     window.addEventListener('mouseup',()=>{pan=null;});
     cv.addEventListener('wheel',e=>{e.preventDefault();zoomBy(e.deltaY>0?1.1:0.9);},{passive:false});})();
+  window.addEventListener('keydown',e=>{const tag=(e.target.tagName||'').toLowerCase();if(tag==='input'||tag==='textarea'||tag==='select')return;
+    if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}
+    else if((e.ctrlKey||e.metaKey)&&(e.key.toLowerCase()==='y'||(e.shiftKey&&e.key.toLowerCase()==='z'))){e.preventDefault();redo();}});
   document.getElementById('fileInput').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;
     try{const data=JSON.parse(await f.text());if(Array.isArray(data.blocks))importQuote(data);else if(Array.isArray(data.rooms))loadProject(data);else throw new Error('unrecognized file');}
     catch(err){alert('Could not load this file: '+(err&&err.message||err));}e.target.value='';});
