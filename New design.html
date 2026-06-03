@@ -196,6 +196,8 @@
         {id:'o3',type:'object',name:'Bed',width:2000,height:1600,x:750,bottom:0}]}]}
   ]};
   MODEL.rooms.forEach(r=>{if(r.matCost==null)r.matCost=70;if(r.cncCost==null)r.cncCost=330;});
+  try{const _s=JSON.parse(localStorage.getItem('fnd_model')||'null');if(_s&&Array.isArray(_s.rooms)&&_s.rooms.length)MODEL.rooms=_s.rooms;}catch(_e){}
+  function saveModel(){try{localStorage.setItem('fnd_model',JSON.stringify({rooms:MODEL.rooms}));}catch(_e){}}
   let sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};
   let view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};
 
@@ -343,11 +345,11 @@
   function renderCrumbs(){crumbs.innerHTML=`${view.room?view.room.name:''} › ${view.wall?view.wall.name:''} › <b>${titleFor()}</b>`;}
 
   // ===== interactions =====
-  function renderAll(){renderChrome();renderTree();renderInspector();renderCanvas();renderCrumbs();renderStatus();}
-  function refresh(){renderTree();renderInspector();renderCanvas();renderCrumbs();renderStatus();}
+  function renderAll(){renderChrome();renderTree();renderInspector();renderCanvas();renderCrumbs();renderStatus();saveModel();}
+  function refresh(){renderTree();renderInspector();renderCanvas();renderCrumbs();renderStatus();saveModel();}
   function curObj(){if(sel.kind==='room')return sel.room;if(sel.kind==='wall')return sel.wall;if(sel.kind==='opening')return sel.op;if(sel.kind==='panel')return sel.wall;return null;}
   const coerce=v=>(v===''||v==null||isNaN(v))?v:Number(v);
-  window.edit=(f,v)=>{const o=curObj();if(!o)return;o[f]=coerce(v);renderTree();renderCanvas();renderCrumbs();renderStatus();};
+  window.edit=(f,v)=>{const o=curObj();if(!o)return;o[f]=coerce(v);renderTree();renderCanvas();renderCrumbs();renderStatus();saveModel();};
   window.editSeg=(f,v)=>{const o=curObj();if(!o)return;o[f]=v;refresh();};
   function selectRoom(id){const r=MODEL.rooms.find(x=>x.id===id);if(!r)return;view={room:r,wall:r.walls[0]||null};sel={kind:'room',room:r,wall:view.wall,op:null,panelId:null};renderAll();}
   function selectWall(rid,wid){const r=MODEL.rooms.find(x=>x.id===rid),w=r.walls.find(x=>x.id===wid);view={room:r,wall:w};sel={kind:'wall',room:r,wall:w,op:null,panelId:null};renderAll();}
