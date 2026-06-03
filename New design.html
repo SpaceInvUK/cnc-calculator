@@ -302,7 +302,8 @@
   const pal=()=>PAL[theme];
   let vb={x:0,y:0,w:880,h:400};
   function applyVB(){const svg=document.getElementById('canvas').querySelector('svg');if(svg)svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);}
-  function zoomBy(f){const cx=vb.x+vb.w/2,cy=vb.y+vb.h/2;vb.w=Math.max(220,Math.min(880,vb.w*f));vb.h=vb.w*(400/880);vb.x=Math.max(0,Math.min(880-vb.w,cx-vb.w/2));vb.y=Math.max(0,Math.min(400-vb.h,cy-vb.h/2));applyVB();}
+  function zoomAt(f,px,py){const nw=Math.max(140,Math.min(8000,vb.w*f)),r=nw/vb.w;vb.x=px-(px-vb.x)*r;vb.y=py-(py-vb.y)*r;vb.w=nw;vb.h=vb.h*r;applyVB();}
+  function zoomBy(f){zoomAt(f,vb.x+vb.w/2,vb.y+vb.h/2);}
   function fitView(){vb={x:0,y:0,w:880,h:400};applyVB();}
   function renderCanvas(){const P=pal(),wall=view.wall,room=view.room;if(!wall){canvas.innerHTML='';return;}
     const L=layoutWall(wall,room),W=L.W,H=L.H;
@@ -369,8 +370,8 @@
   function redo(){if(!redoStack.length)return;undoStack.push(JSON.stringify(MODEL.rooms));restoreRooms(redoStack.pop());}
   window.edit=(f,v)=>{const o=curObj();if(!o)return;pushHistory();o[f]=coerce(v);renderTree();renderCanvas();renderCrumbs();renderStatus();saveModel();};
   window.editSeg=(f,v)=>{const o=curObj();if(!o)return;pushHistory();o[f]=v;refresh();};
-  function selectRoom(id){const r=MODEL.rooms.find(x=>x.id===id);if(!r)return;view={room:r,wall:r.walls[0]||null};sel={kind:'room',room:r,wall:view.wall,op:null,panelId:null};vb={x:0,y:0,w:880,h:400};renderAll();}
-  function selectWall(rid,wid){const r=MODEL.rooms.find(x=>x.id===rid),w=r.walls.find(x=>x.id===wid);view={room:r,wall:w};sel={kind:'wall',room:r,wall:w,op:null,panelId:null};vb={x:0,y:0,w:880,h:400};renderAll();}
+  function selectRoom(id){const r=MODEL.rooms.find(x=>x.id===id);if(!r)return;view={room:r,wall:r.walls[0]||null};sel={kind:'room',room:r,wall:view.wall,op:null,panelId:null};renderAll();}
+  function selectWall(rid,wid){const r=MODEL.rooms.find(x=>x.id===rid),w=r.walls.find(x=>x.id===wid);view={room:r,wall:w};sel={kind:'wall',room:r,wall:w,op:null,panelId:null};renderAll();}
   function selectOpening(id){const w=view.wall,o=(w.openings||[]).find(x=>x.id===id);if(!o)return;sel={kind:'opening',room:view.room,wall:w,op:o,panelId:null};refresh();}
   function selectPanel(id){sel={kind:'panel',room:view.room,wall:view.wall,op:null,panelId:id};refresh();}
   // ===== create / delete =====
@@ -467,9 +468,9 @@
   document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');});
   (()=>{const cv=document.getElementById('canvas');let pan=null;
     cv.addEventListener('mousedown',e=>{pan={sx:e.clientX,sy:e.clientY,vx:vb.x,vy:vb.y};});
-    window.addEventListener('mousemove',e=>{if(!pan)return;const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();vb.x=Math.max(0,Math.min(880-vb.w,pan.vx-(e.clientX-pan.sx)*(vb.w/rc.width)));vb.y=Math.max(0,Math.min(400-vb.h,pan.vy-(e.clientY-pan.sy)*(vb.h/rc.height)));applyVB();});
+    window.addEventListener('mousemove',e=>{if(!pan)return;const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();vb.x=pan.vx-(e.clientX-pan.sx)*(vb.w/rc.width);vb.y=pan.vy-(e.clientY-pan.sy)*(vb.h/rc.height);applyVB();});
     window.addEventListener('mouseup',()=>{pan=null;});
-    cv.addEventListener('wheel',e=>{e.preventDefault();zoomBy(e.deltaY>0?1.1:0.9);},{passive:false});})();
+    cv.addEventListener('wheel',e=>{e.preventDefault();const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();const px=vb.x+(e.clientX-rc.left)/rc.width*vb.w,py=vb.y+(e.clientY-rc.top)/rc.height*vb.h;zoomAt(e.deltaY>0?1.12:0.89,px,py);},{passive:false});})();
   window.addEventListener('keydown',e=>{const tag=(e.target.tagName||'').toLowerCase();if(tag==='input'||tag==='textarea'||tag==='select')return;
     if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}
     else if((e.ctrlKey||e.metaKey)&&(e.key.toLowerCase()==='y'||(e.shiftKey&&e.key.toLowerCase()==='z'))){e.preventDefault();redo();}});
