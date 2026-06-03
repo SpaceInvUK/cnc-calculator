@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FAST CNC — New Design</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+
+  .app{display:grid;grid-template-columns:58px 236px 1fr 314px;grid-template-rows:50px 1fr 30px;height:100vh;width:100vw;
+    --bg:#eceef1;--topbar:#23272e;--topbar-tx:#e7eaee;--rail:#2e333b;--rail-ico:#c4cad3;--rail-on:#2563eb;
+    --panel:#ffffff;--panel-bd:#d6dae0;--text:#1f2430;--muted:#737b88;--accent:#2563eb;
+    --canvas:#eef1f4;--radius:0px;--shadow:none;--soft:#eef2f7;--disabled:#9aa2ad}
+  .app.clean{--bg:#f5f8f7;--topbar:#ffffff;--topbar-tx:#0f172a;--rail:#ffffff;--rail-ico:#0f766e;--rail-on:#0d9488;
+    --panel:#ffffff;--panel-bd:#e6ece9;--text:#0f172a;--muted:#7b8794;--accent:#0d9488;
+    --canvas:#ffffff;--radius:12px;--shadow:0 4px 16px rgba(15,40,30,.07);--soft:#f1f6f4;--disabled:#b8c2bd}
+
+  .topbar{grid-column:1/5;background:var(--topbar);color:var(--topbar-tx);display:flex;align-items:center;gap:16px;
+    padding:0 16px;border-bottom:1px solid rgba(0,0,0,.12)}
+  .app.clean .topbar{border-bottom:1px solid var(--panel-bd)}
+  .logo{font-weight:900;letter-spacing:.5px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .logo .dot{width:11px;height:11px;border-radius:3px;background:var(--accent)}
+  .menu{display:flex;gap:14px;font-size:13px;opacity:.82}.menu span{cursor:pointer}
+  .topbar .spacer{flex:1}
+  .ttool{display:flex;gap:6px;align-items:center}
+  .ttool button{display:flex;align-items:center;gap:6px;border:0;border-radius:8px;padding:7px 12px;font-weight:700;
+    font-size:12px;cursor:pointer;background:rgba(255,255,255,.12);color:var(--topbar-tx)}
+  .app.clean .ttool button{background:var(--soft);color:var(--text)}
+  .ttool button.primary{background:var(--accent);color:#fff}
+
+  .rail{background:var(--rail);display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0;border-right:1px solid rgba(0,0,0,.12)}
+  .app.clean .rail{border-right:1px solid var(--panel-bd)}
+  .rail .tool{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--rail-ico);position:relative}
+  .rail .tool svg{width:21px;height:21px}
+  .rail .tool:hover{background:rgba(255,255,255,.08)}.app.clean .rail .tool:hover{background:var(--soft)}
+  .rail .tool.on{background:var(--rail-on);color:#fff}
+  .rail .tool.disabled{opacity:.4;cursor:not-allowed}
+  .rail .sep{width:26px;height:1px;background:rgba(255,255,255,.14);margin:4px 0}.app.clean .rail .sep{background:var(--panel-bd)}
+
+  .tree{background:var(--panel);border-right:1px solid var(--panel-bd);overflow:auto;padding:10px}
+  .tree h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:6px 6px 8px}
+  .node{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:var(--radius);font-size:13px;cursor:pointer;color:var(--text)}
+  .node:hover{background:var(--soft)}
+  .node.sel{background:color-mix(in srgb,var(--accent) 16%,transparent);font-weight:700;color:var(--accent)}
+  .node .ic{width:15px;height:15px;opacity:.85;display:flex}
+  .node .tag{margin-left:auto;font-size:10px;color:var(--muted)}
+  .roomcard{border:1px solid var(--panel-bd);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow)}
+  .roomcard>.node{border-radius:0}
+
+  .stage{background:var(--canvas);position:relative;overflow:hidden;display:flex;flex-direction:column}
+  .crumbs{position:absolute;top:12px;left:14px;font-size:12px;color:var(--muted);z-index:2;background:var(--panel);
+    border:1px solid var(--panel-bd);padding:6px 12px;border-radius:999px;box-shadow:var(--shadow)}
+  .crumbs b{color:var(--accent)}
+  .viewcube{position:absolute;top:12px;right:14px;display:flex;gap:5px;z-index:2}
+  .viewcube button{border:1px solid var(--panel-bd);background:var(--panel);border-radius:8px;min-width:34px;height:30px;
+    font-size:11px;font-weight:800;color:var(--muted);cursor:pointer;padding:0 8px}
+  .viewcube button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .viewcube button.disabled{opacity:.45;cursor:not-allowed;position:relative}
+  .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:56px 30px 34px}
+  .canvas-wrap svg{width:100%;height:100%;max-width:900px}
+  .canvas-wrap svg .pk{cursor:pointer}
+  .zoombar{position:absolute;bottom:14px;left:14px;display:flex;gap:4px;z-index:2}
+  .zoombar button{border:1px solid var(--panel-bd);background:var(--panel);width:30px;height:30px;border-radius:8px;font-size:15px;font-weight:800;color:var(--muted);cursor:pointer;box-shadow:var(--shadow)}
+  .soon{position:absolute;bottom:14px;right:14px;font-size:10.5px;color:var(--muted);background:var(--panel);border:1px dashed var(--panel-bd);padding:4px 10px;border-radius:999px}
+
+  .insp{background:var(--panel);border-left:1px solid var(--panel-bd);overflow:auto}
+  .ihead{padding:14px 16px;border-bottom:1px solid var(--panel-bd);display:flex;align-items:center;gap:10px}
+  .ihead .pic{width:34px;height:34px;border-radius:9px;background:color-mix(in srgb,var(--accent) 16%,transparent);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+  .ihead .t{font-weight:800;font-size:14px}.ihead .s{font-size:11px;color:var(--muted)}
+  .sec{padding:12px 16px;border-bottom:1px solid var(--panel-bd)}
+  .sec .lab{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800;margin-bottom:10px}
+  .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
+  .row:last-child{margin-bottom:0}
+  .row label{font-size:12.5px;color:var(--text)}
+  .row .val{font-size:12.5px;font-weight:700;background:var(--soft);border:1px solid var(--panel-bd);border-radius:8px;padding:5px 10px;min-width:64px;text-align:center}
+  .seg{display:flex;background:var(--soft);border:1px solid var(--panel-bd);border-radius:8px;overflow:hidden}
+  .seg span{padding:5px 11px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
+  .seg span.on{background:var(--accent);color:#fff}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:11px;font-weight:700;padding:5px 9px;border-radius:999px;background:var(--soft);border:1px solid var(--panel-bd);color:var(--text)}
+  .chip.warn{background:#fff4e5;border-color:#f0c987;color:#92560a}
+
+  .status{grid-column:1/5;background:var(--topbar);color:var(--topbar-tx);display:flex;align-items:center;gap:18px;padding:0 16px;font-size:12px}
+  .app.clean .status{background:var(--panel);color:var(--text);border-top:1px solid var(--panel-bd)}
+  .status .pill{background:rgba(255,255,255,.14);padding:3px 10px;border-radius:999px;font-weight:700}
+  .app.clean .status .pill{background:var(--soft)}
+  .status .spacer{flex:1}.status b{color:var(--accent)}
+</style>
+</head>
+<body>
+  <div class="app clean" id="app">
+    <div class="topbar">
+      <div class="logo"><span class="dot"></span> FAST CNC</div>
+      <div class="menu"><span>Arquivo</span><span>Editar</span><span>Ver</span><span>Inserir</span><span>Exportar</span></div>
+      <div class="spacer"></div>
+      <div class="ttool">
+        <button id="themeBtn" onclick="toggleTheme()">🌙 Escuro</button>
+        <button>↶</button><button>↷</button>
+        <button class="primary">⬇ Exportar DXF</button>
+      </div>
+    </div>
+
+    <div class="rail" id="rail"></div>
+
+    <div class="tree" id="tree"></div>
+
+    <div class="stage">
+      <div class="crumbs" id="crumbs">Bedroom 2 › Wall 1 › <b>P3V</b></div>
+      <div class="viewcube">
+        <button class="on">2D</button>
+        <button class="disabled" title="Em breve (ainda não programado)">2.5D</button>
+        <button class="disabled" title="Em breve (ainda não programado)">DXF</button>
+      </div>
+      <div class="canvas-wrap" id="canvas"></div>
+      <div class="zoombar"><button>+</button><button>−</button><button>⤢</button></div>
+      <div class="soon">Fase 1 · shell visual — motor de cálculo entra na Fase 2</div>
+    </div>
+
+    <div class="insp" id="insp"></div>
+
+    <div class="status">
+      <span class="pill">7 painéis</span>
+      <span class="pill">5 chapas · 62.4%</span>
+      <span id="statusSel">Shaker: <b>336 × 645 mm</b></span>
+      <div class="spacer"></div>
+      <span>Total: <b>£2.480</b></span>
+    </div>
+  </div>
+
+<script>
+  // ===== DRY icon set =====
+  const ICONS={cursor:'M4 3l16 7-7 2-2 7z',wall:'M3 5h18v14H3z M3 10h18 M9 5v5 M15 10v9',
+    door:'M6 3h9v18H6z M12 12h.01 M15 3l3 2v16h-3',window:'M4 4h16v16H4z M12 4v16 M4 12h16',
+    object:'M4 8l8-4 8 4-8 4z M4 8v8l8 4 8-4V8',panel:'M4 3h16v18H4z M10 3v18 M4 9h6 M14 15h6',
+    ruler:'M3 8l13 13 5-5L8 3z M8 8l2 2 M12 7l2 2 M7 12l2 2',hand:'M7 11V6a2 2 0 014 0v5 M11 6a2 2 0 014 0v5 M15 8a2 2 0 014 0v7a5 5 0 01-5 5h-3l-4-4',
+    zoom:'M10 4a6 6 0 100 12 6 6 0 000-12z M20 20l-5-5',add:'M12 5v14 M5 12h14',dxf:'M6 2h9l5 5v15H6z M14 2v6h6'};
+  const svgIcon=(n,sw)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw||1.7}" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n]||''}"/></svg>`;
+
+  // ===== left rail (one loop) =====
+  const TOOLS=[['cursor','Selecionar',1],['wall','Parede'],['door','Porta'],['window','Janela'],['object','Objeto'],['panel','Painel'],
+    ['sep'],['ruler','Medir'],['hand','Mover'],['zoom','Zoom'],['sep'],['dxf','Exportar']];
+  rail.innerHTML=TOOLS.map(t=>t[0]==='sep'?'<div class="sep"></div>':`<div class="tool ${t[2]?'on':''}" title="${t[1]}">${svgIcon(t[0])}</div>`).join('');
+
+  // ===== project tree (data-driven, DRY) =====
+  const PROJECT=[
+    {type:'room',name:'Bedroom 2',tag:'5 sheets',open:true,children:[
+      {type:'wall',name:'Wall 1 — 5909×3200',children:[
+        {type:'panel',name:'P1V'},{type:'panel',name:'P3V'},{type:'door',name:'Porta'},{type:'object',name:'BED'}
+      ]}
+    ]},
+    {type:'room',name:'Ensuite 2',tag:'4 sheets'},
+    {type:'room',name:'Principle bedroom',tag:'3 sheets'}
+  ];
+  function renderTree(){
+    let h='<h4>Projeto</h4>';
+    PROJECT.forEach(room=>{
+      h+='<div class="roomcard">';
+      h+=node(room,0);
+      if(room.open&&room.children) room.children.forEach(w=>{h+=node(w,1);(w.children||[]).forEach(c=>h+=node(c,2));});
+      h+='</div>';
+    });
+    h+='<div class="roomcard"><div class="node" style="color:var(--muted)"><span class="ic">'+svgIcon('add',1.6)+'</span> + Adicionar room</div></div>';
+    tree.innerHTML=h;
+    tree.querySelectorAll('.node[data-sel]').forEach(n=>n.onclick=()=>select(n.dataset.type,n.dataset.name));
+  }
+  function node(item,depth){
+    const sel=item.name===selected.name?'sel':'';
+    return `<div class="node ${sel}" data-sel="1" data-type="${item.type}" data-name="${item.name}" style="margin-left:${depth*18}px">`+
+      `<span class="ic">${svgIcon(item.type==='room'?'wall':item.type,1.6)}</span> ${item.name}`+
+      (item.tag?`<span class="tag">${item.tag}</span>`:'')+`</div>`;
+  }
+
+  // ===== ONE contextual inspector (DRY templates by type) =====
+  const F=(l,v)=>`<div class="row"><label>${l}</label><div class="val">${v}</div></div>`;
+  const SEG=(l,opts,on)=>`<div class="row"><label>${l}</label><div class="seg">${opts.map(o=>`<span class="${o===on?'on':''}">${o}</span>`).join('')}</div></div>`;
+  const SEC=(lab,body)=>`<div class="sec"><div class="lab">${lab}</div>${body}</div>`;
+  const INSPECTOR={
+    panel:n=>({sub:'Bedroom 2 · Wall 1 · vertical',body:
+      SEC('Shaker',SEG('Tipo',['Flat','Shaker','Reeded'],'Shaker')+F('Frame (mm)','80')+SEG('Tamanho',['Auto','Lock'],'Auto')+F('Colunas','2')+F('Linhas','Auto'))+
+      SEC('Regras de lado',F('Topo','Normal')+F('Direita','Joint')+F('Baixo','Normal')+F('Esquerda','Joint'))+
+      SEC('Offset / Pocketing','<div class="chips"><span class="chip">A 0</span><span class="chip">B 6</span><span class="chip">C 8</span><span class="chip">D 19</span><span class="chip">E 25</span><span class="chip">F 28.5</span><span class="chip warn">Back 80</span></div>')+
+      SEC('Material',F('MDF Hidrófugo','22mm'))}),
+    door:n=>({sub:'Bedroom 2 · Wall 1 · abertura',body:
+      SEC('Porta',F('Largura (mm)','820')+F('Altura (mm)','2100')+F('Posição X','4134')+SEG('Medir X de',['Esq','Dir'],'Esq'))+
+      SEC('Regra do lado',F('Painéis ao lado','Door = 175'))}),
+    window:n=>({sub:'abertura',body:SEC('Janela',F('Largura (mm)','1200')+F('Altura (mm)','1100')+F('Peitoril (mm)','900')+F('Posição X','Auto'))}),
+    object:n=>({sub:'Bedroom 2 · Wall 1 · objeto',body:
+      SEC('Objeto',F('Nome','BED')+F('Largura (mm)','2000')+F('Altura (mm)','1600')+F('Base (mm)','0'))+
+      SEC('Painel em cima',SEG('Criar painel no topo',['Sim','Não'],'Sim')+F('Bottom to Shaker','Auto'))}),
+    wall:n=>({sub:'Bedroom 2',body:
+      SEC('Parede',F('Largura (mm)','5909')+F('Altura (mm)','3200')+SEG('Direção painel',['Horizontal','Vertical'],'Vertical')+F('Altura painel','2800'))}),
+    room:n=>({sub:'cômodo',body:
+      SEC('Room',F('Nome',n)+F('Material','MDF Hidrófugo')+F('Espessura','22mm')+F('Frame (mm)','80'))+
+      SEC('Acabamento',SEG('Skirting',['Sim','Não'],'Sim')+F('Altura skirting','225'))})
+  };
+  let selected={type:'panel',name:'P3V'};
+  function renderInspector(){
+    const tpl=(INSPECTOR[selected.type]||INSPECTOR.panel)(selected.name);
+    insp.innerHTML=`<div class="ihead"><div class="pic">${svgIcon(selected.type==='room'?'wall':selected.type,1.7)}</div>`+
+      `<div><div class="t">${labelFor(selected)}</div><div class="s">${tpl.sub}</div></div></div>`+tpl.body;
+  }
+  const labelFor=s=>({panel:'Painel '+s.name,door:s.name,window:'Janela',object:'Objeto '+s.name,wall:s.name,room:s.name})[s.type]||s.name;
+
+  // ===== wall elevation (DRY: columns built in a loop) =====
+  function panelGroup(x,y,w,h,cols,o){o=o||{};const fill=o.fill||'#dcfce7',stroke=o.stroke||'#16a34a',fr=8;
+    let s=`<g class="pk" data-type="${o.dtype||'panel'}" data-name="${o.label||''}">`;
+    s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
+    const iw=w-fr*2,cw=(iw-fr*(cols-1))/cols;
+    for(let i=0;i<cols;i++){const cx=x+fr+i*(cw+fr);
+      s+=`<rect x="${cx}" y="${y+fr}" width="${cw}" height="${h-fr*2}" rx="2" fill="#fff" stroke="${stroke}" stroke-width="1"/>`;
+      for(let r=1;r<3;r++){const lx=cx+cw*r/3;s+=`<line x1="${lx}" y1="${y+fr+4}" x2="${lx}" y2="${y+h-fr-4}" stroke="${stroke}" stroke-opacity=".35"/>`;}}
+    if(o.sel){s+=`<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="5" fill="none" stroke="#2563eb" stroke-width="2"/>`;
+      [[x-3,y-3],[x+w+3,y-3],[x-3,y+h+3],[x+w+3,y+h+3]].forEach(p=>s+=`<rect x="${p[0]-3}" y="${p[1]-3}" width="6" height="6" fill="#2563eb"/>`);}
+    if(o.label)s+=`<text x="${x+w/2}" y="${y-8}" text-anchor="middle" font-size="11" font-weight="700" fill="${o.sel?'#2563eb':'#475569'}">${o.label}</text>`;
+    return s+'</g>';}
+  function wallSVG(){const X=40,Y=46,W=800,H=300,floor=Y+H;const sel=n=>selected.name===n;
+    let s=`<svg viewBox="0 0 880 400">`;
+    s+=`<rect x="${X}" y="${Y}" width="${W}" height="${H}" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>`;
+    s+=`<line x1="${X-10}" y1="${floor}" x2="${X+W+10}" y2="${floor}" stroke="#475569" stroke-width="2"/>`;
+    s+=`<text x="${X+W/2}" y="${Y-22}" text-anchor="middle" font-size="12" fill="#64748b">5909 mm</text>`;
+    s+=`<text x="${X-20}" y="${Y+H/2}" text-anchor="middle" font-size="12" fill="#64748b" transform="rotate(-90 ${X-20} ${Y+H/2})">3200 mm</text>`;
+    s+=panelGroup(X+8,Y+10,120,H-20,2,{label:'P1V',sel:sel('P1V')});
+    const bx=X+150,bw=210,bedTop=Y+150;
+    s+=panelGroup(bx,Y+10,bw,130,4,{label:'P5V',fill:'#dbeafe',stroke:'#2563eb',sel:sel('P5V')});
+    s+=`<g class="pk" data-type="object" data-name="BED"><rect x="${bx}" y="${bedTop}" width="${bw}" height="${floor-bedTop}" fill="#eef2f7" stroke="#94a3b8" stroke-dasharray="5 4" stroke-width="1.3"/>`;
+    s+=`<text x="${bx+bw/2}" y="${bedTop+(floor-bedTop)/2}" text-anchor="middle" font-size="13" font-weight="800" fill="#64748b">BED</text></g>`;
+    s+=panelGroup(X+372,Y+10,90,H-20,2,{label:'P2V',sel:sel('P2V')});
+    s+=panelGroup(X+470,Y+10,70,H-20,1,{label:'P3V',sel:sel('P3V')});
+    const dx=X+552,dw=90,dtop=Y+95;
+    s+=`<g class="pk" data-type="door" data-name="Porta"><rect x="${dx}" y="${dtop}" width="${dw}" height="${floor-dtop}" rx="3" fill="#fde7ef" stroke="#db2777" stroke-width="1.5"/>`;
+    s+=`<text x="${dx+dw/2}" y="${dtop-8}" text-anchor="middle" font-size="11" font-weight="700" fill="#db2777">DOOR</text></g>`;
+    s+=panelGroup(X+654,Y+10,138,H-20,2,{label:'P4V',sel:sel('P4V')});
+    return s+'</svg>';}
+  function renderCanvas(){canvas.innerHTML=wallSVG();
+    canvas.querySelectorAll('.pk').forEach(g=>g.onclick=()=>select(g.dataset.type,g.dataset.name));}
+
+  // ===== selection drives everything =====
+  function select(type,name){selected={type,name};
+    crumbs.innerHTML=`Bedroom 2 › Wall 1 › <b>${name}</b>`;
+    renderTree();renderInspector();renderCanvas();}
+
+  function toggleTheme(){const c=app.classList.toggle('clean');themeBtn.textContent=c?'🌙 Escuro':'☀ Claro';}
+
+  renderTree();renderInspector();renderCanvas();
+</script>
+</body>
+</html>
