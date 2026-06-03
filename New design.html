@@ -68,8 +68,8 @@
   .viewcube button{border:1px solid var(--bd);background:var(--panel);border-radius:8px;min-width:34px;height:30px;font-size:11px;font-weight:800;color:var(--muted);cursor:pointer;padding:0 8px}
   .viewcube button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   .viewcube button.disabled{opacity:.45;cursor:not-allowed}
-  .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:56px 30px 34px}
-  .canvas-wrap svg{width:100%;height:100%;max-width:900px}
+  .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:44px 12px 24px}
+  .canvas-wrap svg{width:100%;height:100%}
   .canvas-wrap svg .pk{cursor:pointer}
   .zoombar{position:absolute;bottom:14px;left:14px;display:flex;gap:4px;z-index:2}
   .zoombar button{border:1px solid var(--bd);background:var(--panel);width:30px;height:30px;border-radius:8px;font-size:15px;font-weight:800;color:var(--muted);cursor:pointer;box-shadow:var(--shadow)}
@@ -102,7 +102,7 @@
 </style>
 </head>
 <body>
-  <div class="app" id="app">
+  <div class="app dark" id="app">
     <div class="topbar">
       <div class="logo"><span class="dot"></span> FAST CNC</div>
       <div class="menu" id="menu"></div>
@@ -172,7 +172,7 @@
       v_auto:'Auto',v_lock:'Lock',v_h:'Horizontal',v_v:'Vertical',v_yes:'Sim',v_no:'Não',v_left:'Esq',v_right:'Dir',
       d_opening:'abertura',d_room:'cômodo'}
   };
-  let lang='en', theme='light';
+  let lang='en', theme='dark';
   const t=k=>(STR[lang]&&STR[lang][k])||STR.en[k]||k;
 
   // ===== icons =====
@@ -298,15 +298,15 @@
 
   // ===== canvas (theme-aware, model-driven) =====
   const PAL={light:{wall:'#f8fafc',wallBd:'#94a3b8',floor:'#475569',dim:'#64748b',pFill:'#dcfce7',pBd:'#16a34a',cell:'#ffffff',capFill:'#dbeafe',capBd:'#2563eb',obj:'#eef2f7',objBd:'#94a3b8',door:'#fde7ef',doorBd:'#db2777',lab:'#475569',sel:'#2563eb'},
-    dark:{wall:'#11151c',wallBd:'#3a424e',floor:'#6b7686',dim:'#9aa3b2',pFill:'#15311f',pBd:'#22c55e',cell:'#10151b',capFill:'#16233f',capBd:'#3b82f6',obj:'#161b22',objBd:'#3a424e',door:'#371728',doorBd:'#ec4899',lab:'#c3cad6',sel:'#60a5fa'}};
+    dark:{wall:'#11151c',wallBd:'#3a424e',floor:'#6b7686',dim:'#9aa3b2',pFill:'#15311f',pBd:'#22c55e',cell:'#525c6b',capFill:'#1f3a63',capBd:'#3b82f6',obj:'#202632',objBd:'#3a424e',door:'#371728',doorBd:'#ec4899',lab:'#c3cad6',sel:'#60a5fa'}};
   const pal=()=>PAL[theme];
   let vb={x:0,y:0,w:880,h:400};
   function applyVB(){const svg=document.getElementById('canvas').querySelector('svg');if(svg)svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);}
-  function zoomBy(f){const cx=vb.x+vb.w/2,cy=vb.y+vb.h/2;vb.w=Math.max(120,Math.min(3000,vb.w*f));vb.h=vb.w*(400/880);vb.x=cx-vb.w/2;vb.y=cy-vb.h/2;applyVB();}
+  function zoomBy(f){const cx=vb.x+vb.w/2,cy=vb.y+vb.h/2;vb.w=Math.max(220,Math.min(880,vb.w*f));vb.h=vb.w*(400/880);vb.x=Math.max(0,Math.min(880-vb.w,cx-vb.w/2));vb.y=Math.max(0,Math.min(400-vb.h,cy-vb.h/2));applyVB();}
   function fitView(){vb={x:0,y:0,w:880,h:400};applyVB();}
   function renderCanvas(){const P=pal(),wall=view.wall,room=view.room;if(!wall){canvas.innerHTML='';return;}
     const L=layoutWall(wall,room),W=L.W,H=L.H;
-    const VB_W=880,VB_H=400,X=48,Yt=44,drawW=VB_W-X-34,drawH=VB_H-Yt-46,floorY=Yt+drawH;
+    const VB_W=880,VB_H=400,X=36,Yt=30,drawW=VB_W-X-18,drawH=VB_H-Yt-30,floorY=Yt+drawH;
     const sx=drawW/W,sy=drawH/H,MX=x=>X+x*sx,MY=hh=>floorY-hh*sy;
     let s=`<svg viewBox="${vb.x} ${vb.y} ${vb.w} ${vb.h}">`;
     s+=`<rect x="${X}" y="${Yt}" width="${drawW}" height="${drawH}" fill="${P.wall}" stroke="${P.wallBd}" stroke-width="1.5"/>`;
@@ -316,19 +316,19 @@
     const tf=L.frame*sy,bf=(room.skirting==='yes'?(+room.skirtingH+L.frame):L.frame)*sy,gap=L.frame*sx,ptype=(wall.shakerType||'shaker');
     L.panels.forEach(p=>{const x=MX(p.x0),w=(p.x1-p.x0)*sx,yTop=MY(p.y1),h=(p.y1-p.y0)*sy;
       const stroke=p.cap?P.capBd:P.pBd,fill=p.cap?P.capFill:P.pFill,selp=sel.kind==='panel'&&sel.panelId===p.id;
-      s+=`<g class="pk" data-k="panel" data-id="${p.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
+      s+=`<g class="pk" data-k="panel" data-id="${p.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
       const ix=x+p.lf*sx,iw=Math.max(0,w-(p.lf+p.rf)*sx),iy=yTop+tf,ih=Math.max(0,h-tf-bf),cols=p.cols,cw=(iw-gap*(cols-1))/cols;
-      if(ptype!=='flat')for(let i=0;i<cols;i++){const cx=ix+i*(cw+gap);s+=`<rect x="${cx}" y="${iy}" width="${Math.max(0,cw)}" height="${ih}" rx="2" fill="${P.cell}" stroke="${stroke}" stroke-width="1"/>`;
+      if(ptype!=='flat')for(let i=0;i<cols;i++){const cx=ix+i*(cw+gap);s+=`<rect x="${cx}" y="${iy}" width="${Math.max(0,cw)}" height="${ih}" fill="${P.cell}" stroke="${stroke}" stroke-width="1"/>`;
         if(ptype==='reeded'){const n=Math.max(2,Math.round(cw/11));for(let k=1;k<n;k++){const lx=cx+cw*k/n;s+=`<line x1="${lx}" y1="${iy+3}" x2="${lx}" y2="${iy+ih-3}" stroke="${stroke}" stroke-opacity=".5"/>`;}}}
       s+=`<text x="${x+w/2}" y="${yTop-5}" text-anchor="middle" font-size="10" font-weight="700" fill="${selp?P.sel:P.lab}">${p.label}</text>`;
-      if(selp)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" rx="5" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
+      if(selp)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
       s+='</g>';});
     L.ops.forEach(o=>{const x=MX(o.x),w=o.width*sx,yTop=MY(o.bottom+o.height),h=o.height*sy;
       const isDoor=o.type==='door',isWin=o.type==='window',fill=isDoor?P.door:(isWin?P.capFill:P.obj),bd=isDoor?P.doorBd:(isWin?P.capBd:P.objBd);
       const selo=sel.kind==='opening'&&sel.op&&sel.op.id===o.id;
-      s+=`<g class="pk" data-k="op" data-id="${o.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" rx="3" fill="${fill}" stroke="${bd}" stroke-width="1.5" ${o.type==='object'?'stroke-dasharray="5 4"':''}/>`;
+      s+=`<g class="pk" data-k="op" data-id="${o.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" fill="${fill}" stroke="${bd}" stroke-width="1.5" ${o.type==='object'?'stroke-dasharray="5 4"':''}/>`;
       s+=`<text x="${x+w/2}" y="${yTop+h/2+4}" text-anchor="middle" font-size="12" font-weight="800" fill="${bd}">${o.name}</text>`;
-      if(selo)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" rx="5" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
+      if(selo)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
       s+='</g>';});
     s+='</svg>';canvas.innerHTML=s;
     canvas.querySelectorAll('.pk').forEach(g=>g.onclick=()=>{g.dataset.k==='op'?selectOpening(g.dataset.id):selectPanel(g.dataset.id);});}
@@ -467,7 +467,7 @@
   document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');});
   (()=>{const cv=document.getElementById('canvas');let pan=null;
     cv.addEventListener('mousedown',e=>{pan={sx:e.clientX,sy:e.clientY,vx:vb.x,vy:vb.y};});
-    window.addEventListener('mousemove',e=>{if(!pan)return;const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();vb.x=pan.vx-(e.clientX-pan.sx)*(vb.w/rc.width);vb.y=pan.vy-(e.clientY-pan.sy)*(vb.h/rc.height);applyVB();});
+    window.addEventListener('mousemove',e=>{if(!pan)return;const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();vb.x=Math.max(0,Math.min(880-vb.w,pan.vx-(e.clientX-pan.sx)*(vb.w/rc.width)));vb.y=Math.max(0,Math.min(400-vb.h,pan.vy-(e.clientY-pan.sy)*(vb.h/rc.height)));applyVB();});
     window.addEventListener('mouseup',()=>{pan=null;});
     cv.addEventListener('wheel',e=>{e.preventDefault();zoomBy(e.deltaY>0?1.1:0.9);},{passive:false});})();
   window.addEventListener('keydown',e=>{const tag=(e.target.tagName||'').toLowerCase();if(tag==='input'||tag==='textarea'||tag==='select')return;
