@@ -78,6 +78,7 @@
   .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:44px 12px 24px}
   .canvas-wrap svg{width:100%;height:100%}
   .canvas-wrap svg .pk{cursor:pointer}
+  .canvas-wrap.measuring,.canvas-wrap.measuring *{cursor:none}
   .zoombar{position:absolute;bottom:14px;left:14px;display:flex;gap:4px;z-index:2}
   .zoombar button{border:1px solid var(--bd);background:var(--panel);width:30px;height:30px;border-radius:8px;font-size:15px;font-weight:800;color:var(--muted);cursor:pointer;box-shadow:var(--shadow)}
   .soon{position:absolute;bottom:14px;right:14px;font-size:10.5px;color:var(--muted);background:var(--panel);border:1px dashed var(--bd);padding:4px 10px;border-radius:999px;max-width:50%}
@@ -322,7 +323,7 @@
     dark:{wall:'#11151c',wallBd:'#3a424e',floor:'#6b7686',dim:'#9aa3b2',pFill:'#15311f',pBd:'#22c55e',cell:'#525c6b',capFill:'#1f3a63',capBd:'#3b82f6',obj:'#202632',objBd:'#3a424e',door:'#371728',doorBd:'#ec4899',lab:'#c3cad6',sel:'#60a5fa'}};
   const pal=()=>PAL[theme];
   let vb={x:0,y:0,w:880,h:400};
-  let measureMode=false,measurePt=null,canvasXf=null;
+  let measureMode=false,measurePt=null,canvasXf=null,hoverPt=null,snapSVG=[];
   function applyVB(){const svg=document.getElementById('canvas').querySelector('svg');if(svg)svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);}
   function zoomAt(f,px,py){const nw=Math.max(140,Math.min(8000,vb.w*f)),r=nw/vb.w;vb.x=px-(px-vb.x)*r;vb.y=py-(py-vb.y)*r;vb.w=nw;vb.h=vb.h*r;applyVB();}
   function zoomBy(f){zoomAt(f,vb.x+vb.w/2,vb.y+vb.h/2);}
@@ -353,12 +354,17 @@
       s+=`<text x="${x+w/2}" y="${yTop+h/2+4}" text-anchor="middle" font-size="12" font-weight="800" fill="${bd}">${o.name}</text>`;
       if(selo)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
       s+='</g>';});
-    (wall.dims||[]).forEach((d,i)=>{const x1=MX(d.x1),y1=MY(d.h1),x2=MX(d.x2),y2=MY(d.h2),len=Math.round(Math.hypot(d.x2-d.x1,d.h2-d.h1)),mx=(x1+x2)/2,my=(y1+y2)/2;
-      s+=`<g class="dim" data-i="${i}" style="cursor:pointer"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${P.sel}" stroke-width="1.5"/><circle cx="${x1}" cy="${y1}" r="3" fill="${P.sel}"/><circle cx="${x2}" cy="${y2}" r="3" fill="${P.sel}"/><rect x="${mx-22}" y="${my-9}" width="44" height="15" fill="${P.wall}" stroke="${P.sel}" stroke-width=".6"/><text x="${mx}" y="${my+2}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${P.sel}">${len}</text></g>`;});
+    snapSVG=[];const addSnap=(x,h)=>snapSVG.push({sx:MX(x),sy:MY(h),x,h});
+    addSnap(0,0);addSnap(W,0);addSnap(0,H);addSnap(W,H);
+    L.panels.forEach(p=>{addSnap(p.x0,p.y0);addSnap(p.x1,p.y0);addSnap(p.x0,p.y1);addSnap(p.x1,p.y1);});
+    L.ops.forEach(o=>{addSnap(o.x,o.bottom);addSnap(o.x+o.width,o.bottom);addSnap(o.x,o.bottom+o.height);addSnap(o.x+o.width,o.bottom+o.height);});
+    (wall.dims||[]).forEach((d,i)=>{const ax=d.axis||(Math.abs(d.x2-d.x1)>=Math.abs(d.h2-d.h1)?'h':'v');let X1=MX(d.x1),Y1=MY(d.h1),X2,Y2,len;if(ax==='h'){X2=MX(d.x2);Y2=Y1;len=Math.round(Math.abs(d.x2-d.x1));}else{X2=X1;Y2=MY(d.h2);len=Math.round(Math.abs(d.h2-d.h1));}const mx=(X1+X2)/2,my=(Y1+Y2)/2;
+      s+=`<g class="dim" data-i="${i}"><line x1="${X1}" y1="${Y1}" x2="${X2}" y2="${Y2}" stroke="${P.sel}" stroke-width="1.2"/><circle cx="${X1}" cy="${Y1}" r="3" fill="${P.sel}"/><circle cx="${X2}" cy="${Y2}" r="3" fill="${P.sel}"/><rect x="${mx-22}" y="${my-9}" width="44" height="15" fill="${P.wall}" stroke="${P.sel}" stroke-width=".6"/><text x="${mx}" y="${my+2}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${P.sel}">${len}</text></g>`;});
     if(measurePt)s+=`<circle cx="${MX(measurePt.x)}" cy="${MY(measurePt.h)}" r="4" fill="none" stroke="${P.sel}" stroke-width="1.5"/>`;
+    s+='<g id="mOverlay"></g>';
     s+='</svg>';canvas.innerHTML=s;
     canvas.querySelectorAll('.pk').forEach(g=>g.onclick=()=>{if(measureMode)return;g.dataset.k==='op'?selectOpening(g.dataset.id):selectPanel(g.dataset.id);});
-    document.querySelector('.stage').style.cursor=measureMode?'crosshair':'';}
+    document.getElementById('canvas').classList.toggle('measuring',measureMode);}
 
   // ===== chrome / status / crumbs =====
   function renderChrome(){
@@ -415,13 +421,23 @@
     if(act==='measure'){measureMode=!measureMode;measurePt=null;renderChrome();renderCanvas();return;}
     if(act==='wall')return addWall();
     if(act==='door'||act==='window'||act==='object')return addOpening(act);}
-  function measureClick(e){const cv=document.getElementById('canvas'),svg=cv.querySelector('svg'),wall=view.wall;if(!svg||!canvasXf||!wall)return;
+  function clientToSvgPt(e){const svg=document.getElementById('canvas').querySelector('svg');if(!svg)return null;const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const m=svg.getScreenCTM();if(!m)return null;return pt.matrixTransform(m.inverse());}
+  function svgToMM(p){return {x:(p.x-canvasXf.X)/canvasXf.sx,h:(canvasXf.floorY-p.y)/canvasXf.sy};}
+  function nearestSnap(p){let best=null,bd=Infinity;const thr=vb.w*0.02;(snapSVG||[]).forEach(s=>{const d=Math.hypot(s.sx-p.x,s.sy-p.y);if(d<bd){bd=d;best=s;}});return (best&&bd<=thr)?best:null;}
+  function drawOverlay(sx,sy,snapped){const ov=document.getElementById('mOverlay');if(!ov)return;const col=pal().sel,lw=Math.max(0.4,vb.w*0.0016),r=vb.w*0.007;
+    let s=`<line x1="${vb.x}" y1="${sy}" x2="${vb.x+vb.w}" y2="${sy}" stroke="${col}" stroke-width="${lw}"/><line x1="${sx}" y1="${vb.y}" x2="${sx}" y2="${vb.y+vb.h}" stroke="${col}" stroke-width="${lw}"/>`;
+    if(snapped)s+=`<circle cx="${sx}" cy="${sy}" r="${r}" fill="none" stroke="${col}" stroke-width="${lw*2}"/>`;
+    ov.innerHTML=s;}
+  function measureHover(e){if(!measureMode||!canvasXf)return;const p=clientToSvgPt(e);if(!p)return;const snap=nearestSnap(p);
+    let sx,sy;if(snap){hoverPt={x:snap.x,h:snap.h};sx=snap.sx;sy=snap.sy;}else{const mm=svgToMM(p);hoverPt={x:mm.x,h:mm.h};sx=p.x;sy=p.y;}
+    drawOverlay(sx,sy,!!snap);}
+  function measureClick(e){const wall=view.wall;if(!wall||!canvasXf)return;
     const dimEl=e.target&&e.target.closest?e.target.closest('.dim'):null;
     if(dimEl){(wall.dims=wall.dims||[]).splice(+dimEl.dataset.i,1);renderCanvas();saveModel();return;}
-    const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const m=svg.getScreenCTM();if(!m)return;const p=pt.matrixTransform(m.inverse());
-    const mmx=(p.x-canvasXf.X)/canvasXf.sx,mmh=(canvasXf.floorY-p.y)/canvasXf.sy;
-    if(!measurePt){measurePt={x:mmx,h:mmh};renderCanvas();}
-    else{(wall.dims=wall.dims||[]).push({x1:measurePt.x,h1:measurePt.h,x2:mmx,h2:mmh});measurePt=null;renderCanvas();saveModel();}}
+    let pt=hoverPt;if(!pt){const p=clientToSvgPt(e);if(!p)return;pt=svgToMM(p);}
+    if(!measurePt){measurePt={x:pt.x,h:pt.h};renderCanvas();}
+    else{const dx=Math.abs(pt.x-measurePt.x),dh=Math.abs(pt.h-measurePt.h),axis=dx>=dh?'h':'v';
+      (wall.dims=wall.dims||[]).push({x1:measurePt.x,h1:measurePt.h,x2:pt.x,h2:pt.h,axis});measurePt=null;renderCanvas();saveModel();}}
   function newProject(){pushHistory();const id='r'+(++uid),wid='w'+(++uid);MODEL.rooms=[{id,name:'Room 1',material:'MDF',thickness:'18mm',frame:80,doorAllow:175,skirting:'no',skirtingH:225,sheets:1,matCost:70,cncCost:330,walls:[{id:wid,name:'Wall 1',width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]}]}];view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};renderAll();}
   const MENU=[
     ['File',[['New',()=>newProject()],['Open…',()=>document.getElementById('fileInput').click()],['Save',()=>saveProject()]]],
@@ -517,6 +533,7 @@
   document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');if(!(e.target.closest&&e.target.closest('.menu')))menu.querySelectorAll('.mtop').forEach(z=>z.classList.remove('open'));});
   (()=>{const cv=document.getElementById('canvas');let pan=null;
     cv.addEventListener('mousedown',e=>{pan={sx:e.clientX,sy:e.clientY,vx:vb.x,vy:vb.y,moved:false};});
+    cv.addEventListener('mousemove',e=>{if(measureMode)measureHover(e);});
     window.addEventListener('mousemove',e=>{if(!pan)return;if(Math.abs(e.clientX-pan.sx)+Math.abs(e.clientY-pan.sy)>3)pan.moved=true;const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();vb.x=pan.vx-(e.clientX-pan.sx)*(vb.w/rc.width);vb.y=pan.vy-(e.clientY-pan.sy)*(vb.h/rc.height);applyVB();});
     window.addEventListener('mouseup',e=>{const wasClick=pan&&!pan.moved;pan=null;if(wasClick&&measureMode)measureClick(e);});
     cv.addEventListener('wheel',e=>{e.preventDefault();const svg=cv.querySelector('svg');if(!svg)return;const rc=svg.getBoundingClientRect();const px=vb.x+(e.clientX-rc.left)/rc.width*vb.w,py=vb.y+(e.clientY-rc.top)/rc.height*vb.h;zoomAt(e.deltaY>0?1.12:0.89,px,py);},{passive:false});})();
