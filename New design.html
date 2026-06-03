@@ -105,6 +105,8 @@
       <div class="menu" id="menu"></div>
       <div class="spacer"></div>
       <div class="ttool">
+        <input type="file" id="fileInput" accept=".json" style="display:none">
+        <button class="icobtn" id="openBtn" title="Open quote (.json)" onclick="document.getElementById('fileInput').click()">📂</button>
         <button class="icobtn" id="gear" title="Options" onclick="toggleOpt(event)">⚙</button>
         <button>↶</button><button>↷</button>
         <button class="primary" id="exportBtn">⬇ Export DXF</button>
@@ -353,10 +355,39 @@
     if(sel.kind==='opening'){const w=view.wall;w.openings=w.openings.filter(o=>o!==sel.op);selectWall(view.room.id,w.id);}
     else if(sel.kind==='wall'){const r=view.room;if(r.walls.length<=1)return;r.walls=r.walls.filter(w=>w!==sel.wall);selectRoom(r.id);}
     else if(sel.kind==='room'){if(MODEL.rooms.length<=1)return;MODEL.rooms=MODEL.rooms.filter(x=>x!==sel.room);selectRoom(MODEL.rooms[0].id);}}
+
+  // ===== import a saved .fastcnc.json quote =====
+  function importQuote(data){
+    if(!data||!Array.isArray(data.blocks))throw new Error('not a FAST CNC quote');
+    const rooms=[];let rn=0;
+    data.blocks.forEach(b=>{
+      if(String(b.calcMode)!=='panel')return;
+      const parts=Array.isArray(b.parts)?b.parts:[];
+      const walls=parts.map((p,i)=>{
+        const dir=String(p.wallPanelDirection||b.panelDirection||'horizontal')==='vertical'?'vertical':'horizontal';
+        const width=+p.wallWidth||+b.wallWidth||3000, height=+(p.wallHeight||b.wallHeight)||3200;
+        const ph=dir==='vertical'?(+p.panelVerticalHeight||+b.panelVerticalHeight||3000):(+p.panelHorizontalHeight||+b.panelHorizontalHeight||1030);
+        const ops=(Array.isArray(p.wallOpenings)?p.wallOpenings:[]).map(o=>{
+          const ty=o.type==='door'?'door':(o.type==='window'?'window':'object');
+          return {id:'o'+(++uid),type:ty,name:o.name||ty,width:+o.width||0,height:+o.height||0,x:+o.x||0,bottom:+(o.bottom||0)};
+        }).filter(o=>o.width>0&&o.height>0);
+        return {id:'w'+(++uid),name:'Wall '+(i+1),width,height,panelDir:dir,panelHeight:ph,colTarget:340,openings:ops};
+      });
+      if(!walls.length)walls.push({id:'w'+(++uid),name:'Wall 1',width:+b.wallWidth||3000,height:+b.wallHeight||3200,panelDir:'vertical',panelHeight:3000,colTarget:340,openings:[]});
+      rooms.push({id:'r'+(++uid),name:b.roomName||('Room '+(++rn)),material:b.material||'MDF',thickness:b.thickness||'18mm',
+        frame:+b.frameSize||80,doorAllow:+b.panelDoorAllowance||175,skirting:b.panelSkirtingEnabled==='Yes'?'yes':'no',
+        skirtingH:+b.panelSkirtingHeight||225,sheets:+b.sheetQuantity||1,walls});
+    });
+    if(!rooms.length)throw new Error('no panel rooms found');
+    MODEL.rooms=rooms;view={room:rooms[0],wall:rooms[0].walls[0]};sel={kind:'wall',room:rooms[0],wall:rooms[0].walls[0],op:null,panelId:null};
+    renderAll();
+  }
   function setTheme(th){theme=th;app.classList.toggle('dark',th==='dark');renderChrome();renderCanvas();}
   function setLang(l){lang=l;document.documentElement.lang=l;renderAll();}
   function toggleOpt(e){if(e)e.stopPropagation();optpop.classList.toggle('show');}
   document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');});
+  document.getElementById('fileInput').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;
+    try{importQuote(JSON.parse(await f.text()));}catch(err){alert('Could not load this file: '+(err&&err.message||err));}e.target.value='';});
 
   renderAll();
 </script>
