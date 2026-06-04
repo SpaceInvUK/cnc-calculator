@@ -78,6 +78,7 @@
   .canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:44px 12px 24px}
   .canvas-wrap svg{width:100%;height:100%}
   .canvas-wrap svg .pk{cursor:pointer}
+  .canvas-wrap svg rect,.canvas-wrap svg line{vector-effect:non-scaling-stroke}
   .canvas-wrap.measuring,.canvas-wrap.measuring *{cursor:none}
   .zoombar{position:absolute;bottom:14px;left:14px;display:flex;gap:4px;z-index:2}
   .zoombar button{border:1px solid var(--bd);background:var(--panel);width:30px;height:30px;border-radius:8px;font-size:15px;font-weight:800;color:var(--muted);cursor:pointer;box-shadow:var(--shadow)}
@@ -131,8 +132,6 @@
         <div class="seg"><span id="thLight" onclick="setTheme('light')">Light</span><span id="thDark" onclick="setTheme('dark')">Dark</span></div></div>
       <div class="optrow"><span id="lblLang">Language</span>
         <div class="seg"><span id="lgEn" onclick="setLang('en')">EN</span><span id="lgPt" onclick="setLang('pt')">PT</span></div></div>
-      <div class="optrow"><span>Sheet</span>
-        <div class="seg"><span id="sh8" onclick="setSheet('8x4')">8x4</span><span id="sh10" onclick="setSheet('10x4')">10x4</span></div></div>
       <div class="optrow"><span>Sizing</span>
         <div class="seg"><span id="szAuto" onclick="setSizeMode('auto')">Auto</span><span id="szLock" onclick="setSizeMode('locked')">Locked</span><span id="szPer" onclick="setSizeMode('per')">Section</span></div></div>
     </div>
@@ -249,8 +248,7 @@
   function layoutWall(wall,room){
     const W=+wall.width,H=+wall.height,frame=+resolveShaker(room,wall).frame||80,da=+room.doorAllow||175;
     const vert=wall.panelDir==='vertical';
-    const sheetLong=PROJECT.sheet==='10x4'?3050:2440, sheetShort=1220;
-    const maxW=vert?sheetShort:sheetLong, maxH=vert?sheetLong:sheetShort;
+    const maxW=vert?1220:2440, maxH=vert?3050:1220;
     const th=parseInt(rp(room,'thickness'))||18,sv=r=>sideVal(r,frame,th,da);
     const ops=(wall.openings||[]).map(o=>({...o,x:+o.x,width:+o.width,height:+o.height,bottom:+(o.bottom||0)})).sort((a,b)=>a.x-b.x);
     const spans=[];let cursor=0,leftRule=wall.sideLeft||'normal';
@@ -292,19 +290,22 @@
       shelfX+=o.w+gap;if(o.h>shelfH)shelfH=o.h;});
     return sheets;
   }
-  function nestRoom(r){const s=NEST_SHEET(),parts=[];(r.walls||[]).forEach(w=>layoutWall(w,r).panels.forEach(p=>parts.push({w:Math.round(p.x1-p.x0),h:Math.round(p.y1-p.y0),label:p.label})));return nestPanels(parts,s.w,s.h,NEST_GAP);}
+  function nestRoom(r){const parts=[];(r.walls||[]).forEach(w=>layoutWall(w,r).panels.forEach(p=>parts.push({w:Math.round(p.x1-p.x0),h:Math.round(p.y1-p.y0),label:p.label})));
+    const g8=parts.filter(p=>Math.max(p.w,p.h)<=2400),g10=parts.filter(p=>Math.max(p.w,p.h)>2400),out=[];
+    if(g8.length)nestPanels(g8,2440,1220,NEST_GAP).forEach(s=>out.push({size:'8x4',SW:2440,SH:1220,parts:s.parts}));
+    if(g10.length)nestPanels(g10,3050,1220,NEST_GAP).forEach(s=>out.push({size:'10x4',SW:3050,SH:1220,parts:s.parts}));
+    return out;}
   function roomSheets(r){return nestRoom(r).length;}
   function projectSheets(){return MODEL.rooms.reduce((n,r)=>n+roomSheets(r),0);}
-  function renderNest(){const P=pal(),s0=NEST_SHEET(),SW=s0.w,SH=s0.h,margin=18,gapY=16,labelH=16;
+  function renderNest(){const P=pal(),margin=18,gapY=16,labelH=16,sc=(880-2*margin)/3050;
     const groups=MODEL.rooms.map(r=>({name:r.name,sheets:nestRoom(r)})).filter(g=>g.sheets.length);
-    const sc=(880-2*margin)/SW, sheetH=SH*sc;
-    const vbH=Math.max(400, margin+groups.reduce((a,g)=>a+g.sheets.length*(sheetH+labelH+gapY),0)+10);
+    const vbH=Math.max(400, margin+groups.reduce((a,g)=>a+g.sheets.reduce((b,sh)=>b+sh.SH*sc+labelH+gapY,0),0)+10);
     let s=`<svg viewBox="0 0 880 ${vbH}">`,y=margin;
     if(!groups.length)s+=`<text x="440" y="70" text-anchor="middle" font-size="14" fill="${P.dim}">No panels to nest</text>`;
-    groups.forEach(g=>g.sheets.forEach((sh,si)=>{
-      s+=`<text x="${margin}" y="${y+11}" font-size="11" font-weight="700" fill="${P.lab}">${g.name} — Sheet ${si+1} (${PROJECT.sheet})</text>`;y+=labelH;
-      s+=`<rect x="${margin}" y="${y}" width="${SW*sc}" height="${sheetH}" fill="${P.wall}" stroke="${P.wallBd}" stroke-width="1"/>`;
-      sh.parts.forEach(pt=>{s+=`<rect x="${margin+pt.x*sc}" y="${y+pt.y*sc}" width="${pt.w*sc}" height="${pt.h*sc}" fill="${P.pFill}" stroke="${P.pBd}" stroke-width="0.7"/>`;
+    groups.forEach(g=>g.sheets.forEach((sh,si)=>{const sheetH=sh.SH*sc;
+      s+=`<text x="${margin}" y="${y+11}" font-size="11" font-weight="700" fill="${P.lab}">${g.name} — Sheet ${si+1} (${sh.size})</text>`;y+=labelH;
+      s+=`<rect x="${margin}" y="${y}" width="${sh.SW*sc}" height="${sheetH}" fill="${P.wall}" stroke="${P.wallBd}" stroke-width="0.6"/>`;
+      sh.parts.forEach(pt=>{s+=`<rect x="${margin+pt.x*sc}" y="${y+pt.y*sc}" width="${pt.w*sc}" height="${pt.h*sc}" fill="${P.pFill}" stroke="${P.pBd}" stroke-width="0.5"/>`;
         if(pt.w*sc>22&&pt.h*sc>11)s+=`<text x="${margin+(pt.x+pt.w/2)*sc}" y="${y+(pt.y+pt.h/2)*sc+3}" text-anchor="middle" font-size="8" fill="${P.lab}">${pt.label}</text>`;});
       y+=sheetH+gapY;}));
     s+=`</svg>`;canvas.innerHTML=s;document.getElementById('canvas').classList.remove('measuring');}
@@ -338,7 +339,7 @@
       const seg=(cur,opts,fn)=>'<div class="seg">'+opts.map(o=>'<span class="'+(o[0]===cur?'on':'')+'" onclick="'+fn+'(\''+o[0]+'\')">'+o[1]+'</span>').join('')+'</div>';
       const pj=(l,f,ty)=>'<div class="row"><label>'+l+'</label><input class="val" type="'+(ty||'text')+'" value="'+(PROJECT[f]==null?'':PROJECT[f])+'" onchange="editProject(\''+f+'\',this.value)"></div>';
       const skseg='<div class="row"><label>Skirting</label><div class="seg">'+[['yes','Yes'],['no','No']].map(o=>'<span class="'+(PROJECT.skirting===o[0]?'on':'')+'" onclick="editProject(\'skirting\',\''+o[0]+'\')">'+o[1]+'</span>').join('')+'</div></div>';
-      return SEC('Project defaults','<div class="row"><label>Sheet</label>'+seg(PROJECT.sheet,[['8x4','8x4'],['10x4','10x4']],'setSheet')+'</div><div class="row"><label>Sizing</label>'+seg(PROJECT.sizeMode,[['auto','Auto'],['locked','Locked'],['per','Section']],'setSizeMode')+'</div>'+pj('Material','material')+pj('Thickness','thickness')+skseg+pj('Skirting height','skirtingH','number'))
+      return SEC('Project defaults','<div class="row"><label>Sizing</label>'+seg(PROJECT.sizeMode,[['auto','Auto'],['locked','Locked'],['per','Section']],'setSizeMode')+'</div><div class="row"><label>Sheet</label><div class="val" style="background:transparent;border:0">auto (8x4 · 10x4 if &gt;2.4m)</div></div>'+pj('Material','material')+pj('Thickness','thickness')+skseg+pj('Skirting height','skirtingH','number'))
         +SEC('Pricing',pj('Material £/sheet','matCost','number')+pj('CNC £/sheet','cncCost','number')+RO('Project total',money(projectTotal())))
         +shakerEditor(PROJECT.shaker,'project');
     }
@@ -404,27 +405,27 @@
     const VB_W=880,VB_H=400,X=36,Yt=30,drawW=VB_W-X-18,drawH=VB_H-Yt-30,floorY=Yt+drawH;
     const sx=drawW/W,sy=drawH/H,MX=x=>X+x*sx,MY=hh=>floorY-hh*sy;canvasXf={X,sx,floorY,sy};
     let s=`<svg viewBox="${vb.x} ${vb.y} ${vb.w} ${vb.h}">`;
-    s+=`<rect x="${X}" y="${Yt}" width="${drawW}" height="${drawH}" fill="${P.wall}" stroke="${P.wallBd}" stroke-width="1.5"/>`;
-    s+=`<line x1="${X-10}" y1="${floorY}" x2="${X+drawW+10}" y2="${floorY}" stroke="${P.floor}" stroke-width="2"/>`;
+    s+=`<rect x="${X}" y="${Yt}" width="${drawW}" height="${drawH}" fill="${P.wall}" stroke="${P.wallBd}" stroke-width="0.7"/>`;
+    s+=`<line x1="${X-10}" y1="${floorY}" x2="${X+drawW+10}" y2="${floorY}" stroke="${P.floor}" stroke-width="0.9"/>`;
     s+=`<text x="${X+drawW/2}" y="${Yt-18}" text-anchor="middle" font-size="12" fill="${P.dim}">${W} mm</text>`;
     s+=`<text x="${X-26}" y="${Yt+drawH/2}" text-anchor="middle" font-size="12" fill="${P.dim}" transform="rotate(-90 ${X-26} ${Yt+drawH/2})">${H} mm</text>`;
     const _sh=resolveShaker(room,wall),th=parseInt(rp(room,'thickness'))||18,da=+room.doorAllow||175,tf=sideVal(wall.sideTop||'normal',L.frame,th,da)*sy,bf=(rp(room,'skirting')==='yes'?(+rp(room,'skirtingH')+L.frame):sideVal(wall.sideBottom||'normal',L.frame,th,da))*sy,gap=L.frame*sx,ptype=_sh.type||'shaker',bead=_sh.beading||[];
     L.panels.forEach(p=>{const x=MX(p.x0),w=(p.x1-p.x0)*sx,yTop=MY(p.y1),h=(p.y1-p.y0)*sy;
       const stroke=p.cap?P.capBd:P.pBd,fill=p.cap?P.capFill:P.pFill,selp=sel.kind==='panel'&&sel.panelId===p.id;
-      s+=`<g class="pk" data-k="panel" data-id="${p.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
+      s+=`<g class="pk" data-k="panel" data-id="${p.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" fill="${fill}" stroke="${stroke}" stroke-width="0.7"/>`;
       const ix=x+p.lf*sx,iw=Math.max(0,w-(p.lf+p.rf)*sx),iy=yTop+tf,ih=Math.max(0,h-tf-bf),cols=p.cols,cw=(iw-gap*(cols-1))/cols;
-      if(ptype!=='flat')for(let i=0;i<cols;i++){const cx=ix+i*(cw+gap);s+=`<rect x="${cx}" y="${iy}" width="${Math.max(0,cw)}" height="${ih}" fill="${P.cell}" stroke="${stroke}" stroke-width="1"/>`;
+      if(ptype!=='flat')for(let i=0;i<cols;i++){const cx=ix+i*(cw+gap);s+=`<rect x="${cx}" y="${iy}" width="${Math.max(0,cw)}" height="${ih}" fill="${P.cell}" stroke="${stroke}" stroke-width="0.5"/>`;
         if(ptype==='reeded'){const n=Math.max(2,Math.round(cw/11));for(let k=1;k<n;k++){const lx=cx+cw*k/n;s+=`<line x1="${lx}" y1="${iy+3}" x2="${lx}" y2="${iy+ih-3}" stroke="${stroke}" stroke-opacity=".5"/>`;}}
-        bead.forEach((bd,bi)=>{if(!bd.on)return;const o=+bd.off||0,ox=o*sx,oy=o*sy,bw=Math.max(0,cw)-2*ox,bh=ih-2*oy;if(bw>0&&bh>0)s+=`<rect x="${cx+ox}" y="${iy+oy}" width="${bw}" height="${bh}" fill="none" stroke="${BEAD_COLORS[bi]}" stroke-width="0.8"/>`;});}
+        bead.forEach((bd,bi)=>{if(!bd.on)return;const o=+bd.off||0,ox=o*sx,oy=o*sy,bw=Math.max(0,cw)-2*ox,bh=ih-2*oy;if(bw>0&&bh>0)s+=`<rect x="${cx+ox}" y="${iy+oy}" width="${bw}" height="${bh}" fill="none" stroke="${BEAD_COLORS[bi]}" stroke-width="0.5"/>`;});}
       s+=`<text x="${x+w/2}" y="${yTop-5}" text-anchor="middle" font-size="10" font-weight="700" fill="${selp?P.sel:P.lab}">${p.label}</text>`;
-      if(selp)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
+      if(selp)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" fill="none" stroke="${P.sel}" stroke-width="0.9"/>`;
       s+='</g>';});
     L.ops.forEach(o=>{const x=MX(o.x),w=o.width*sx,yTop=MY(o.bottom+o.height),h=o.height*sy;
       const isDoor=o.type==='door',isWin=o.type==='window',fill=isDoor?P.door:(isWin?P.capFill:P.obj),bd=isDoor?P.doorBd:(isWin?P.capBd:P.objBd);
       const selo=sel.kind==='opening'&&sel.op&&sel.op.id===o.id;
-      s+=`<g class="pk" data-k="op" data-id="${o.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" fill="${fill}" stroke="${bd}" stroke-width="1.5" ${o.type==='object'?'stroke-dasharray="5 4"':''}/>`;
+      s+=`<g class="pk" data-k="op" data-id="${o.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" fill="${fill}" stroke="${bd}" stroke-width="0.7" ${o.type==='object'?'stroke-dasharray="5 4"':''}/>`;
       s+=`<text x="${x+w/2}" y="${yTop+h/2+4}" text-anchor="middle" font-size="12" font-weight="800" fill="${bd}">${o.name}</text>`;
-      if(selo)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
+      if(selo)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" fill="none" stroke="${P.sel}" stroke-width="0.9"/>`;
       s+='</g>';});
     snapSVG=[];const addSnap=(x,h)=>snapSVG.push({sx:MX(x),sy:MY(h),x,h});
     addSnap(0,0);addSnap(W,0);addSnap(0,H);addSnap(W,H);
@@ -433,8 +434,8 @@
       if(ptype!=='flat'&&iw>0&&cyT>cyB)for(let i=0;i<p.cols;i++){const cl=p.x0+p.lf+i*(cw+fr),cr=cl+cw;addSnap(cl,cyB);addSnap(cr,cyB);addSnap(cl,cyT);addSnap(cr,cyT);}});
     L.ops.forEach(o=>{addSnap(o.x,o.bottom);addSnap(o.x+o.width,o.bottom);addSnap(o.x,o.bottom+o.height);addSnap(o.x+o.width,o.bottom+o.height);});
     (wall.dims||[]).forEach((d,i)=>{const ax=d.axis||(Math.abs(d.x2-d.x1)>=Math.abs(d.h2-d.h1)?'h':'v');let X1=MX(d.x1),Y1=MY(d.h1),X2,Y2,len;if(ax==='h'){X2=MX(d.x2);Y2=Y1;len=Math.round(Math.abs(d.x2-d.x1));}else{X2=X1;Y2=MY(d.h2);len=Math.round(Math.abs(d.h2-d.h1));}const mx=(X1+X2)/2,my=(Y1+Y2)/2;
-      s+=`<g class="dim" data-i="${i}"><line x1="${X1}" y1="${Y1}" x2="${X2}" y2="${Y2}" stroke="${P.sel}" stroke-width="1.2"/><circle cx="${X1}" cy="${Y1}" r="3" fill="${P.sel}"/><circle cx="${X2}" cy="${Y2}" r="3" fill="${P.sel}"/><rect x="${mx-22}" y="${my-9}" width="44" height="15" fill="${P.wall}" stroke="${P.sel}" stroke-width=".6"/><text x="${mx}" y="${my+2}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${P.sel}">${len}</text></g>`;});
-    if(measurePt)s+=`<circle cx="${MX(measurePt.x)}" cy="${MY(measurePt.h)}" r="4" fill="none" stroke="${P.sel}" stroke-width="1.5"/>`;
+      s+=`<g class="dim" data-i="${i}"><line x1="${X1}" y1="${Y1}" x2="${X2}" y2="${Y2}" stroke="${P.sel}" stroke-width="0.6"/><circle cx="${X1}" cy="${Y1}" r="3" fill="${P.sel}"/><circle cx="${X2}" cy="${Y2}" r="3" fill="${P.sel}"/><rect x="${mx-22}" y="${my-9}" width="44" height="15" fill="${P.wall}" stroke="${P.sel}" stroke-width=".6"/><text x="${mx}" y="${my+2}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${P.sel}">${len}</text></g>`;});
+    if(measurePt)s+=`<circle cx="${MX(measurePt.x)}" cy="${MY(measurePt.h)}" r="4" fill="none" stroke="${P.sel}" stroke-width="0.7"/>`;
     s+='<g id="mOverlay"></g>';
     s+='</svg>';canvas.innerHTML=s;
     canvas.querySelectorAll('.pk').forEach(g=>g.onclick=()=>{if(measureMode)return;g.dataset.k==='op'?selectOpening(g.dataset.id):selectPanel(g.dataset.id);});
@@ -454,7 +455,6 @@
     thLight.textContent=t('light');thDark.textContent=t('dark');
     thLight.className=theme==='light'?'on':'';thDark.className=theme==='dark'?'on':'';
     lgEn.className=lang==='en'?'on':'';lgPt.className=lang==='pt'?'on':'';
-    sh8.className=PROJECT.sheet==='8x4'?'on':'';sh10.className=PROJECT.sheet==='10x4'?'on':'';
     szAuto.className=PROJECT.sizeMode==='auto'?'on':'';szLock.className=PROJECT.sizeMode==='locked'?'on':'';szPer.className=PROJECT.sizeMode==='per'?'on':'';}
   const money=n=>'£'+Math.round(+n||0).toLocaleString();
   const rp=(r,k)=>(r&&r[k]!=null&&r[k]!=='')?r[k]:PROJECT[k];
