@@ -277,6 +277,37 @@
     return {W,H,frame,ops,panels};
   }
   const ruleName=r=>r==='joint'?'Joint':(r==='door'?'Door':'Normal');
+  // ===== nesting (per room; shelf packer; 7mm gap; rotation) =====
+  const NEST_SHEET=()=>PROJECT.sheet==='10x4'?{w:3050,h:1220}:{w:2440,h:1220};
+  function nestPanels(parts,SW,SH,gap){
+    const items=parts.map(p=>({w:+p.w,h:+p.h,label:p.label})).filter(p=>p.w>0&&p.h>0).sort((a,b)=>Math.max(b.w,b.h)-Math.max(a.w,a.h));
+    const sheets=[];let cur=null,shelfY=0,shelfH=0,shelfX=0;
+    const startSheet=()=>{cur={parts:[]};sheets.push(cur);shelfY=gap;shelfH=0;shelfX=gap;};
+    const orient=it=>{const a=(it.w<=SW-2*gap&&it.h<=SH-2*gap),b=(it.h<=SW-2*gap&&it.w<=SH-2*gap);if(a&&!b)return {w:it.w,h:it.h};if(b&&!a)return {w:it.h,h:it.w};return it.w>=it.h?{w:it.w,h:it.h}:{w:it.h,h:it.w};};
+    startSheet();
+    items.forEach(it=>{let o=orient(it);
+      if(shelfX+o.w>SW-gap){shelfY+=shelfH+gap;shelfX=gap;shelfH=0;}
+      if(shelfY+o.h>SH-gap){startSheet();o=orient(it);}
+      cur.parts.push({x:shelfX,y:shelfY,w:o.w,h:o.h,label:it.label});
+      shelfX+=o.w+gap;if(o.h>shelfH)shelfH=o.h;});
+    return sheets;
+  }
+  function nestRoom(r){const s=NEST_SHEET(),parts=[];(r.walls||[]).forEach(w=>layoutWall(w,r).panels.forEach(p=>parts.push({w:Math.round(p.x1-p.x0),h:Math.round(p.y1-p.y0),label:p.label})));return nestPanels(parts,s.w,s.h,NEST_GAP);}
+  function roomSheets(r){return nestRoom(r).length;}
+  function projectSheets(){return MODEL.rooms.reduce((n,r)=>n+roomSheets(r),0);}
+  function renderNest(){const P=pal(),s0=NEST_SHEET(),SW=s0.w,SH=s0.h,margin=18,gapY=16,labelH=16;
+    const groups=MODEL.rooms.map(r=>({name:r.name,sheets:nestRoom(r)})).filter(g=>g.sheets.length);
+    const sc=(880-2*margin)/SW, sheetH=SH*sc;
+    const vbH=Math.max(400, margin+groups.reduce((a,g)=>a+g.sheets.length*(sheetH+labelH+gapY),0)+10);
+    let s=`<svg viewBox="0 0 880 ${vbH}">`,y=margin;
+    if(!groups.length)s+=`<text x="440" y="70" text-anchor="middle" font-size="14" fill="${P.dim}">No panels to nest</text>`;
+    groups.forEach(g=>g.sheets.forEach((sh,si)=>{
+      s+=`<text x="${margin}" y="${y+11}" font-size="11" font-weight="700" fill="${P.lab}">${g.name} — Sheet ${si+1} (${PROJECT.sheet})</text>`;y+=labelH;
+      s+=`<rect x="${margin}" y="${y}" width="${SW*sc}" height="${sheetH}" fill="${P.wall}" stroke="${P.wallBd}" stroke-width="1"/>`;
+      sh.parts.forEach(pt=>{s+=`<rect x="${margin+pt.x*sc}" y="${y+pt.y*sc}" width="${pt.w*sc}" height="${pt.h*sc}" fill="${P.pFill}" stroke="${P.pBd}" stroke-width="0.7"/>`;
+        if(pt.w*sc>22&&pt.h*sc>11)s+=`<text x="${margin+(pt.x+pt.w/2)*sc}" y="${y+(pt.y+pt.h/2)*sc+3}" text-anchor="middle" font-size="8" fill="${P.lab}">${pt.label}</text>`;});
+      y+=sheetH+gapY;}));
+    s+=`</svg>`;canvas.innerHTML=s;document.getElementById('canvas').classList.remove('measuring');}
 
   // ===== inspector (one contextual panel, editable) =====
   const SEC=(lab,body)=>`<div class="sec"><div class="lab">${lab}</div>${body}</div>`;
@@ -316,7 +347,7 @@
       const rdsk='<div class="row"><label>'+t('f_skirting')+'</label><div class="seg">'+[['yes',t('v_yes')],['no',t('v_no')]].map(o=>'<span class="'+(rp(r,'skirting')===o[0]?'on':'')+'" onclick="editRoomDefault(\'skirting\',\''+o[0]+'\')">'+o[1]+'</span>').join('')+'</div></div>';
       return SEC(t('s_room'),TXT(t('f_name'),'name',r.name)+NUM(t('f_frame'),'frame',r.frame)+rd(t('f_material'),'material')+rd(t('f_thickness'),'thickness'))
         +SEC(t('s_finish'),rdsk+rd(t('f_skirtingh'),'skirtingH','number'))
-        +SEC(t('s_pricing'),NUM(t('f_sheets'),'sheets',r.sheets)+RO(t('f_roomtotal'),money(roomTotal(r))))
+        +SEC(t('s_pricing'),RO('Sheets (nested)',roomSheets(r))+RO(t('f_roomtotal'),money(roomTotal(r))))
         +shakerScopeBlock('room');}
     if(sel.kind==='wall'){const w=sel.wall;
       return SEC(t('s_wall'),TXT(t('f_name'),'name',w.name)+NUM(t('f_width'),'width',w.width)+NUM(t('f_height'),'height',w.height)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir)+NUM(t('f_panelheight'),'panelHeight',w.panelHeight))
@@ -363,11 +394,12 @@
   const pal=()=>PAL[theme];
   let vb={x:0,y:0,w:880,h:400};
   let measureMode=false,measurePt=null,canvasXf=null,hoverPt=null,snapSVG=[];
-  function applyVB(){const svg=document.getElementById('canvas').querySelector('svg');if(svg)svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);}
+  let viewMode='2d';
+  function applyVB(){if(viewMode!=='2d')return;const svg=document.getElementById('canvas').querySelector('svg');if(svg)svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);}
   function zoomAt(f,px,py){const nw=Math.max(20,Math.min(8000,vb.w*f)),r=nw/vb.w;vb.x=px-(px-vb.x)*r;vb.y=py-(py-vb.y)*r;vb.w=nw;vb.h=vb.h*r;applyVB();}
   function zoomBy(f){zoomAt(f,vb.x+vb.w/2,vb.y+vb.h/2);}
   function fitView(){vb={x:0,y:0,w:880,h:400};applyVB();}
-  function renderCanvas(){const P=pal(),wall=view.wall,room=view.room;if(!wall){canvas.innerHTML='';return;}
+  function renderCanvas(){if(viewMode==='nest')return renderNest();const P=pal(),wall=view.wall,room=view.room;if(!wall){canvas.innerHTML='';return;}
     const L=layoutWall(wall,room),W=L.W,H=L.H;
     const VB_W=880,VB_H=400,X=36,Yt=30,drawW=VB_W-X-18,drawH=VB_H-Yt-30,floorY=Yt+drawH;
     const sx=drawW/W,sy=drawH/H,MX=x=>X+x*sx,MY=hh=>floorY-hh*sy;canvasXf={X,sx,floorY,sy};
@@ -416,7 +448,7 @@
     rail.innerHTML=TOOLGROUPS.map(g=>g.map(x=>{const on=(x[1]==='measure'&&measureMode)||(x[1]==='select'&&!measureMode);return `<div class="tool ${on?'on':''}" data-act="${x[1]}" title="${t('tool_'+x[1])}"><span class="ti">${svgIcon(x[0])}</span><span class="tl">${t('tool_'+x[1])}</span></div>`;}).join('')).join('<div class="sep"></div>');
     rail.querySelectorAll('.tool[data-act]').forEach(el=>el.onclick=()=>toolAction(el.dataset.act));
     exportBtn.textContent='⬇ '+t('exportdxf');
-    viewcube.innerHTML=`<button class="on">2D</button><button class="disabled" title="${t('soon_tip')}">2.5D</button><button class="disabled" title="${t('soon_tip')}">DXF</button>`;
+    viewcube.innerHTML=`<button class="${viewMode==='2d'?'on':''}" onclick="setView('2d')">2D</button><button class="${viewMode==='nest'?'on':''}" onclick="setView('nest')">Nest</button><button class="disabled" title="${t('soon_tip')}">2.5D</button>`;
     soon.textContent=t('phase1');
     optTitle.textContent=t('options');lblTheme.textContent=t('theme');lblLang.textContent=t('language');
     thLight.textContent=t('light');thDark.textContent=t('dark');
@@ -426,11 +458,11 @@
     szAuto.className=PROJECT.sizeMode==='auto'?'on':'';szLock.className=PROJECT.sizeMode==='locked'?'on':'';szPer.className=PROJECT.sizeMode==='per'?'on':'';}
   const money=n=>'£'+Math.round(+n||0).toLocaleString();
   const rp=(r,k)=>(r&&r[k]!=null&&r[k]!=='')?r[k]:PROJECT[k];
-  const roomTotal=r=>(+r.sheets||0)*((+PROJECT.matCost||0)+(+PROJECT.cncCost||0));
+  const roomTotal=r=>roomSheets(r)*((+PROJECT.matCost||0)+(+PROJECT.cncCost||0));
   const projectTotal=()=>MODEL.rooms.reduce((s,r)=>s+roomTotal(r),0);
   function renderStatus(){const w=view.wall,r=view.room,L=w?layoutWall(w,r):{panels:[]};
     let area=0;L.panels.forEach(p=>{area+=Math.max(0,p.x1-p.x0)*Math.max(0,p.y1-p.y0);});area=area/1e6;
-    document.getElementById('status').innerHTML=`<span class="pill">${r?r.name:''}</span><span class="pill">${L.panels.length} ${t('st_panels')}</span>`+(w?`<span>${w.width} × ${w.height} mm · ≈ ${area.toFixed(2)} m²</span>`:'')+`<div class="spacer"></div><span class="pill">${t('st_total')}: ${money(projectTotal())}</span>`;}
+    document.getElementById('status').innerHTML=`<span class="pill">${r?r.name:''}</span><span class="pill">${L.panels.length} ${t('st_panels')}</span>`+(w?`<span>${w.width} × ${w.height} mm · ≈ ${area.toFixed(2)} m²</span>`:'')+`<div class="spacer"></div><span class="pill">${projectSheets()} sheets</span><span class="pill">${t('st_total')}: ${money(projectTotal())}</span>`;}
   function renderCrumbs(){crumbs.innerHTML=`${view.room?view.room.name:''} › ${view.wall?view.wall.name:''} › <b>${titleFor()}</b>`;}
   function renderWallTabs(){const el=document.getElementById('walltabs'),r=view.room;
     if(!r||(r.walls||[]).length<2){el.innerHTML='';return;}
@@ -576,6 +608,7 @@
   function setLang(l){lang=l;document.documentElement.lang=l;renderAll();}
   function setSheet(s){PROJECT.sheet=s;renderChrome();renderCanvas();renderStatus();renderInspector();saveModel();}
   function setSizeMode(m){PROJECT.sizeMode=m;renderChrome();renderCanvas();renderStatus();renderInspector();saveModel();}
+  function setView(m){viewMode=m;renderChrome();renderCanvas();}
   window.editProject=(f,v)=>{PROJECT[f]=(f==='skirtingH'||f==='matCost'||f==='cncCost')?(+v||0):v;renderCanvas();renderStatus();renderInspector();saveModel();};
   window.editRoomDefault=(f,v)=>{const r=sel.room;if(!r)return;const cur=rp(r,f);if(String(cur)===String(v)){renderInspector();return;}if(!confirm('Change '+f+' from "'+cur+'" to "'+v+'" in this room ("'+r.name+'") only?')){renderInspector();return;}r[f]=(f==='skirtingH')?(+v||0):v;renderTree();renderCanvas();renderStatus();renderInspector();saveModel();};
   function toggleOpt(e){if(e)e.stopPropagation();optpop.classList.toggle('show');}
