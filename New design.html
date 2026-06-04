@@ -297,34 +297,41 @@
   function resetShaker(sc){if(sc==='room'){if(sel.room)delete sel.room.shaker;}else if(view.wall)delete view.wall.shaker;refresh();saveModel();}
   function selPanel(){if(sel.kind!=='panel'||!view.wall)return null;return layoutWall(view.wall,view.room).panels.find(p=>p.id===sel.panelId)||null;}
   function inspectorBody(){
+    if(sel.kind==='project'){
+      const seg=(cur,opts,fn)=>'<div class="seg">'+opts.map(o=>'<span class="'+(o[0]===cur?'on':'')+'" onclick="'+fn+'(\''+o[0]+'\')">'+o[1]+'</span>').join('')+'</div>';
+      return SEC('Project defaults','<div class="row"><label>Sheet</label>'+seg(PROJECT.sheet,[['8x4','8x4'],['10x4','10x4']],'setSheet')+'</div><div class="row"><label>Sizing</label>'+seg(PROJECT.sizeMode,[['auto','Auto'],['locked','Locked'],['per','Section']],'setSizeMode')+'</div>')+shakerEditor(PROJECT.shaker,'project');
+    }
     if(sel.kind==='room'){const r=sel.room;
       return SEC(t('s_room'),TXT(t('f_name'),'name',r.name)+NUM(t('f_frame'),'frame',r.frame)+TXT(t('f_material'),'material',r.material)+TXT(t('f_thickness'),'thickness',r.thickness))
         +SEC(t('s_finish'),SEGE(t('f_skirting'),'skirting',[['yes',t('v_yes')],['no',t('v_no')]],r.skirting)+NUM(t('f_skirtingh'),'skirtingH',r.skirtingH))
-        +SEC(t('s_pricing'),NUM(t('f_sheets'),'sheets',r.sheets)+NUM(t('f_matcost'),'matCost',r.matCost)+NUM(t('f_cnccost'),'cncCost',r.cncCost)+RO(t('f_roomtotal'),money(roomTotal(r))));}
+        +SEC(t('s_pricing'),NUM(t('f_sheets'),'sheets',r.sheets)+NUM(t('f_matcost'),'matCost',r.matCost)+NUM(t('f_cnccost'),'cncCost',r.cncCost)+RO(t('f_roomtotal'),money(roomTotal(r))))
+        +shakerScopeBlock('room');}
     if(sel.kind==='wall'){const w=sel.wall;
       return SEC(t('s_wall'),TXT(t('f_name'),'name',w.name)+NUM(t('f_width'),'width',w.width)+NUM(t('f_height'),'height',w.height)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir)+NUM(t('f_panelheight'),'panelHeight',w.panelHeight))
-        +SEC(t('s_shaker'),NUM(t('f_size'),'colTarget',w.colTarget));}
+        +SEC(t('s_shaker'),NUM(t('f_size'),'colTarget',w.colTarget))+shakerScopeBlock('wall');}
     if(sel.kind==='opening'){const o=sel.op;
       if(o.type==='door')return SEC(t('s_door'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_posx'),'x',o.x))+SEC(t('s_siderule'),RO(t('f_panelsbeside'),'Door = '+((+sel.room.doorAllow)||175)));
       if(o.type==='window')return SEC(t('s_window'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_sill'),'bottom',o.bottom)+NUM(t('f_posx'),'x',o.x));
       return SEC(t('s_object'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_base'),'bottom',o.bottom))+SEC(t('s_toppanel'),SEGE(t('f_createtop'),'topPanel',[['yes',t('v_yes')],['no',t('v_no')]],o.topPanel||'yes'));}
     const p=selPanel(),w=view.wall;
-    return SEC(t('s_shaker'),SEGE(t('f_type'),'shakerType',[['shaker','Shaker'],['flat','Flat'],['reeded','Reeded']],w.shakerType||'shaker')+RO(t('f_columns'),p?p.cols:'—')+NUM(t('f_size'),'colTarget',w.colTarget)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir))
+    return SEC(t('s_shaker'),RO(t('f_columns'),p?p.cols:'—')+NUM(t('f_size'),'colTarget',w.colTarget)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir))
       +SEC(t('s_siderules'),RO(t('f_left'),p?ruleName(p.leftRule):'—')+RO(t('f_right'),p?ruleName(p.rightRule):'—'))
-      +SEC(t('s_offset'),'<div class="chips"><span class="chip">A 0</span><span class="chip">B 6</span><span class="chip">C 8</span><span class="chip">D 19</span><span class="chip">E 25</span><span class="chip">F 28.5</span><span class="chip warn">Back 80</span></div>');
+      +shakerScopeBlock('wall');
   }
-  function titleFor(){if(sel.kind==='room')return sel.room.name;if(sel.kind==='wall')return sel.wall.name;if(sel.kind==='opening')return sel.op.name;const p=selPanel();return 'Panel '+(p?p.label:'');}
+  function titleFor(){if(sel.kind==='project')return 'Project';if(sel.kind==='room')return sel.room.name;if(sel.kind==='wall')return sel.wall.name;if(sel.kind==='opening')return sel.op.name;const p=selPanel();return 'Panel '+(p?p.label:'');}
   function subFor(){const rn=view.room?view.room.name:'',wn=view.wall?view.wall.name:'';
+    if(sel.kind==='project')return 'defaults';
     if(sel.kind==='room')return t('d_room');
     if(sel.kind==='wall')return rn;
     if(sel.kind==='opening')return rn+' · '+wn+' · '+t('d_opening');
     return rn+' · '+wn;}
-  function inspIcon(){if(sel.kind==='room')return 'panel';if(sel.kind==='wall')return 'wall';if(sel.kind==='opening')return sel.op.type;return 'panel';}
+  function inspIcon(){if(sel.kind==='project')return 'object';if(sel.kind==='room')return 'panel';if(sel.kind==='wall')return 'wall';if(sel.kind==='opening')return sel.op.type;return 'panel';}
   function renderInspector(){const rm=(sel.kind==='opening'||sel.kind==='wall'||sel.kind==='room');
     insp.innerHTML=`<div class="ihead"><div class="pic">${svgIcon(inspIcon(),1.7)}</div><div style="flex:1"><div class="t">${titleFor()}</div><div class="s">${subFor()}</div></div>${rm?'<button class="rm" onclick="dupSel()" title="Duplicate">⧉</button><button class="rm" onclick="removeSel()" title="Remove">🗑</button>':''}</div>`+inspectorBody();}
 
   // ===== tree =====
   function renderTree(){let h=`<h4>${t('project')}</h4>`;
+    h+=`<div class="roomcard"><div class="node ${sel.kind==='project'?'sel':''}" data-k="project"><span class="ic">${svgIcon('object',1.6)}</span> Project</div></div>`;
     MODEL.rooms.forEach(r=>{h+='<div class="roomcard">';
       const rsel=sel.kind==='room'&&sel.room===r?'sel':'';
       h+=`<div class="node ${rsel}" data-k="room" data-r="${r.id}"><span class="ic">${svgIcon('panel',1.6)}</span> ${r.name}<span class="tag">${r.sheets} ${t('sheets')}</span></div>`;
@@ -336,7 +343,7 @@
     h+=`<div class="roomcard"><div class="node" style="color:var(--muted)" onclick="addRoom()"><span class="ic">${svgIcon('add',1.6)}</span> ${t('addroom')}</div></div>`;
     tree.innerHTML=h;
     tree.querySelectorAll('.node[data-k]').forEach(n=>{const k=n.dataset.k;
-      n.onclick=()=>{if(k==='room')selectRoom(n.dataset.r);else if(k==='wall')selectWall(n.dataset.r,n.dataset.w);else if(k==='op')selectOpening(n.dataset.o);};});}
+      n.onclick=()=>{if(k==='project')selectProject();else if(k==='room')selectRoom(n.dataset.r);else if(k==='wall')selectWall(n.dataset.r,n.dataset.w);else if(k==='op')selectOpening(n.dataset.o);};});}
 
   // ===== canvas (theme-aware, model-driven) =====
   const PAL={light:{wall:'#f8fafc',wallBd:'#94a3b8',floor:'#475569',dim:'#64748b',pFill:'#dcfce7',pBd:'#16a34a',cell:'#ffffff',capFill:'#dbeafe',capBd:'#2563eb',obj:'#eef2f7',objBd:'#94a3b8',door:'#fde7ef',doorBd:'#db2777',lab:'#475569',sel:'#2563eb'},
@@ -428,6 +435,7 @@
   function redo(){if(!redoStack.length)return;undoStack.push(JSON.stringify(MODEL.rooms));restoreRooms(redoStack.pop());}
   window.edit=(f,v)=>{const o=curObj();if(!o)return;pushHistory();o[f]=coerce(v);renderTree();renderCanvas();renderCrumbs();renderStatus();saveModel();};
   window.editSeg=(f,v)=>{const o=curObj();if(!o)return;pushHistory();o[f]=v;refresh();};
+  function selectProject(){sel={kind:'project',room:view.room,wall:view.wall,op:null,panelId:null};renderAll();}
   function selectRoom(id){const r=MODEL.rooms.find(x=>x.id===id);if(!r)return;view={room:r,wall:r.walls[0]||null};sel={kind:'room',room:r,wall:view.wall,op:null,panelId:null};renderAll();}
   function selectWall(rid,wid){const r=MODEL.rooms.find(x=>x.id===rid),w=r.walls.find(x=>x.id===wid);view={room:r,wall:w};sel={kind:'wall',room:r,wall:w,op:null,panelId:null};renderAll();}
   function selectOpening(id){const w=view.wall,o=(w.openings||[]).find(x=>x.id===id);if(!o)return;sel={kind:'opening',room:view.room,wall:w,op:o,panelId:null};refresh();}
@@ -552,8 +560,8 @@
     view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};renderAll();}
   function setTheme(th){theme=th;app.classList.toggle('dark',th==='dark');renderChrome();renderCanvas();}
   function setLang(l){lang=l;document.documentElement.lang=l;renderAll();}
-  function setSheet(s){PROJECT.sheet=s;renderChrome();renderCanvas();renderStatus();saveModel();}
-  function setSizeMode(m){PROJECT.sizeMode=m;renderChrome();renderCanvas();renderStatus();saveModel();}
+  function setSheet(s){PROJECT.sheet=s;renderChrome();renderCanvas();renderStatus();renderInspector();saveModel();}
+  function setSizeMode(m){PROJECT.sizeMode=m;renderChrome();renderCanvas();renderStatus();renderInspector();saveModel();}
   function toggleOpt(e){if(e)e.stopPropagation();optpop.classList.toggle('show');}
   document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');if(!(e.target.closest&&e.target.closest('.menu')))menu.querySelectorAll('.mtop').forEach(z=>z.classList.remove('open'));});
   (()=>{const cv=document.getElementById('canvas');let pan=null;
