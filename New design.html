@@ -220,7 +220,7 @@
   let view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};
   const BEAD_COLORS=['#b45309','#dc2626','#2563eb','#7c3aed','#0f766e','#f97316','#a16207'];
   function defaultBeading(){return [{on:false,off:0,round:true},{on:false,off:6,round:false},{on:false,off:8,round:false},{on:false,off:19,round:false},{on:false,off:25,round:false},{on:false,off:28.5,round:false},{on:false,off:0,round:false}];}
-  let PROJECT={sheet:'8x4',sizeMode:'auto',shaker:{type:'shaker',frame:80,beading:defaultBeading(),backFrame:80,sides:'front'}};
+  let PROJECT={sheet:'8x4',sizeMode:'auto',material:'MDF',thickness:'18mm',skirting:'no',skirtingH:225,matCost:70,cncCost:330,shaker:{type:'shaker',frame:80,beading:defaultBeading(),backFrame:80,sides:'front'}};
   const NEST_GAP=7; // mm gap between parts for nesting (used later)
   try{const _p=JSON.parse(localStorage.getItem('fnd_model')||'null');if(_p&&_p.project)PROJECT=Object.assign(PROJECT,_p.project);}catch(_e){}
   function resolveShaker(room,wall){const m=Object.assign({},PROJECT.shaker||{},(room&&room.shaker)||{},(wall&&wall.shaker)||{});
@@ -301,12 +301,18 @@
   function inspectorBody(){
     if(sel.kind==='project'){
       const seg=(cur,opts,fn)=>'<div class="seg">'+opts.map(o=>'<span class="'+(o[0]===cur?'on':'')+'" onclick="'+fn+'(\''+o[0]+'\')">'+o[1]+'</span>').join('')+'</div>';
-      return SEC('Project defaults','<div class="row"><label>Sheet</label>'+seg(PROJECT.sheet,[['8x4','8x4'],['10x4','10x4']],'setSheet')+'</div><div class="row"><label>Sizing</label>'+seg(PROJECT.sizeMode,[['auto','Auto'],['locked','Locked'],['per','Section']],'setSizeMode')+'</div>')+shakerEditor(PROJECT.shaker,'project');
+      const pj=(l,f,ty)=>'<div class="row"><label>'+l+'</label><input class="val" type="'+(ty||'text')+'" value="'+(PROJECT[f]==null?'':PROJECT[f])+'" onchange="editProject(\''+f+'\',this.value)"></div>';
+      const skseg='<div class="row"><label>Skirting</label><div class="seg">'+[['yes','Yes'],['no','No']].map(o=>'<span class="'+(PROJECT.skirting===o[0]?'on':'')+'" onclick="editProject(\'skirting\',\''+o[0]+'\')">'+o[1]+'</span>').join('')+'</div></div>';
+      return SEC('Project defaults','<div class="row"><label>Sheet</label>'+seg(PROJECT.sheet,[['8x4','8x4'],['10x4','10x4']],'setSheet')+'</div><div class="row"><label>Sizing</label>'+seg(PROJECT.sizeMode,[['auto','Auto'],['locked','Locked'],['per','Section']],'setSizeMode')+'</div>'+pj('Material','material')+pj('Thickness','thickness')+skseg+pj('Skirting height','skirtingH','number'))
+        +SEC('Pricing',pj('Material £/sheet','matCost','number')+pj('CNC £/sheet','cncCost','number')+RO('Project total',money(projectTotal())))
+        +shakerEditor(PROJECT.shaker,'project');
     }
     if(sel.kind==='room'){const r=sel.room;
-      return SEC(t('s_room'),TXT(t('f_name'),'name',r.name)+NUM(t('f_frame'),'frame',r.frame)+TXT(t('f_material'),'material',r.material)+TXT(t('f_thickness'),'thickness',r.thickness))
-        +SEC(t('s_finish'),SEGE(t('f_skirting'),'skirting',[['yes',t('v_yes')],['no',t('v_no')]],r.skirting)+NUM(t('f_skirtingh'),'skirtingH',r.skirtingH))
-        +SEC(t('s_pricing'),NUM(t('f_sheets'),'sheets',r.sheets)+NUM(t('f_matcost'),'matCost',r.matCost)+NUM(t('f_cnccost'),'cncCost',r.cncCost)+RO(t('f_roomtotal'),money(roomTotal(r))))
+      const rd=(l,f,ty)=>'<div class="row"><label>'+l+'</label><input class="val" type="'+(ty||'text')+'" value="'+rp(r,f)+'" onchange="editRoomDefault(\''+f+'\',this.value)"></div>';
+      const rdsk='<div class="row"><label>'+t('f_skirting')+'</label><div class="seg">'+[['yes',t('v_yes')],['no',t('v_no')]].map(o=>'<span class="'+(rp(r,'skirting')===o[0]?'on':'')+'" onclick="editRoomDefault(\'skirting\',\''+o[0]+'\')">'+o[1]+'</span>').join('')+'</div></div>';
+      return SEC(t('s_room'),TXT(t('f_name'),'name',r.name)+NUM(t('f_frame'),'frame',r.frame)+rd(t('f_material'),'material')+rd(t('f_thickness'),'thickness'))
+        +SEC(t('s_finish'),rdsk+rd(t('f_skirtingh'),'skirtingH','number'))
+        +SEC(t('s_pricing'),NUM(t('f_sheets'),'sheets',r.sheets)+RO(t('f_roomtotal'),money(roomTotal(r))))
         +shakerScopeBlock('room');}
     if(sel.kind==='wall'){const w=sel.wall;
       return SEC(t('s_wall'),TXT(t('f_name'),'name',w.name)+NUM(t('f_width'),'width',w.width)+NUM(t('f_height'),'height',w.height)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir)+NUM(t('f_panelheight'),'panelHeight',w.panelHeight))
@@ -366,7 +372,7 @@
     s+=`<line x1="${X-10}" y1="${floorY}" x2="${X+drawW+10}" y2="${floorY}" stroke="${P.floor}" stroke-width="2"/>`;
     s+=`<text x="${X+drawW/2}" y="${Yt-18}" text-anchor="middle" font-size="12" fill="${P.dim}">${W} mm</text>`;
     s+=`<text x="${X-26}" y="${Yt+drawH/2}" text-anchor="middle" font-size="12" fill="${P.dim}" transform="rotate(-90 ${X-26} ${Yt+drawH/2})">${H} mm</text>`;
-    const _sh=resolveShaker(room,wall),tf=L.frame*sy,bf=(room.skirting==='yes'?(+room.skirtingH+L.frame):L.frame)*sy,gap=L.frame*sx,ptype=_sh.type||'shaker',bead=_sh.beading||[];
+    const _sh=resolveShaker(room,wall),tf=L.frame*sy,bf=(rp(room,'skirting')==='yes'?(+rp(room,'skirtingH')+L.frame):L.frame)*sy,gap=L.frame*sx,ptype=_sh.type||'shaker',bead=_sh.beading||[];
     L.panels.forEach(p=>{const x=MX(p.x0),w=(p.x1-p.x0)*sx,yTop=MY(p.y1),h=(p.y1-p.y0)*sy;
       const stroke=p.cap?P.capBd:P.pBd,fill=p.cap?P.capFill:P.pFill,selp=sel.kind==='panel'&&sel.panelId===p.id;
       s+=`<g class="pk" data-k="panel" data-id="${p.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
@@ -387,7 +393,7 @@
     snapSVG=[];const addSnap=(x,h)=>snapSVG.push({sx:MX(x),sy:MY(h),x,h});
     addSnap(0,0);addSnap(W,0);addSnap(0,H);addSnap(W,H);
     L.panels.forEach(p=>{addSnap(p.x0,p.y0);addSnap(p.x1,p.y0);addSnap(p.x0,p.y1);addSnap(p.x1,p.y1);
-      const fr=L.frame,bf=(room.skirting==='yes'?(+room.skirtingH+fr):fr),iw=(p.x1-p.x0)-p.lf-p.rf,cw=(iw-fr*Math.max(0,p.cols-1))/Math.max(1,p.cols),cyB=p.y0+bf,cyT=p.y1-fr;
+      const fr=L.frame,bf=(rp(room,'skirting')==='yes'?(+rp(room,'skirtingH')+fr):fr),iw=(p.x1-p.x0)-p.lf-p.rf,cw=(iw-fr*Math.max(0,p.cols-1))/Math.max(1,p.cols),cyB=p.y0+bf,cyT=p.y1-fr;
       if(ptype!=='flat'&&iw>0&&cyT>cyB)for(let i=0;i<p.cols;i++){const cl=p.x0+p.lf+i*(cw+fr),cr=cl+cw;addSnap(cl,cyB);addSnap(cr,cyB);addSnap(cl,cyT);addSnap(cr,cyT);}});
     L.ops.forEach(o=>{addSnap(o.x,o.bottom);addSnap(o.x+o.width,o.bottom);addSnap(o.x,o.bottom+o.height);addSnap(o.x+o.width,o.bottom+o.height);});
     (wall.dims||[]).forEach((d,i)=>{const ax=d.axis||(Math.abs(d.x2-d.x1)>=Math.abs(d.h2-d.h1)?'h':'v');let X1=MX(d.x1),Y1=MY(d.h1),X2,Y2,len;if(ax==='h'){X2=MX(d.x2);Y2=Y1;len=Math.round(Math.abs(d.x2-d.x1));}else{X2=X1;Y2=MY(d.h2);len=Math.round(Math.abs(d.h2-d.h1));}const mx=(X1+X2)/2,my=(Y1+Y2)/2;
@@ -415,7 +421,8 @@
     sh8.className=PROJECT.sheet==='8x4'?'on':'';sh10.className=PROJECT.sheet==='10x4'?'on':'';
     szAuto.className=PROJECT.sizeMode==='auto'?'on':'';szLock.className=PROJECT.sizeMode==='locked'?'on':'';szPer.className=PROJECT.sizeMode==='per'?'on':'';}
   const money=n=>'£'+Math.round(+n||0).toLocaleString();
-  const roomTotal=r=>(+r.sheets||0)*((+r.matCost||0)+(+r.cncCost||0));
+  const rp=(r,k)=>(r&&r[k]!=null&&r[k]!=='')?r[k]:PROJECT[k];
+  const roomTotal=r=>(+r.sheets||0)*((+PROJECT.matCost||0)+(+PROJECT.cncCost||0));
   const projectTotal=()=>MODEL.rooms.reduce((s,r)=>s+roomTotal(r),0);
   function renderStatus(){const w=view.wall,r=view.room,L=w?layoutWall(w,r):{panels:[]};
     let area=0;L.panels.forEach(p=>{area+=Math.max(0,p.x1-p.x0)*Math.max(0,p.y1-p.y0);});area=area/1e6;
@@ -474,7 +481,7 @@
     if(!measurePt){measurePt={x:pt.x,h:pt.h};renderCanvas();}
     else{const dx=Math.abs(pt.x-measurePt.x),dh=Math.abs(pt.h-measurePt.h),axis=dx>=dh?'h':'v';
       (wall.dims=wall.dims||[]).push({x1:measurePt.x,h1:measurePt.h,x2:pt.x,h2:pt.h,axis});measurePt=null;renderCanvas();saveModel();}}
-  function newProject(){pushHistory();const id='r'+(++uid),wid='w'+(++uid);MODEL.rooms=[{id,name:'Room 1',material:'MDF',thickness:'18mm',frame:80,doorAllow:175,skirting:'no',skirtingH:225,sheets:1,matCost:70,cncCost:330,walls:[{id:wid,name:'Wall 1',width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]}]}];view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};renderAll();}
+  function newProject(){pushHistory();const id='r'+(++uid),wid='w'+(++uid);MODEL.rooms=[{id,name:'Room 1',frame:80,doorAllow:175,sheets:1,walls:[{id:wid,name:'Wall 1',width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]}]}];view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};renderAll();}
   const MENU=[
     ['File',[['New',()=>newProject()],['Open…',()=>document.getElementById('fileInput').click()],['Save',()=>saveProject()]]],
     ['Edit',[['Undo',()=>undo()],['Redo',()=>redo()]]],
@@ -483,7 +490,7 @@
     ['Export',[['DXF',()=>exportDXF()]]]
   ];
   function addRoom(){pushHistory();const id='r'+(++uid),wid='w'+(++uid);
-    MODEL.rooms.push({id,name:'New room',material:'MDF',thickness:'18mm',frame:80,doorAllow:175,skirting:'no',skirtingH:225,sheets:1,matCost:70,cncCost:330,
+    MODEL.rooms.push({id,name:'New room',frame:80,doorAllow:175,sheets:1,
       walls:[{id:wid,name:'Wall 1',width:3000,height:2400,panelDir:'vertical',panelHeight:2400,colTarget:340,openings:[]}]});
     selectRoom(id);}
   function addWall(){const r=view.room||sel.room;if(!r)return;pushHistory();const wid='w'+(++uid);
@@ -565,6 +572,8 @@
   function setLang(l){lang=l;document.documentElement.lang=l;renderAll();}
   function setSheet(s){PROJECT.sheet=s;renderChrome();renderCanvas();renderStatus();renderInspector();saveModel();}
   function setSizeMode(m){PROJECT.sizeMode=m;renderChrome();renderCanvas();renderStatus();renderInspector();saveModel();}
+  window.editProject=(f,v)=>{PROJECT[f]=(f==='skirtingH'||f==='matCost'||f==='cncCost')?(+v||0):v;renderCanvas();renderStatus();renderInspector();saveModel();};
+  window.editRoomDefault=(f,v)=>{const r=sel.room;if(!r)return;const cur=rp(r,f);if(String(cur)===String(v)){renderInspector();return;}if(!confirm('Change '+f+' from "'+cur+'" to "'+v+'" in this room ("'+r.name+'") only?')){renderInspector();return;}r[f]=(f==='skirtingH')?(+v||0):v;renderTree();renderCanvas();renderStatus();renderInspector();saveModel();};
   function toggleOpt(e){if(e)e.stopPropagation();optpop.classList.toggle('show');}
   document.addEventListener('click',e=>{if(!optpop.contains(e.target)&&e.target.id!=='gear')optpop.classList.remove('show');if(!(e.target.closest&&e.target.closest('.menu')))menu.querySelectorAll('.mtop').forEach(z=>z.classList.remove('open'));});
   (()=>{const cv=document.getElementById('canvas');let pan=null;
