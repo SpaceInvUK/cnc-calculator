@@ -218,7 +218,8 @@
   function saveModel(){try{localStorage.setItem('fnd_model',JSON.stringify({rooms:MODEL.rooms,project:PROJECT}));}catch(_e){}}
   let sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};
   let view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};
-  function defaultBeading(){return [{on:true,off:0,round:true},{on:true,off:6,round:false},{on:true,off:8,round:false},{on:true,off:19,round:false},{on:true,off:25,round:false},{on:true,off:28.5,round:false},{on:false,off:0,round:false}];}
+  const BEAD_COLORS=['#b45309','#dc2626','#2563eb','#7c3aed','#0f766e','#f97316','#a16207'];
+  function defaultBeading(){return [{on:false,off:0,round:true},{on:false,off:6,round:false},{on:false,off:8,round:false},{on:false,off:19,round:false},{on:false,off:25,round:false},{on:false,off:28.5,round:false},{on:false,off:0,round:false}];}
   let PROJECT={sheet:'8x4',sizeMode:'auto',shaker:{type:'shaker',frame:80,beading:defaultBeading(),backFrame:80,sides:'front'}};
   const NEST_GAP=7; // mm gap between parts for nesting (used later)
   try{const _p=JSON.parse(localStorage.getItem('fnd_model')||'null');if(_p&&_p.project)PROJECT=Object.assign(PROJECT,_p.project);}catch(_e){}
@@ -284,7 +285,7 @@
   // shaker model editor (with Beading) + scope (project/room/wall)
   const NUMS=(l,sc,p,v)=>`<div class="row"><label>${l}</label><input class="val" type="number" value="${v==null?'':v}" onchange="editShaker('${sc}','${p}',this.value)"></div>`;
   const SEGS=(l,sc,p,opts,val)=>`<div class="row"><label>${l}</label><div class="seg">${opts.map(o=>`<span class="${o[0]===val?'on':''}" onclick="editShakerSeg('${sc}','${p}','${o[0]}')">${o[1]}</span>`).join('')}</div></div>`;
-  function beadRow(sc,i,b){return `<div class="row"><label>${'ABCDEFG'[i]}</label><div style="display:flex;gap:5px;align-items:center"><div class="seg"><span class="${b.on?'on':''}" onclick="editShakerSeg('${sc}','bead.${i}.on',${!b.on})">${b.on?'On':'Off'}</span></div><input class="val" style="width:52px" type="number" value="${b.off}" onchange="editShaker('${sc}','bead.${i}.off',this.value)"><div class="seg"><span class="${b.round?'on':''}" onclick="editShakerSeg('${sc}','bead.${i}.round',${!b.round})" title="Round corners">R</span></div></div></div>`;}
+  function beadRow(sc,i,b){const c=BEAD_COLORS[i];return `<div class="row"><label><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c};margin-right:5px;vertical-align:middle"></span>${'ABCDEFG'[i]}</label><div style="display:flex;gap:5px;align-items:center"><div class="seg"><span class="${b.on?'on':''}" style="${b.on?`background:${c};color:#fff;border-color:${c}`:''}" onclick="editShakerSeg('${sc}','bead.${i}.on',${!b.on})">${b.on?'On':'Off'}</span></div><input class="val" style="width:52px" type="number" value="${b.off}" onchange="editShaker('${sc}','bead.${i}.off',this.value)"><div class="seg"><span class="${b.round?'on':''}" onclick="editShakerSeg('${sc}','bead.${i}.round',${!b.round})" title="Round corners">R</span></div></div></div>`;}
   function shakerEditor(model,sc){return SEC('Shaker',SEGS('Type',sc,'type',[['shaker','Shaker'],['flat','Flat'],['reeded','Reeded']],model.type)+NUMS('Frame (mm)',sc,'frame',model.frame))+SEC('Beading',(model.beading||[]).map((b,i)=>beadRow(sc,i,b)).join(''));}
   function shakerModelFor(sc){return sc==='project'?PROJECT.shaker:(sc==='room'?(sel.room&&sel.room.shaker):(view.wall&&view.wall.shaker));}
   function shakerScopeBlock(sc){const own=shakerModelFor(sc),res=sc==='room'?resolveShaker(sel.room,null):resolveShaker(view.room,view.wall);
@@ -365,13 +366,14 @@
     s+=`<line x1="${X-10}" y1="${floorY}" x2="${X+drawW+10}" y2="${floorY}" stroke="${P.floor}" stroke-width="2"/>`;
     s+=`<text x="${X+drawW/2}" y="${Yt-18}" text-anchor="middle" font-size="12" fill="${P.dim}">${W} mm</text>`;
     s+=`<text x="${X-26}" y="${Yt+drawH/2}" text-anchor="middle" font-size="12" fill="${P.dim}" transform="rotate(-90 ${X-26} ${Yt+drawH/2})">${H} mm</text>`;
-    const tf=L.frame*sy,bf=(room.skirting==='yes'?(+room.skirtingH+L.frame):L.frame)*sy,gap=L.frame*sx,ptype=resolveShaker(room,wall).type||'shaker';
+    const _sh=resolveShaker(room,wall),tf=L.frame*sy,bf=(room.skirting==='yes'?(+room.skirtingH+L.frame):L.frame)*sy,gap=L.frame*sx,ptype=_sh.type||'shaker',bead=_sh.beading||[];
     L.panels.forEach(p=>{const x=MX(p.x0),w=(p.x1-p.x0)*sx,yTop=MY(p.y1),h=(p.y1-p.y0)*sy;
       const stroke=p.cap?P.capBd:P.pBd,fill=p.cap?P.capFill:P.pFill,selp=sel.kind==='panel'&&sel.panelId===p.id;
       s+=`<g class="pk" data-k="panel" data-id="${p.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
       const ix=x+p.lf*sx,iw=Math.max(0,w-(p.lf+p.rf)*sx),iy=yTop+tf,ih=Math.max(0,h-tf-bf),cols=p.cols,cw=(iw-gap*(cols-1))/cols;
       if(ptype!=='flat')for(let i=0;i<cols;i++){const cx=ix+i*(cw+gap);s+=`<rect x="${cx}" y="${iy}" width="${Math.max(0,cw)}" height="${ih}" fill="${P.cell}" stroke="${stroke}" stroke-width="1"/>`;
-        if(ptype==='reeded'){const n=Math.max(2,Math.round(cw/11));for(let k=1;k<n;k++){const lx=cx+cw*k/n;s+=`<line x1="${lx}" y1="${iy+3}" x2="${lx}" y2="${iy+ih-3}" stroke="${stroke}" stroke-opacity=".5"/>`;}}}
+        if(ptype==='reeded'){const n=Math.max(2,Math.round(cw/11));for(let k=1;k<n;k++){const lx=cx+cw*k/n;s+=`<line x1="${lx}" y1="${iy+3}" x2="${lx}" y2="${iy+ih-3}" stroke="${stroke}" stroke-opacity=".5"/>`;}}
+        bead.forEach((bd,bi)=>{if(!bd.on)return;const o=+bd.off||0,ox=o*sx,oy=o*sy,bw=Math.max(0,cw)-2*ox,bh=ih-2*oy;if(bw>0&&bh>0)s+=`<rect x="${cx+ox}" y="${iy+oy}" width="${bw}" height="${bh}" fill="none" stroke="${BEAD_COLORS[bi]}" stroke-width="0.8"/>`;});}
       s+=`<text x="${x+w/2}" y="${yTop-5}" text-anchor="middle" font-size="10" font-weight="700" fill="${selp?P.sel:P.lab}">${p.label}</text>`;
       if(selp)s+=`<rect x="${x-3}" y="${yTop-3}" width="${w+6}" height="${h+6}" fill="none" stroke="${P.sel}" stroke-width="2"/>`;
       s+='</g>';});
