@@ -243,20 +243,22 @@
       if(!best||score<best.score)best={count,score};}
     return best?best.count:1;
   }
+  function sideVal(rule,frame,th,da){return rule==='joint'?frame/2:(rule==='jointVertical'?0:(rule==='door'?(+da||175):((rule==='corner'||rule==='column')?frame+(+th||0):frame)));}
+  const SIDE_OPTS=[['normal','Normal'],['joint','Joint'],['jointVertical','Vertical Joint'],['door','Door'],['corner','Corner'],['column','Column']];
   // ===== layout engine (model-driven geometry) =====
   function layoutWall(wall,room){
     const W=+wall.width,H=+wall.height,frame=+resolveShaker(room,wall).frame||80,da=+room.doorAllow||175;
     const vert=wall.panelDir==='vertical';
     const sheetLong=PROJECT.sheet==='10x4'?3050:2440, sheetShort=1220;
     const maxW=vert?sheetShort:sheetLong, maxH=vert?sheetLong:sheetShort;
-    const sv=r=>r==='joint'?frame/2:(r==='door'?da:frame);
+    const th=parseInt(rp(room,'thickness'))||18,sv=r=>sideVal(r,frame,th,da);
     const ops=(wall.openings||[]).map(o=>({...o,x:+o.x,width:+o.width,height:+o.height,bottom:+(o.bottom||0)})).sort((a,b)=>a.x-b.x);
-    const spans=[];let cursor=0,leftRule='normal';
+    const spans=[];let cursor=0,leftRule=wall.sideLeft||'normal';
     ops.forEach(o=>{const x0=Math.max(0,Math.min(W,o.x)),x1=Math.max(x0,Math.min(W,o.x+o.width));
       const r=o.type==='door'?'door':'normal';
       if(x0>cursor+0.5)spans.push({x0:cursor,x1:x0,lr:leftRule,rr:r});
       cursor=Math.max(cursor,x1);leftRule=r;});
-    if(cursor<W-0.5)spans.push({x0:cursor,x1:W,lr:leftRule,rr:'normal'});
+    if(cursor<W-0.5)spans.push({x0:cursor,x1:W,lr:leftRule,rr:wall.sideRight||'normal'});
     const mode=PROJECT.sizeMode||'auto', baseT=+wall.colTarget||340;
     let target=baseT;
     if(mode==='auto'){let ti=0,tc=0;spans.forEach(sp=>{const inr=Math.max(0,(sp.x1-sp.x0)-sv(sp.lr)-sv(sp.rr));if(inr<=0)return;ti+=inr;tc+=Math.max(1,Math.round((inr+frame)/(baseT+frame)));});if(tc>0)target=Math.max(SHK_MIN,Math.min(SHK_MAX,ti/tc));}
@@ -282,6 +284,8 @@
   const NUM=(l,f,v)=>`<div class="row"><label>${l}</label><input class="val" type="number" value="${v==null?'':v}" onchange="edit('${f}',this.value)"></div>`;
   const TXT=(l,f,v)=>`<div class="row"><label>${l}</label><input class="val" type="text" value="${v==null?'':v}" onchange="edit('${f}',this.value)"></div>`;
   const SEGE=(l,f,opts,val)=>`<div class="row"><label>${l}</label><div class="seg">${opts.map(o=>`<span class="${o[0]===val?'on':''}" onclick="editSeg('${f}','${o[0]}')">${o[1]}</span>`).join('')}</div></div>`;
+  const SEL=(l,f,opts,val)=>`<div class="row"><label>${l}</label><select class="val" onchange="editSeg('${f}',this.value)">${opts.map(o=>`<option value="${o[0]}"${o[0]===(val||'normal')?' selected':''}>${o[1]}</option>`).join('')}</select></div>`;
+  const sideRulesSection=w=>SEC('Side rules',SEL('Top','sideTop',SIDE_OPTS,w.sideTop)+SEL('Right','sideRight',SIDE_OPTS,w.sideRight)+SEL('Bottom','sideBottom',SIDE_OPTS,w.sideBottom)+SEL('Left','sideLeft',SIDE_OPTS,w.sideLeft));
   // shaker model editor (with Beading) + scope (project/room/wall)
   const NUMS=(l,sc,p,v)=>`<div class="row"><label>${l}</label><input class="val" type="number" value="${v==null?'':v}" onchange="editShaker('${sc}','${p}',this.value)"></div>`;
   const SEGS=(l,sc,p,opts,val)=>`<div class="row"><label>${l}</label><div class="seg">${opts.map(o=>`<span class="${o[0]===val?'on':''}" onclick="editShakerSeg('${sc}','${p}','${o[0]}')">${o[1]}</span>`).join('')}</div></div>`;
@@ -316,14 +320,14 @@
         +shakerScopeBlock('room');}
     if(sel.kind==='wall'){const w=sel.wall;
       return SEC(t('s_wall'),TXT(t('f_name'),'name',w.name)+NUM(t('f_width'),'width',w.width)+NUM(t('f_height'),'height',w.height)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir)+NUM(t('f_panelheight'),'panelHeight',w.panelHeight))
-        +SEC(t('s_shaker'),NUM(t('f_size'),'colTarget',w.colTarget))+shakerScopeBlock('wall');}
+        +SEC(t('s_shaker'),NUM(t('f_size'),'colTarget',w.colTarget))+sideRulesSection(w)+shakerScopeBlock('wall');}
     if(sel.kind==='opening'){const o=sel.op;
       if(o.type==='door')return SEC(t('s_door'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_posx'),'x',o.x))+SEC(t('s_siderule'),RO(t('f_panelsbeside'),'Door = '+((+sel.room.doorAllow)||175)));
       if(o.type==='window')return SEC(t('s_window'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_sill'),'bottom',o.bottom)+NUM(t('f_posx'),'x',o.x));
       return SEC(t('s_object'),TXT(t('f_name'),'name',o.name)+NUM(t('f_width'),'width',o.width)+NUM(t('f_height'),'height',o.height)+NUM(t('f_base'),'bottom',o.bottom))+SEC(t('s_toppanel'),SEGE(t('f_createtop'),'topPanel',[['yes',t('v_yes')],['no',t('v_no')]],o.topPanel||'yes'));}
     const p=selPanel(),w=view.wall;
     return SEC(t('s_shaker'),RO(t('f_columns'),p?p.cols:'—')+NUM(t('f_size'),'colTarget',w.colTarget)+SEGE(t('f_paneldir'),'panelDir',[['horizontal',t('v_h')],['vertical',t('v_v')]],w.panelDir))
-      +SEC(t('s_siderules'),RO(t('f_left'),p?ruleName(p.leftRule):'—')+RO(t('f_right'),p?ruleName(p.rightRule):'—'))
+      +sideRulesSection(view.wall)
       +shakerScopeBlock('wall');
   }
   function titleFor(){if(sel.kind==='project')return 'Project';if(sel.kind==='room')return sel.room.name;if(sel.kind==='wall')return sel.wall.name;if(sel.kind==='opening')return sel.op.name;const p=selPanel();return 'Panel '+(p?p.label:'');}
@@ -372,7 +376,7 @@
     s+=`<line x1="${X-10}" y1="${floorY}" x2="${X+drawW+10}" y2="${floorY}" stroke="${P.floor}" stroke-width="2"/>`;
     s+=`<text x="${X+drawW/2}" y="${Yt-18}" text-anchor="middle" font-size="12" fill="${P.dim}">${W} mm</text>`;
     s+=`<text x="${X-26}" y="${Yt+drawH/2}" text-anchor="middle" font-size="12" fill="${P.dim}" transform="rotate(-90 ${X-26} ${Yt+drawH/2})">${H} mm</text>`;
-    const _sh=resolveShaker(room,wall),tf=L.frame*sy,bf=(rp(room,'skirting')==='yes'?(+rp(room,'skirtingH')+L.frame):L.frame)*sy,gap=L.frame*sx,ptype=_sh.type||'shaker',bead=_sh.beading||[];
+    const _sh=resolveShaker(room,wall),th=parseInt(rp(room,'thickness'))||18,da=+room.doorAllow||175,tf=sideVal(wall.sideTop||'normal',L.frame,th,da)*sy,bf=(rp(room,'skirting')==='yes'?(+rp(room,'skirtingH')+L.frame):sideVal(wall.sideBottom||'normal',L.frame,th,da))*sy,gap=L.frame*sx,ptype=_sh.type||'shaker',bead=_sh.beading||[];
     L.panels.forEach(p=>{const x=MX(p.x0),w=(p.x1-p.x0)*sx,yTop=MY(p.y1),h=(p.y1-p.y0)*sy;
       const stroke=p.cap?P.capBd:P.pBd,fill=p.cap?P.capFill:P.pFill,selp=sel.kind==='panel'&&sel.panelId===p.id;
       s+=`<g class="pk" data-k="panel" data-id="${p.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
@@ -393,7 +397,7 @@
     snapSVG=[];const addSnap=(x,h)=>snapSVG.push({sx:MX(x),sy:MY(h),x,h});
     addSnap(0,0);addSnap(W,0);addSnap(0,H);addSnap(W,H);
     L.panels.forEach(p=>{addSnap(p.x0,p.y0);addSnap(p.x1,p.y0);addSnap(p.x0,p.y1);addSnap(p.x1,p.y1);
-      const fr=L.frame,bf=(rp(room,'skirting')==='yes'?(+rp(room,'skirtingH')+fr):fr),iw=(p.x1-p.x0)-p.lf-p.rf,cw=(iw-fr*Math.max(0,p.cols-1))/Math.max(1,p.cols),cyB=p.y0+bf,cyT=p.y1-fr;
+      const fr=L.frame,bf=(rp(room,'skirting')==='yes'?(+rp(room,'skirtingH')+fr):sideVal(wall.sideBottom||'normal',fr,th,da)),tfv=sideVal(wall.sideTop||'normal',fr,th,da),iw=(p.x1-p.x0)-p.lf-p.rf,cw=(iw-fr*Math.max(0,p.cols-1))/Math.max(1,p.cols),cyB=p.y0+bf,cyT=p.y1-tfv;
       if(ptype!=='flat'&&iw>0&&cyT>cyB)for(let i=0;i<p.cols;i++){const cl=p.x0+p.lf+i*(cw+fr),cr=cl+cw;addSnap(cl,cyB);addSnap(cr,cyB);addSnap(cl,cyT);addSnap(cr,cyT);}});
     L.ops.forEach(o=>{addSnap(o.x,o.bottom);addSnap(o.x+o.width,o.bottom);addSnap(o.x,o.bottom+o.height);addSnap(o.x+o.width,o.bottom+o.height);});
     (wall.dims||[]).forEach((d,i)=>{const ax=d.axis||(Math.abs(d.x2-d.x1)>=Math.abs(d.h2-d.h1)?'h':'v');let X1=MX(d.x1),Y1=MY(d.h1),X2,Y2,len;if(ax==='h'){X2=MX(d.x2);Y2=Y1;len=Math.round(Math.abs(d.x2-d.x1));}else{X2=X1;Y2=MY(d.h2);len=Math.round(Math.abs(d.h2-d.h1));}const mx=(X1+X2)/2,my=(Y1+Y2)/2;
