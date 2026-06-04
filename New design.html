@@ -376,7 +376,9 @@
       s+='</g>';});
     snapSVG=[];const addSnap=(x,h)=>snapSVG.push({sx:MX(x),sy:MY(h),x,h});
     addSnap(0,0);addSnap(W,0);addSnap(0,H);addSnap(W,H);
-    L.panels.forEach(p=>{addSnap(p.x0,p.y0);addSnap(p.x1,p.y0);addSnap(p.x0,p.y1);addSnap(p.x1,p.y1);});
+    L.panels.forEach(p=>{addSnap(p.x0,p.y0);addSnap(p.x1,p.y0);addSnap(p.x0,p.y1);addSnap(p.x1,p.y1);
+      const fr=L.frame,bf=(room.skirting==='yes'?(+room.skirtingH+fr):fr),iw=(p.x1-p.x0)-p.lf-p.rf,cw=(iw-fr*Math.max(0,p.cols-1))/Math.max(1,p.cols),cyB=p.y0+bf,cyT=p.y1-fr;
+      if(ptype!=='flat'&&iw>0&&cyT>cyB)for(let i=0;i<p.cols;i++){const cl=p.x0+p.lf+i*(cw+fr),cr=cl+cw;addSnap(cl,cyB);addSnap(cr,cyB);addSnap(cl,cyT);addSnap(cr,cyT);}});
     L.ops.forEach(o=>{addSnap(o.x,o.bottom);addSnap(o.x+o.width,o.bottom);addSnap(o.x,o.bottom+o.height);addSnap(o.x+o.width,o.bottom+o.height);});
     (wall.dims||[]).forEach((d,i)=>{const ax=d.axis||(Math.abs(d.x2-d.x1)>=Math.abs(d.h2-d.h1)?'h':'v');let X1=MX(d.x1),Y1=MY(d.h1),X2,Y2,len;if(ax==='h'){X2=MX(d.x2);Y2=Y1;len=Math.round(Math.abs(d.x2-d.x1));}else{X2=X1;Y2=MY(d.h2);len=Math.round(Math.abs(d.h2-d.h1));}const mx=(X1+X2)/2,my=(Y1+Y2)/2;
       s+=`<g class="dim" data-i="${i}"><line x1="${X1}" y1="${Y1}" x2="${X2}" y2="${Y2}" stroke="${P.sel}" stroke-width="1.2"/><circle cx="${X1}" cy="${Y1}" r="3" fill="${P.sel}"/><circle cx="${X2}" cy="${Y2}" r="3" fill="${P.sel}"/><rect x="${mx-22}" y="${my-9}" width="44" height="15" fill="${P.wall}" stroke="${P.sel}" stroke-width=".6"/><text x="${mx}" y="${my+2}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${P.sel}">${len}</text></g>`;});
@@ -446,7 +448,7 @@
   function nearestSnap(p){let best=null,bd=Infinity;const thr=vb.w*0.02;(snapSVG||[]).forEach(s=>{const d=Math.hypot(s.sx-p.x,s.sy-p.y);if(d<bd){bd=d;best=s;}});return (best&&bd<=thr)?best:null;}
   function mmToSvg(p){return {x:canvasXf.X+p.x*canvasXf.sx,y:canvasXf.floorY-p.h*canvasXf.sy};}
   function drawOverlay(sx,sy,snapped){const ov=document.getElementById('mOverlay');if(!ov)return;const col=pal().sel,lw=Math.max(0.5,vb.w*0.0015),r=vb.w*0.008;
-    let s=`<line x1="${vb.x}" y1="${sy}" x2="${vb.x+vb.w}" y2="${sy}" stroke="${col}" stroke-width="${lw}" opacity=".85"/><line x1="${sx}" y1="${vb.y}" x2="${sx}" y2="${vb.y+vb.h}" stroke="${col}" stroke-width="${lw}" opacity=".85"/>`;
+    const cl=vb.w*0.0125;let s=`<line x1="${sx-cl}" y1="${sy}" x2="${sx+cl}" y2="${sy}" stroke="${col}" stroke-width="${lw}"/><line x1="${sx}" y1="${sy-cl}" x2="${sx}" y2="${sy+cl}" stroke="${col}" stroke-width="${lw}"/>`;
     if(measurePt&&hoverPt&&canvasXf){const a=mmToSvg(measurePt),horiz=Math.abs(hoverPt.x-measurePt.x)>=Math.abs(hoverPt.h-measurePt.h),ex=horiz?sx:a.x,ey=horiz?a.y:sy,val=Math.round(horiz?Math.abs(hoverPt.x-measurePt.x):Math.abs(hoverPt.h-measurePt.h)),mx=(a.x+ex)/2,my=(a.y+ey)/2;
       s+=`<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${col}" stroke-width="${lw*1.7}"/><circle cx="${a.x}" cy="${a.y}" r="${r*0.85}" fill="${col}"/><rect x="${mx-22}" y="${my-9}" width="44" height="15" fill="${pal().wall}" stroke="${col}" stroke-width=".6"/><text x="${mx}" y="${my+2}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${col}">${val}</text>`;}
     s+=snapped?`<circle cx="${sx}" cy="${sy}" r="${r}" fill="none" stroke="${col}" stroke-width="${lw*2}"/><circle cx="${sx}" cy="${sy}" r="${lw*1.3}" fill="${col}"/>`:`<circle cx="${sx}" cy="${sy}" r="${lw*1.7}" fill="${col}"/>`;
