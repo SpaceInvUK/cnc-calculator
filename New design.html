@@ -217,9 +217,14 @@
   function saveModel(){try{localStorage.setItem('fnd_model',JSON.stringify({rooms:MODEL.rooms,project:PROJECT}));}catch(_e){}}
   let sel={kind:'wall',room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0],op:null,panelId:null};
   let view={room:MODEL.rooms[0],wall:MODEL.rooms[0].walls[0]};
-  let PROJECT={sheet:'8x4',sizeMode:'auto'};
+  function defaultBeading(){return [{on:true,off:0,round:true},{on:true,off:6,round:false},{on:true,off:8,round:false},{on:true,off:19,round:false},{on:true,off:25,round:false},{on:true,off:28.5,round:false},{on:false,off:0,round:false}];}
+  let PROJECT={sheet:'8x4',sizeMode:'auto',shaker:{type:'shaker',frame:80,beading:defaultBeading(),backFrame:80,sides:'front'}};
   const NEST_GAP=7; // mm gap between parts for nesting (used later)
   try{const _p=JSON.parse(localStorage.getItem('fnd_model')||'null');if(_p&&_p.project)PROJECT=Object.assign(PROJECT,_p.project);}catch(_e){}
+  function resolveShaker(room,wall){const m=Object.assign({},PROJECT.shaker||{},(room&&room.shaker)||{},(wall&&wall.shaker)||{});
+    if(!(wall&&wall.shaker&&wall.shaker.frame!=null)&&!(room&&room.shaker&&room.shaker.frame!=null)&&room&&room.frame!=null)m.frame=+room.frame;
+    if(!(wall&&wall.shaker&&wall.shaker.type)&&!(room&&room.shaker&&room.shaker.type)&&wall&&wall.shakerType)m.type=wall.shakerType;
+    return m;}
 
   // ===== shaker balancing (ported from production equalShakersForSpan) =====
   const SHK_MIN=150,SHK_MAX=700;
@@ -238,7 +243,7 @@
   }
   // ===== layout engine (model-driven geometry) =====
   function layoutWall(wall,room){
-    const W=+wall.width,H=+wall.height,frame=+room.frame,da=+room.doorAllow||175;
+    const W=+wall.width,H=+wall.height,frame=+resolveShaker(room,wall).frame||80,da=+room.doorAllow||175;
     const vert=wall.panelDir==='vertical';
     const sheetLong=PROJECT.sheet==='10x4'?3050:2440, sheetShort=1220;
     const maxW=vert?sheetShort:sheetLong, maxH=vert?sheetLong:sheetShort;
@@ -275,6 +280,21 @@
   const NUM=(l,f,v)=>`<div class="row"><label>${l}</label><input class="val" type="number" value="${v==null?'':v}" onchange="edit('${f}',this.value)"></div>`;
   const TXT=(l,f,v)=>`<div class="row"><label>${l}</label><input class="val" type="text" value="${v==null?'':v}" onchange="edit('${f}',this.value)"></div>`;
   const SEGE=(l,f,opts,val)=>`<div class="row"><label>${l}</label><div class="seg">${opts.map(o=>`<span class="${o[0]===val?'on':''}" onclick="editSeg('${f}','${o[0]}')">${o[1]}</span>`).join('')}</div></div>`;
+  // shaker model editor (with Beading) + scope (project/room/wall)
+  const NUMS=(l,sc,p,v)=>`<div class="row"><label>${l}</label><input class="val" type="number" value="${v==null?'':v}" onchange="editShaker('${sc}','${p}',this.value)"></div>`;
+  const SEGS=(l,sc,p,opts,val)=>`<div class="row"><label>${l}</label><div class="seg">${opts.map(o=>`<span class="${o[0]===val?'on':''}" onclick="editShakerSeg('${sc}','${p}','${o[0]}')">${o[1]}</span>`).join('')}</div></div>`;
+  function beadRow(sc,i,b){return `<div class="row"><label>${'ABCDEFG'[i]}</label><div style="display:flex;gap:5px;align-items:center"><div class="seg"><span class="${b.on?'on':''}" onclick="editShakerSeg('${sc}','bead.${i}.on',${!b.on})">${b.on?'On':'Off'}</span></div><input class="val" style="width:52px" type="number" value="${b.off}" onchange="editShaker('${sc}','bead.${i}.off',this.value)"><div class="seg"><span class="${b.round?'on':''}" onclick="editShakerSeg('${sc}','bead.${i}.round',${!b.round})" title="Round corners">R</span></div></div></div>`;}
+  function shakerEditor(model,sc){return SEC('Shaker',SEGS('Type',sc,'type',[['shaker','Shaker'],['flat','Flat'],['reeded','Reeded']],model.type)+NUMS('Frame (mm)',sc,'frame',model.frame)+SEGS('Sides',sc,'sides',[['front','Front'],['frontback','Front+Back']],model.sides)+NUMS('Back frame',sc,'backFrame',model.backFrame))+SEC('Beading',(model.beading||[]).map((b,i)=>beadRow(sc,i,b)).join(''));}
+  function shakerModelFor(sc){return sc==='project'?PROJECT.shaker:(sc==='room'?(sel.room&&sel.room.shaker):(view.wall&&view.wall.shaker));}
+  function shakerScopeBlock(sc){const own=shakerModelFor(sc),res=sc==='room'?resolveShaker(sel.room,null):resolveShaker(view.room,view.wall);
+    const btn=(label,fn)=>`<div class="row"><button onclick="${fn}" style="cursor:pointer;border:1px solid var(--bd);background:var(--soft);color:var(--text);border-radius:8px;padding:6px 10px;font-weight:700;font-size:12px">${label}</button></div>`;
+    if(own)return shakerEditor(own,sc)+SEC('',btn('↺ Reset to inherited',`resetShaker('${sc}')`));
+    return SEC('Shaker',RO('Inherited',`${res.type} · ${res.frame}mm`)+btn('Override here',`overrideShaker('${sc}')`));}
+  function setShakerPath(m,path,val){if(!m)return;if(path.indexOf('bead.')===0){const a=path.split('.');(m.beading=m.beading||defaultBeading())[+a[1]][a[2]]=val;}else m[path]=val;}
+  window.editShaker=(sc,path,val)=>{const m=shakerModelFor(sc);if(!m)return;const num=(path.slice(-4)==='.off'||path==='frame'||path==='backFrame');setShakerPath(m,path,num?(+val||0):val);renderCanvas();renderStatus();saveModel();};
+  window.editShakerSeg=(sc,path,val)=>{const m=shakerModelFor(sc);if(!m)return;let v=val;if(v==='true')v=true;else if(v==='false')v=false;setShakerPath(m,path,v);refresh();};
+  function overrideShaker(sc){const res=sc==='room'?resolveShaker(sel.room,null):resolveShaker(view.room,view.wall);const c=JSON.parse(JSON.stringify(res));if(sc==='room')sel.room.shaker=c;else view.wall.shaker=c;refresh();saveModel();}
+  function resetShaker(sc){if(sc==='room'){if(sel.room)delete sel.room.shaker;}else if(view.wall)delete view.wall.shaker;refresh();saveModel();}
   function selPanel(){if(sel.kind!=='panel'||!view.wall)return null;return layoutWall(view.wall,view.room).panels.find(p=>p.id===sel.panelId)||null;}
   function inspectorBody(){
     if(sel.kind==='room'){const r=sel.room;
@@ -337,7 +357,7 @@
     s+=`<line x1="${X-10}" y1="${floorY}" x2="${X+drawW+10}" y2="${floorY}" stroke="${P.floor}" stroke-width="2"/>`;
     s+=`<text x="${X+drawW/2}" y="${Yt-18}" text-anchor="middle" font-size="12" fill="${P.dim}">${W} mm</text>`;
     s+=`<text x="${X-26}" y="${Yt+drawH/2}" text-anchor="middle" font-size="12" fill="${P.dim}" transform="rotate(-90 ${X-26} ${Yt+drawH/2})">${H} mm</text>`;
-    const tf=L.frame*sy,bf=(room.skirting==='yes'?(+room.skirtingH+L.frame):L.frame)*sy,gap=L.frame*sx,ptype=(wall.shakerType||'shaker');
+    const tf=L.frame*sy,bf=(room.skirting==='yes'?(+room.skirtingH+L.frame):L.frame)*sy,gap=L.frame*sx,ptype=resolveShaker(room,wall).type||'shaker';
     L.panels.forEach(p=>{const x=MX(p.x0),w=(p.x1-p.x0)*sx,yTop=MY(p.y1),h=(p.y1-p.y0)*sy;
       const stroke=p.cap?P.capBd:P.pBd,fill=p.cap?P.capFill:P.pFill,selp=sel.kind==='panel'&&sel.panelId===p.id;
       s+=`<g class="pk" data-k="panel" data-id="${p.id}"><rect x="${x}" y="${yTop}" width="${w}" height="${h}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
@@ -424,9 +444,12 @@
   function clientToSvgPt(e){const svg=document.getElementById('canvas').querySelector('svg');if(!svg)return null;const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const m=svg.getScreenCTM();if(!m)return null;return pt.matrixTransform(m.inverse());}
   function svgToMM(p){return {x:(p.x-canvasXf.X)/canvasXf.sx,h:(canvasXf.floorY-p.y)/canvasXf.sy};}
   function nearestSnap(p){let best=null,bd=Infinity;const thr=vb.w*0.02;(snapSVG||[]).forEach(s=>{const d=Math.hypot(s.sx-p.x,s.sy-p.y);if(d<bd){bd=d;best=s;}});return (best&&bd<=thr)?best:null;}
-  function drawOverlay(sx,sy,snapped){const ov=document.getElementById('mOverlay');if(!ov)return;const col=pal().sel,lw=Math.max(0.4,vb.w*0.0016),r=vb.w*0.007;
-    let s=`<line x1="${vb.x}" y1="${sy}" x2="${vb.x+vb.w}" y2="${sy}" stroke="${col}" stroke-width="${lw}"/><line x1="${sx}" y1="${vb.y}" x2="${sx}" y2="${vb.y+vb.h}" stroke="${col}" stroke-width="${lw}"/>`;
-    if(snapped)s+=`<circle cx="${sx}" cy="${sy}" r="${r}" fill="none" stroke="${col}" stroke-width="${lw*2}"/>`;
+  function mmToSvg(p){return {x:canvasXf.X+p.x*canvasXf.sx,y:canvasXf.floorY-p.h*canvasXf.sy};}
+  function drawOverlay(sx,sy,snapped){const ov=document.getElementById('mOverlay');if(!ov)return;const col=pal().sel,lw=Math.max(0.5,vb.w*0.0015),r=vb.w*0.008;
+    let s=`<line x1="${vb.x}" y1="${sy}" x2="${vb.x+vb.w}" y2="${sy}" stroke="${col}" stroke-width="${lw}" opacity=".85"/><line x1="${sx}" y1="${vb.y}" x2="${sx}" y2="${vb.y+vb.h}" stroke="${col}" stroke-width="${lw}" opacity=".85"/>`;
+    if(measurePt&&hoverPt&&canvasXf){const a=mmToSvg(measurePt),horiz=Math.abs(hoverPt.x-measurePt.x)>=Math.abs(hoverPt.h-measurePt.h),ex=horiz?sx:a.x,ey=horiz?a.y:sy,val=Math.round(horiz?Math.abs(hoverPt.x-measurePt.x):Math.abs(hoverPt.h-measurePt.h)),mx=(a.x+ex)/2,my=(a.y+ey)/2;
+      s+=`<line x1="${a.x}" y1="${a.y}" x2="${ex}" y2="${ey}" stroke="${col}" stroke-width="${lw*1.7}"/><circle cx="${a.x}" cy="${a.y}" r="${r*0.85}" fill="${col}"/><rect x="${mx-22}" y="${my-9}" width="44" height="15" fill="${pal().wall}" stroke="${col}" stroke-width=".6"/><text x="${mx}" y="${my+2}" text-anchor="middle" font-size="9.5" font-weight="800" fill="${col}">${val}</text>`;}
+    s+=snapped?`<circle cx="${sx}" cy="${sy}" r="${r}" fill="none" stroke="${col}" stroke-width="${lw*2}"/><circle cx="${sx}" cy="${sy}" r="${lw*1.3}" fill="${col}"/>`:`<circle cx="${sx}" cy="${sy}" r="${lw*1.7}" fill="${col}"/>`;
     ov.innerHTML=s;}
   function measureHover(e){if(!measureMode||!canvasXf)return;const p=clientToSvgPt(e);if(!p)return;const snap=nearestSnap(p);
     let sx,sy;if(snap){hoverPt={x:snap.x,h:snap.h};sx=snap.sx;sy=snap.sy;}else{const mm=svgToMM(p);hoverPt={x:mm.x,h:mm.h};sx=p.x;sy=p.y;}
