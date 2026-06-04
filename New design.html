@@ -94,7 +94,8 @@
   .row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
   .row:last-child{margin-bottom:0}
   .row label{font-size:12.5px;color:var(--text)}
-  .row .val{font-size:12.5px;font-weight:700;background:var(--soft);border:1px solid var(--bd);border-radius:8px;padding:5px 10px;min-width:64px;text-align:center}
+  .row .val{font-size:12.5px;font-weight:700;color:var(--text);background:var(--soft);border:1px solid var(--bd);border-radius:8px;padding:5px 10px;min-width:64px;text-align:center}
+  .row select.val{min-width:96px;text-align:left}
   .row input.val{width:80px;font-family:inherit;outline:none}
   .row input.val:focus{border-color:var(--accent)}
   .seg{display:flex;background:var(--soft);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
@@ -284,12 +285,12 @@
   const NUMS=(l,sc,p,v)=>`<div class="row"><label>${l}</label><input class="val" type="number" value="${v==null?'':v}" onchange="editShaker('${sc}','${p}',this.value)"></div>`;
   const SEGS=(l,sc,p,opts,val)=>`<div class="row"><label>${l}</label><div class="seg">${opts.map(o=>`<span class="${o[0]===val?'on':''}" onclick="editShakerSeg('${sc}','${p}','${o[0]}')">${o[1]}</span>`).join('')}</div></div>`;
   function beadRow(sc,i,b){return `<div class="row"><label>${'ABCDEFG'[i]}</label><div style="display:flex;gap:5px;align-items:center"><div class="seg"><span class="${b.on?'on':''}" onclick="editShakerSeg('${sc}','bead.${i}.on',${!b.on})">${b.on?'On':'Off'}</span></div><input class="val" style="width:52px" type="number" value="${b.off}" onchange="editShaker('${sc}','bead.${i}.off',this.value)"><div class="seg"><span class="${b.round?'on':''}" onclick="editShakerSeg('${sc}','bead.${i}.round',${!b.round})" title="Round corners">R</span></div></div></div>`;}
-  function shakerEditor(model,sc){return SEC('Shaker',SEGS('Type',sc,'type',[['shaker','Shaker'],['flat','Flat'],['reeded','Reeded']],model.type)+NUMS('Frame (mm)',sc,'frame',model.frame)+SEGS('Sides',sc,'sides',[['front','Front'],['frontback','Front+Back']],model.sides)+NUMS('Back frame',sc,'backFrame',model.backFrame))+SEC('Beading',(model.beading||[]).map((b,i)=>beadRow(sc,i,b)).join(''));}
+  function shakerEditor(model,sc){return SEC('Shaker',SEGS('Type',sc,'type',[['shaker','Shaker'],['flat','Flat'],['reeded','Reeded']],model.type)+NUMS('Frame (mm)',sc,'frame',model.frame))+SEC('Beading',(model.beading||[]).map((b,i)=>beadRow(sc,i,b)).join(''));}
   function shakerModelFor(sc){return sc==='project'?PROJECT.shaker:(sc==='room'?(sel.room&&sel.room.shaker):(view.wall&&view.wall.shaker));}
   function shakerScopeBlock(sc){const own=shakerModelFor(sc),res=sc==='room'?resolveShaker(sel.room,null):resolveShaker(view.room,view.wall);
     const btn=(label,fn)=>`<div class="row"><button onclick="${fn}" style="cursor:pointer;border:1px solid var(--bd);background:var(--soft);color:var(--text);border-radius:8px;padding:6px 10px;font-weight:700;font-size:12px">${label}</button></div>`;
-    if(own)return shakerEditor(own,sc)+SEC('',btn('↺ Reset to inherited',`resetShaker('${sc}')`));
-    return SEC('Shaker',RO('Inherited',`${res.type} · ${res.frame}mm`)+btn('Override here',`overrideShaker('${sc}')`));}
+    if(own)return shakerEditor(own,sc)+SEC('',btn('↺ Use project default',`resetShaker('${sc}')`));
+    return SEC('Shaker',RO('Shaker',`Project default · ${res.type}`)+btn('Override this '+sc,`overrideShaker('${sc}')`));}
   function setShakerPath(m,path,val){if(!m)return;if(path.indexOf('bead.')===0){const a=path.split('.');(m.beading=m.beading||defaultBeading())[+a[1]][a[2]]=val;}else m[path]=val;}
   window.editShaker=(sc,path,val)=>{const m=shakerModelFor(sc);if(!m)return;const num=(path.slice(-4)==='.off'||path==='frame'||path==='backFrame');setShakerPath(m,path,num?(+val||0):val);renderCanvas();renderStatus();saveModel();};
   window.editShakerSeg=(sc,path,val)=>{const m=shakerModelFor(sc);if(!m)return;let v=val;if(v==='true')v=true;else if(v==='false')v=false;setShakerPath(m,path,v);refresh();};
@@ -352,7 +353,7 @@
   let vb={x:0,y:0,w:880,h:400};
   let measureMode=false,measurePt=null,canvasXf=null,hoverPt=null,snapSVG=[];
   function applyVB(){const svg=document.getElementById('canvas').querySelector('svg');if(svg)svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);}
-  function zoomAt(f,px,py){const nw=Math.max(140,Math.min(8000,vb.w*f)),r=nw/vb.w;vb.x=px-(px-vb.x)*r;vb.y=py-(py-vb.y)*r;vb.w=nw;vb.h=vb.h*r;applyVB();}
+  function zoomAt(f,px,py){const nw=Math.max(20,Math.min(8000,vb.w*f)),r=nw/vb.w;vb.x=px-(px-vb.x)*r;vb.y=py-(py-vb.y)*r;vb.w=nw;vb.h=vb.h*r;applyVB();}
   function zoomBy(f){zoomAt(f,vb.x+vb.w/2,vb.y+vb.h/2);}
   function fitView(){vb={x:0,y:0,w:880,h:400};applyVB();}
   function renderCanvas(){const P=pal(),wall=view.wall,room=view.room;if(!wall){canvas.innerHTML='';return;}
