@@ -798,7 +798,7 @@
   <div class="wrap">
     <div class="hero">
       <img class="logo" src="https://fastcnc.co.uk/wp-content/uploads/2024/11/logo-header.png" alt="FAST CNC logo">
-      <div class="app-version">05/06 02:11</div>
+      <div class="app-version">05/06 02:22</div>
     </div>
 
     <div class="grid">
@@ -15599,14 +15599,19 @@
         html += '<div class="pricing-grid">';
         html += '<div class="pricing-panel"><div class="pricing-panel-title">Material</div>';
         const matLines = Array.isArray(price.materialSheetLines) ? price.materialSheetLines.filter(line=>Number(line.units || 0) > 0) : [];
-        const matVaries = matLines.length > 1 && (matLines.some(line=>line.hasOverride) || !matLines.every(line=>Math.abs(Number(line.amount || 0) - Number(matLines[0].amount || 0)) < 0.001));
-        if(matVaries){
+        if(matLines.length){
+          const matGroups = new Map();
           matLines.forEach(line=>{
-            html += '<div class="row"><div class="label">Sheet '+line.index+'</div><div class="value">'+money(line.amount)+'</div></div>';
+            const amt = Number(line.amount || 0);
+            const key = amt.toFixed(2);
+            if(matGroups.has(key)) matGroups.get(key).count++;
+            else matGroups.set(key, {amount:amt, count:1});
+          });
+          matGroups.forEach(g=>{
+            html += '<div class="row"><div class="label">Sheet price</div><div class="value">'+money(g.amount)+(g.count>1?' × '+g.count:'')+'</div></div>';
           });
         } else {
-          const perSheetPrice = matLines.length ? matLines[0].amount : (Number(block.materialCost)||0);
-          html += '<div class="row"><div class="label">Sheet price</div><div class="value">'+money(perSheetPrice)+'</div></div>';
+          html += '<div class="row"><div class="label">Sheet price</div><div class="value">'+money(Number(block.materialCost)||0)+'</div></div>';
           html += '<div class="row"><div class="label">Sheets</div><div class="value">'+price.sheetQuantity+'</div></div>';
         }
         html += '<div class="row"><div class="label">Material subtotal</div><div class="value">'+money(price.materialLineTotal)+'</div></div>';
@@ -15617,14 +15622,19 @@
         if(price.drillingAmount>0) html += '<div class="row"><div class="label">Drillings <span class="pill">+'+price.drillingPct+'%</span></div><div class="value">'+money(price.drillingAmount)+'</div></div>';
         if(price.pocketAmount>0) html += '<div class="row"><div class="label">Offset <span class="pill">'+displayPocketMinutes(price.pocketMinutes)+' min / +'+price.pocketPct.toFixed(0)+'%</span></div><div class="value">'+money(price.pocketAmount)+'</div></div>';
         const cncLines = Array.isArray(price.cncSheetLines) ? price.cncSheetLines : [];
-        const cncVaries = cncLines.length > 1 && (cncLines.some(line=>line.hasOverride) || !cncLines.every(line=>Math.abs(Number(line.amount || 0) - Number(cncLines[0].amount || 0)) < 0.001));
-        if(cncVaries){
+        if(cncLines.length){
+          const cncGroups = new Map();
           cncLines.forEach(line=>{
-            html += '<div class="row"><div class="label">Sheet '+line.index+' CNC</div><div class="value">'+money(line.amount)+'</div></div>';
+            const amt = Number(line.amount || 0);
+            const key = amt.toFixed(2);
+            if(cncGroups.has(key)) cncGroups.get(key).count++;
+            else cncGroups.set(key, {amount:amt, count:1});
+          });
+          cncGroups.forEach(g=>{
+            html += '<div class="row service-subtotal"><div class="label">CNC per sheet</div><div class="value">'+money(g.amount)+(g.count>1?' × '+g.count:'')+'</div></div>';
           });
         } else {
-          const cncPerSheet = cncLines.length ? Number(cncLines[0].amount || 0) : Number(price.adjustedCncPrice || 0);
-          html += '<div class="row service-subtotal"><div class="label">CNC per sheet</div><div class="value">'+money(cncPerSheet)+'</div></div>';
+          html += '<div class="row service-subtotal"><div class="label">CNC per sheet</div><div class="value">'+money(Number(price.adjustedCncPrice || 0))+'</div></div>';
         }
         html += '<div class="row"><div class="label">CNC total</div><div class="value">'+money(serviceTotal)+'</div></div>';
         if(price.timeAmountPerSheet>0) html += '<div class="row"><div class="label">Time total</div><div class="value">'+money(timeTotal)+'</div></div>';
