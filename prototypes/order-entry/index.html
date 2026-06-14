@@ -108,6 +108,13 @@
   .sheet-head{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
   .sheet-svg{width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:6px;display:block}
   .nlabel{font-size:5px;font-family:Arial;fill:#1e3a8a;font-weight:700;text-anchor:middle}
+  .sheet-svg.editing{cursor:default}
+  .sheet-svg.editing .npart{cursor:move}
+  .sheet-svg.editing .npart:hover rect:first-of-type{stroke:#d97706;stroke-width:0.8}
+  .aplink{font-size:10px;font-weight:700;color:var(--blue);cursor:pointer;border:1px solid #bfdbfe;border-radius:5px;padding:1px 5px;background:#eff6ff;white-space:nowrap}
+  .aplink:hover{background:#dbeafe}
+  .apf{display:inline-flex;gap:3px;margin-left:6px;vertical-align:middle}
+  .apf .t{font-size:9px;color:var(--muted);font-weight:700;align-self:center}
   .spray-wrap{margin-top:10px}
   .spray-edit{margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:8px;background:#fff;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
   #nest{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px}
@@ -219,6 +226,7 @@
         </div>
 
         <div class="hint" style="margin:0 0 10px"><b>Sheet rule:</b> a sheet only holds parts with the same <b>Material + Thickness + Sheet size</b>. Change <b>Material</b> and <b>Size</b> right on each sheet header below.</div>
+        <div id="nestTools" style="margin:0 0 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"></div>
         <div id="nest"></div>
         <div class="hint">Click a sheet to zoom. Colours match the DXF layers: outer = black, offset A–G = their own colour, hinges = red.</div>
       </div>
@@ -540,6 +548,9 @@
 
   // ---- render list ----
   function render(){
+    // manual nesting is invalidated when the part set / sheet sizing changes (footprint signature)
+    const sig=items.map(it=>[it.type,it.w,it.h,it.q,it.mat,it.size,it.pocketSide,it.grain?1:0].join(',')).join('|')+'#'+nestSize+'#'+JSON.stringify(sheetSizeOv);
+    if(sig!==lastSig){placements=null;selKey=null;lastSig=sig;}
     const L=document.getElementById('list');L.innerHTML='';
     items.forEach((it,i)=>{
       const d=TYPES[it.type],c=d.color;
@@ -573,26 +584,47 @@
     renderProfiles();renderNest();updateMatPricing();summary();
   }
 
+  // ---- Apply to All / Apply to Same Group ----
+  // "Same group" = same material + same sheet size + same dimensions (W&H) + same part type.
+  function sameGroup(a,b){return a.mat===b.mat&&a.size===b.size&&(+a.w===+b.w)&&(+a.h===+b.h)&&a.type===b.type;}
+  function applyField(i,field,scope){
+    const src=items[i];
+    items.forEach((it,j)=>{
+      if(j===i)return; if(scope==='group'&&!sameGroup(src,it))return;
+      if(field==='frame'){it.frame=JSON.parse(JSON.stringify(src.frame));it.frameLink=src.frameLink;}
+      else if(field==='offset'){it.lines=JSON.parse(JSON.stringify(src.lines));it.pocketSide=src.pocketSide;it.pocketRound=src.pocketRound;it.offsetName=src.offsetName;}
+      else if(field==='hinges'){it.hinges=JSON.parse(JSON.stringify(src.hinges));}
+      else if(field==='spray'){it.spray=src.spray;it.sprayCfg=src.sprayCfg?JSON.parse(JSON.stringify(src.sprayCfg)):null;}
+      else if(field==='grain'){it.grain=src.grain;}
+      else if(field==='mat'){it.mat=src.mat;}
+      else if(field==='type'){it.type=src.type;}
+      else if(field==='w'){it.w=src.w;}
+      else if(field==='h'){it.h=src.h;}
+      else if(field==='text'){it.text=src.text;}
+    });
+    render();
+  }
+  function ap(i,field){return `<span class="apf"><span class="t">→</span><span class="aplink" onclick="applyField(${i},'${field}','group')" title="Apply this value to every part in the same group (same material, sheet size, W×H and type)">group</span><span class="aplink" onclick="applyField(${i},'${field}','all')" title="Apply this value to every part in the order">all</span></span>`;}
   function editorHtml(i,it){
     const f=resolveFrame(it);
     return `
       <div class="ed-grid">
-        <div class="ed-field"><label>Shaker type</label><select onchange="upd(${i},'type',this.value)">${Object.keys(TYPES).map(k=>`<option value="${k}" ${k===it.type?'selected':''}>${TYPES[k].name}</option>`).join('')}</select></div>
-        <div class="ed-field"><label>Width (mm)</label><input type="number" value="${it.w}" onchange="upd(${i},'w',+this.value)"></div>
-        <div class="ed-field"><label>Height (mm)</label><input type="number" value="${it.h}" onchange="upd(${i},'h',+this.value)"></div>
+        <div class="ed-field"><label>Shaker type</label><select onchange="upd(${i},'type',this.value)">${Object.keys(TYPES).map(k=>`<option value="${k}" ${k===it.type?'selected':''}>${TYPES[k].name}</option>`).join('')}</select>${ap(i,'type')}</div>
+        <div class="ed-field"><label>Width (mm)</label><input type="number" value="${it.w}" onchange="upd(${i},'w',+this.value)">${ap(i,'w')}</div>
+        <div class="ed-field"><label>Height (mm)</label><input type="number" value="${it.h}" onchange="upd(${i},'h',+this.value)">${ap(i,'h')}</div>
         <div class="ed-field"><label>Quantity</label><input type="number" value="${it.q}" onchange="upd(${i},'q',+this.value)"></div>
-        <div class="ed-field"><label>Material</label><select onchange="upd(${i},'mat',this.value)">${matOptionsHtml(it.mat)}</select></div>
-        <div class="ed-field"><label>Grain</label><label class="tg" style="height:34px"><input type="checkbox" ${it.grain?'checked':''} onchange="upd(${i},'grain',this.checked)"> Grain (locks height, no rotate)</label></div>
-        <div class="ed-field"><label>Text / engraving</label><input type="text" value="${esc(it.text||'')}" onchange="upd(${i},'text',this.value)" placeholder="e.g. Pantry"></div>
+        <div class="ed-field"><label>Material</label><select onchange="upd(${i},'mat',this.value)">${matOptionsHtml(it.mat)}</select>${ap(i,'mat')}</div>
+        <div class="ed-field"><label>Rigid (grain)</label><label class="tg" style="height:34px"><input type="checkbox" ${it.grain?'checked':''} onchange="upd(${i},'grain',this.checked)"> Rigid — grain along longest side</label>${ap(i,'grain')}</div>
+        <div class="ed-field"><label>Text / engraving</label><input type="text" value="${esc(it.text||'')}" onchange="upd(${i},'text',this.value)" placeholder="e.g. Pantry">${ap(i,'text')}</div>
       </div>
       <div class="spray-wrap">
-        <label class="tg"><input type="checkbox" ${it.spray?'checked':''} onchange="sprayOn(${i},this.checked)"> Spray finish</label>
+        <label class="tg"><input type="checkbox" ${it.spray?'checked':''} onchange="sprayOn(${i},this.checked)"> Spray finish</label>${ap(i,'spray')}
         ${it.spray?sprayEditorHtml(i,it):''}
       </div>
       <div class="hinge-wrap" style="margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:8px">
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
           <b style="font-size:13px">Hinges</b>
-          <label class="tg"><input type="checkbox" ${it.hinges.on?'checked':''} onchange="setHingeOn(${i},this.checked)"> on</label>
+          <label class="tg"><input type="checkbox" ${it.hinges.on?'checked':''} onchange="setHingeOn(${i},this.checked)"> on</label>${ap(i,'hinges')}
           ${it.hinges.on?`
           <label class="sub">Side <select onchange="setHingeSide(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${['auto','left','right','top','bottom'].map(o=>`<option ${o===it.hinges.side?'selected':''}>${o}</option>`).join('')}</select></label>
           <label class="sub">Count <select onchange="setHingeCount(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${['auto',2,3,4,5].map(o=>`<option ${String(o)===String(it.hinges.count)?'selected':''}>${o}</option>`).join('')}</select></label>
@@ -601,12 +633,12 @@
         </div>
       </div>
       <div class="offset-wrap">
-        <div class="offset-head"><h4>Frame &amp; offset</h4><span class="sub">cavity = part − frames · lines A–G measured from the frame inward</span></div>
+        <div class="offset-head"><h4>Frame &amp; offset</h4><span class="sub">cavity = part − frames · lines A–G from the frame inward</span>${ap(i,'offset')}</div>
         <div class="frame-ctl" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
           <span class="sub" style="font-weight:700">Frame:</span>
           ${it.frameLink?`<input type="number" value="${f.t}" onchange="setFrame(${i},this.value)" style="width:66px;padding:6px;border:1px solid var(--line);border-radius:8px"><span class="sub">mm all sides</span>`:['t','r','b','l'].map(sd=>`<span class="sub" style="text-transform:uppercase">${sd}</span><input type="number" value="${f[sd]}" onchange="setFrameSide(${i},'${sd}',this.value)" style="width:50px;padding:6px;border:1px solid var(--line);border-radius:8px">`).join('')}
           <label class="tg" style="font-size:12px;margin-left:6px"><input type="checkbox" ${it.frameLink?'checked':''} onchange="toggleFrameLink(${i})"> link all</label>
-          <span class="sub">→ cavity ${cavityOf(it).w} × ${cavityOf(it).h} mm</span>
+          <span class="sub">→ cavity ${cavityOf(it).w} × ${cavityOf(it).h} mm</span>${ap(i,'frame')}
         </div>
         <div class="offset-body">
           <div>${offsetPreview(it)}</div>
@@ -682,58 +714,111 @@
   // ---- nesting ----
   let nestSize='8x4',sheetSizeOv={},nestSvgs=[];
   let nestMatCost=0,nestCncCost=0,nestSheets=0;
+  let editMode=false, placements=null, selKey=null, dragState=null, lastSig='';
   function setNestSize(v){nestSize=v;sheetSizeOv={};render();}
   function setGroupMat(mat,v){items.forEach(it=>{if(it.mat===mat)it.mat=v;});render();}
   function setSheetSize(mat,si,v){sheetSizeOv[mat+'#'+si]=v;render();}
   function openZoom(i){const d=nestSvgs[i];if(!d)return;let ov=document.getElementById('zoomOverlay');if(!ov){ov=document.createElement('div');ov.id='zoomOverlay';ov.className='zoomov';ov.addEventListener('click',e=>{if(e.target===ov)closeZoom();});document.body.appendChild(ov);}ov.innerHTML=`<div class="zoombox"><div class="zoomhead"><b>${esc(d.label)}</b><span><label class="sub">zoom <input type="range" min="120" max="700" value="220" oninput="document.getElementById('zoomInner').style.width=this.value+'%'"></label> <button class="btn ghost tiny" onclick="closeZoom()">Close ✕</button></span></div><div class="zoomscroll"><div id="zoomInner" style="width:220%">${d.svg}</div></div></div>`;ov.classList.add('show');}
   function closeZoom(){const ov=document.getElementById('zoomOverlay');if(ov)ov.classList.remove('show');}
 
-  // shared packer — returns Map(material -> [sheets]) used by BOTH the on-screen nesting and DXF export
-  function buildSheetGroups(){
-    const gapFor=sz=>(sz==='jumbo'?13:7);
-    const groups=new Map();
-    const addPart=(mat,p)=>{if(!groups.has(mat))groups.set(mat,[]);groups.get(mat).push(p);};
-    items.forEach(it=>{
+  // ---- parts + packing (shared by nesting view, DXF, manual editor) ----
+  // Rigid (grain) = the LONGEST side runs along the sheet grain (sheet width / X). So a rigid part is
+  // always oriented long-side-horizontal and is never rotated the other way by the auto-packer.
+  function rigidOrient(p){if(p.grain&&p.h>p.w)return {w:p.h,h:p.w};return {w:p.w,h:p.h};}
+  function sheetMeta(mat,idx){const sz=sheetSizeOv[mat+'#'+idx]||nestSize;const S=SHEETS[sz]||SHEETS['8x4'];const g=(sz==='jumbo'?13:7);return {sz,S,g};}
+  function genParts(){
+    const groups=new Map();const add=(mat,p)=>{if(!groups.has(mat))groups.set(mat,[]);groups.get(mat).push(p);};
+    items.forEach((it,i)=>{
       const ins=insertSpecFor(it);const h=hingeInfo(it);const f=resolveFrame(it);const el=enabledLines(it);
       for(let n=0;n<(+it.q||0);n++){
-        addPart(it.mat,{w:+it.w||0,h:+it.h||0,color:TYPES[it.type].color,name:TYPES[it.type].name,type:it.type,text:it.text||'',grain:!!it.grain,frame:f,lines:el,hinge:h});
-        if(it.pocketSide==='front-back') addPart(it.mat,{w:+it.w||0,h:+it.h||0,color:TYPES[it.type].color,name:TYPES[it.type].name+' (back)',type:it.type,text:'BACK',grain:!!it.grain,frame:f,lines:el.slice(0,1),hinge:{on:false},isBack:true});
-        if(ins) addPart(ins.mat,{w:ins.w,h:ins.h,color:ins.color,name:'Insert',isInsert:true,insTh:ins.insTh,kind:ins.kind,text:(it.text||TYPES[it.type].name),grain:false,frame:{t:0,r:0,b:0,l:0},lines:[],hinge:{on:false}});
+        add(it.mat,{key:i+'_'+n,w:+it.w||0,h:+it.h||0,color:TYPES[it.type].color,name:TYPES[it.type].name,type:it.type,text:it.text||'',grain:!!it.grain,frame:f,lines:el,hinge:h});
+        if(it.pocketSide==='front-back') add(it.mat,{key:i+'_'+n+'_b',w:+it.w||0,h:+it.h||0,color:TYPES[it.type].color,name:TYPES[it.type].name+' (back)',type:it.type,text:'BACK',grain:!!it.grain,frame:f,lines:el.slice(0,1),hinge:{on:false},isBack:true});
+        if(ins) add(ins.mat,{key:i+'_'+n+'_i',w:ins.w,h:ins.h,color:ins.color,name:'Insert',isInsert:true,insTh:ins.insTh,kind:ins.kind,text:(it.text||TYPES[it.type].name),grain:false,frame:{t:0,r:0,b:0,l:0},lines:[],hinge:{on:false}});
       }
     });
-    const out=new Map();
-    groups.forEach((parts,mat)=>{
-      parts.sort((a,b)=>b.h-a.h);
-      const sheets=[];let si=-1,cur=null;
-      const startSheet=()=>{si++;const sz=sheetSizeOv[mat+'#'+si]||nestSize;const S=SHEETS[sz]||SHEETS['8x4'];const g=gapFor(sz);cur={sz,S,g,uW:S.w-2*g,uH:(S.uh||S.h)-2*g,x:g,y:g,rowH:0,parts:[]};sheets.push(cur);};
-      startSheet();
-      parts.forEach(p=>{
-        let pw=p.w,ph=p.h;
-        if(!p.grain&&pw>cur.uW&&ph<=cur.uW){const t=pw;pw=ph;ph=t;}
-        if(cur.x+pw>cur.g+cur.uW){cur.x=cur.g;cur.y+=cur.rowH+cur.g;cur.rowH=0;}
-        if(cur.y+ph>cur.g+cur.uH){startSheet();pw=p.w;ph=p.h;if(!p.grain&&pw>cur.uW&&ph<=cur.uW){const t=pw;pw=ph;ph=t;}}
-        cur.parts.push(Object.assign({},p,{x:cur.x,y:cur.y,w:pw,h:ph}));
-        cur.x+=pw+cur.g;cur.rowH=Math.max(cur.rowH,ph);
-      });
-      out.set(mat,sheets);
+    return groups;
+  }
+  function clampPos(m,p){const S=m.S,g=m.g;return {x:Math.max(g,Math.min(p.x,S.w-g-p.w)),y:Math.max(g,Math.min(p.y,(S.uh||S.h)-g-p.h))};}
+  function autoPack(mat,parts){
+    parts=parts.slice().sort((a,b)=>b.h-a.h);
+    const sheets=[];let idx=-1,cur=null;
+    const start=()=>{idx++;const m=sheetMeta(mat,idx);cur={sz:m.sz,S:m.S,g:m.g,uW:m.S.w-2*m.g,uH:(m.S.uh||m.S.h)-2*m.g,x:m.g,y:m.g,rowH:0,parts:[]};sheets.push(cur);};
+    start();
+    parts.forEach(p=>{
+      let o=rigidOrient(p),pw=o.w,ph=o.h;
+      if(!p.grain&&pw>cur.uW&&ph<=cur.uW){const t=pw;pw=ph;ph=t;}
+      if(cur.x+pw>cur.g+cur.uW){cur.x=cur.g;cur.y+=cur.rowH+cur.g;cur.rowH=0;}
+      if(cur.y+ph>cur.g+cur.uH){start();o=rigidOrient(p);pw=o.w;ph=o.h;if(!p.grain&&pw>cur.uW&&ph<=cur.uW){const t=pw;pw=ph;ph=t;}}
+      cur.parts.push(Object.assign({},p,{x:cur.x,y:cur.y,w:pw,h:ph,rot:(pw!==p.w)?90:0}));
+      cur.x+=pw+cur.g;cur.rowH=Math.max(cur.rowH,ph);
+    });
+    return sheets;
+  }
+  function packInto(m,parts){
+    const S=m.S,g=m.g,uW=S.w-2*g;let x=g,y=g,rowH=0;const out=[];
+    parts.slice().sort((a,b)=>b.h-a.h).forEach(p=>{
+      let o=rigidOrient(p),pw=o.w,ph=o.h;
+      if(!p.grain&&pw>uW&&ph<=uW){const t=pw;pw=ph;ph=t;}
+      if(x+pw>g+uW){x=g;y+=rowH+g;rowH=0;}
+      out.push(Object.assign({},p,{x,y,w:pw,h:ph,rot:(pw!==p.w)?90:0}));
+      x+=pw+g;rowH=Math.max(rowH,ph);
     });
     return out;
   }
+  function materialize(){
+    if(placements)return;placements={};
+    genParts().forEach((parts,mat)=>{autoPack(mat,parts).forEach((sh,s)=>sh.parts.forEach(p=>{placements[p.key]={g:mat,s:s,x:p.x,y:p.y,rot:p.rot||0};}));});
+  }
+  // returns Map(material -> [sheets]). Uses manual placements when present, else auto-packs.
+  function buildSheetGroups(){
+    const groups=genParts();const out=new Map();
+    groups.forEach((parts,mat)=>{
+      if(placements){
+        const mine=parts.filter(p=>placements[p.key]&&placements[p.key].g===mat);
+        const orphans=parts.filter(p=>!(placements[p.key]&&placements[p.key].g===mat));
+        let maxS=0;mine.forEach(p=>maxS=Math.max(maxS,placements[p.key].s));
+        const sheets=[];for(let s=0;s<=maxS;s++){const m=sheetMeta(mat,s);sheets.push({sz:m.sz,S:m.S,g:m.g,parts:[]});}
+        mine.forEach(p=>{const pl=placements[p.key];const w=pl.rot?p.h:p.w,h=pl.rot?p.w:p.h;const m=sheetMeta(mat,pl.s);const c=clampPos(m,{x:pl.x,y:pl.y,w,h});sheets[pl.s].parts.push(Object.assign({},p,{x:c.x,y:c.y,w,h,rot:pl.rot}));});
+        if(orphans.length) autoPack(mat,orphans).forEach(sh=>sheets.push(sh));
+        out.set(mat,sheets);
+      } else out.set(mat,autoPack(mat,parts));
+    });
+    return out;
+  }
+  function toggleEdit(){editMode=!editMode;selKey=null;render();}
+  function resetNest(){placements=null;selKey=null;render();}
+  function reNest(){
+    materialize();
+    genParts().forEach((parts,mat)=>{
+      const mine=parts.filter(p=>placements[p.key]&&placements[p.key].g===mat);
+      const bySheet={};mine.forEach(p=>{const s=placements[p.key].s;(bySheet[s]=bySheet[s]||[]).push(p);});
+      Object.keys(bySheet).forEach(s=>{const m=sheetMeta(mat,+s);packInto(m,bySheet[s]).forEach(pp=>{placements[pp.key]={g:mat,s:+s,x:pp.x,y:pp.y,rot:pp.rot};});});
+    });
+    render();
+  }
+  function nestToolbar(){
+    return `<button class="btn ${editMode?'primary':'ghost'} tiny" onclick="toggleEdit()">✎ Edit mode: ${editMode?'ON':'OFF'}</button>`
+      +(editMode?` <button class="btn ghost tiny" onclick="reNest()">⟲ Re-nest (keep sheets)</button>`:'')
+      +` <button class="btn ghost tiny" onclick="resetNest()">↺ Reset nesting</button>`
+      +(editMode?` <span class="sub">drag a part · drop on a same-group sheet · click to select then <b>9</b>/<b>0</b> rotate · hover-zoom off</span>`:` <span class="sub">turn on Edit mode to drag &amp; rotate parts</span>`);
+  }
   function renderNest(){
     const box=document.getElementById('nest');if(!box)return;
+    const tb=document.getElementById('nestTools');if(tb)tb.innerHTML=nestToolbar();
     const groups=buildSheetGroups();
     let html='',nMat=0,nCnc=0,nSheets=0;nestSvgs=[];
     groups.forEach((sheets,mat)=>{
-      const matInp=`<input list="matList" value="${esc(mat)}" onchange="setGroupMat('${esc(mat)}',this.value)" style="font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 6px;width:175px">`;
+      const matInp=`<input list="matList" value="${esc(mat)}" onchange="setGroupMat('${esc(mat)}',this.value)" ${editMode?'disabled':''} style="font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 6px;width:175px">`;
       sheets.forEach((sh,idx)=>{
         const S=sh.S,vbW=Math.round(S.w/10),vbH=Math.round(S.h/10);const bcolSheet=blockColor(mat,sh.sz);
         const used=sh.parts.reduce((s,p)=>s+p.w*p.h,0)/(S.w*S.h)*100;
         nSheets++;nMat+=priceForSheet(mat,sh.sz);nCnc+=cncForThickness(mat);
-        const sizeSel=`<select onchange="setSheetSize('${esc(mat)}',${idx},this.value)" style="font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 4px">`+['8x4','10x4','10x5','jumbo'].map(k=>`<option value="${k}" ${k===sh.sz?'selected':''}>${SHEETS[k].label}</option>`).join('')+`</select>`;
+        const sizeSel=`<select onchange="setSheetSize('${esc(mat)}',${idx},this.value)" ${editMode?'disabled':''} style="font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 4px">`+['8x4','10x4','10x5','jumbo'].map(k=>`<option value="${k}" ${k===sh.sz?'selected':''}>${SHEETS[k].label}</option>`).join('')+`</select>`;
         const zi=nestSvgs.length;
-        let svg=`<svg class="sheet-svg" onclick="openZoom(${zi})" style="cursor:zoom-in" viewBox="0 0 ${vbW} ${vbH}"><rect x="0.25" y="0.25" width="${(vbW-0.5).toFixed(1)}" height="${(vbH-0.5).toFixed(1)}" fill="#fff" stroke="#cbd5e1" stroke-width="0.4"/>`;
+        const clickAttr=editMode?'':`onclick="openZoom(${zi})" style="cursor:zoom-in"`;
+        let svg=`<svg class="sheet-svg${editMode?' editing':''}" data-group="${esc(mat)}" data-sheet="${idx}" data-size="${sh.sz}" ${clickAttr} viewBox="0 0 ${vbW} ${vbH}"><rect x="0.25" y="0.25" width="${(vbW-0.5).toFixed(1)}" height="${(vbH-0.5).toFixed(1)}" fill="#fff" stroke="#cbd5e1" stroke-width="0.4"/>`;
         if(S.uh&&S.uh<S.h)svg+=`<rect x="0.25" y="${(S.uh/10).toFixed(1)}" width="${(vbW-0.5).toFixed(1)}" height="${((S.h-S.uh)/10).toFixed(1)}" fill="#fee2e2"/>`;
-        sh.parts.forEach(p=>{svg+=drawPart(p);});
+        sh.parts.forEach(p=>{svg+=drawPart(p,p.key===selKey);});
         svg+='</svg>';
         nestSvgs.push({label:parseMat(mat).name+' · '+parseMat(mat).th+' · '+S.label+' · gap '+sh.g+'mm',svg});
         html+=`<div class="sheet-card" style="border-left:5px solid ${bcolSheet}"><div class="sheet-head"><span>${matInp} ${sizeSel} <span style="color:#94a3b8">· ${sh.parts.length} part${sh.parts.length===1?'':'s'} · gap ${sh.g}mm</span></span><span>${used.toFixed(0)}% used</span></div>${svg}</div>`;
@@ -741,19 +826,57 @@
     });
     nestMatCost=nMat;nestCncCost=nCnc;nestSheets=nSheets;
     box.innerHTML=html||'<div class="sub">No parts yet.</div>';
+    if(editMode)attachEditHandlers();
+  }
+  // ---- manual drag / move / rotate ----
+  function attachEditHandlers(){
+    document.querySelectorAll('#nest .sheet-svg.editing .npart').forEach(g=>{g.addEventListener('pointerdown',e=>startDrag(e,g.closest('.sheet-svg'),g));});
+  }
+  function startDrag(e,svg,g){
+    e.preventDefault();e.stopPropagation();materialize();
+    const key=g.getAttribute('data-key');selKey=key;
+    document.querySelectorAll('#nest .npart.sel').forEach(n=>n.classList.remove('sel'));g.classList.add('sel');
+    dragState={key,g,fromSvg:svg,startX:e.clientX,startY:e.clientY,moved:false};
+    window.addEventListener('pointermove',onDragMove);window.addEventListener('pointerup',onDragUp);
+  }
+  function onDragMove(e){
+    if(!dragState)return;
+    const dx=e.clientX-dragState.startX,dy=e.clientY-dragState.startY;
+    if(Math.abs(dx)>2||Math.abs(dy)>2)dragState.moved=true;
+    const svg=dragState.fromSvg,rect=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal;
+    dragState.g.setAttribute('transform',`translate(${(dx*vb.width/rect.width).toFixed(2)} ${(dy*vb.height/rect.height).toFixed(2)})`);
+    dragState.g.style.pointerEvents='none';
+  }
+  function onDragUp(e){
+    window.removeEventListener('pointermove',onDragMove);window.removeEventListener('pointerup',onDragUp);
+    const ds=dragState;dragState=null;if(!ds)return;
+    if(!ds.moved){render();return;}
+    const pl=placements[ds.key],w=+ds.g.getAttribute('data-w'),h=+ds.g.getAttribute('data-h');
+    const el=document.elementFromPoint(e.clientX,e.clientY),tgt=el?el.closest('.sheet-svg'):null;
+    if(tgt){
+      const tGroup=tgt.getAttribute('data-group'),tSheet=+tgt.getAttribute('data-sheet'),tSize=tgt.getAttribute('data-size');
+      if(tGroup===pl.g&&tSize===sheetMeta(pl.g,pl.s).sz){
+        const rect=tgt.getBoundingClientRect(),vb=tgt.viewBox.baseVal;
+        const nx=(e.clientX-rect.left)*vb.width/rect.width*10-w/2, ny=(e.clientY-rect.top)*vb.height/rect.height*10-h/2;
+        const c=clampPos(sheetMeta(tGroup,tSheet),{x:nx,y:ny,w,h});
+        placements[ds.key]={g:tGroup,s:tSheet,x:c.x,y:c.y,rot:pl.rot};
+      }
+    }
+    render();
   }
 
   // draw one packed part (coords in mm; svg units = mm/10)
-  function drawPart(p){
+  function drawPart(p,sel){
     const X=p.x/10,Y=p.y/10,W=p.w/10,H=p.h/10;let s='';
-    s+=`<rect x="${X.toFixed(1)}" y="${Y.toFixed(1)}" width="${W.toFixed(1)}" height="${H.toFixed(1)}" fill="${p.color}1a" stroke="${DXFC.OUT}" stroke-width="0.4"><title>${esc(p.name)} ${p.w}×${p.h}</title></rect>`;
+    s+=`<g class="npart${sel?' sel':''}" data-key="${p.key||''}" data-w="${p.w}" data-h="${p.h}">`;
+    s+=`<rect x="${X.toFixed(1)}" y="${Y.toFixed(1)}" width="${W.toFixed(1)}" height="${H.toFixed(1)}" fill="${p.color}1a" stroke="${sel?'#d97706':DXFC.OUT}" stroke-width="${sel?'0.9':'0.4'}"><title>${esc(p.name)} ${p.w}×${p.h}</title></rect>`;
     if(p.isInsert){
       // concentric insert step lines (cavity + overlay) + reeded hatch
       const a=Math.min(W,H);const cols=[OFFCOL.A,OFFCOL.B];
       [0.7,1.4].forEach((o,k)=>{if(o<a/2-0.4)s+=`<rect x="${(X+o).toFixed(1)}" y="${(Y+o).toFixed(1)}" width="${(W-2*o).toFixed(1)}" height="${(H-2*o).toFixed(1)}" fill="none" stroke="${cols[k]}" stroke-width="0.3"/>`;});
       if(p.kind==='reeded'){const step=1.25,x0=X+1.6,x1=X+W-1.6;for(let lx=x0;lx<=x1;lx+=step)s+=`<line x1="${lx.toFixed(1)}" y1="${(Y+1.4).toFixed(1)}" x2="${lx.toFixed(1)}" y2="${(Y+H-1.4).toFixed(1)}" stroke="${OFFCOL.E}" stroke-width="0.16"/>`;}
       if(W>=9&&H>=8)s+=`<text x="${(X+W/2).toFixed(1)}" y="${(Y+H/2+1.2).toFixed(1)}" font-size="3.2" font-family="Arial" text-anchor="middle" fill="${DXFC.OUT}">Ins ${p.insTh}mm</text>`;
-      return s;
+      s+='</g>';return s;
     }
     const f=p.frame||{t:0,r:0,b:0,l:0};
     (p.lines||[]).forEach(l=>{
@@ -768,11 +891,17 @@
     }
     if(W>=11&&H>=8)s+=`<text x="${(X+1.8).toFixed(1)}" y="${(Y+4.2).toFixed(1)}" font-size="3" font-family="Arial" font-weight="700" fill="${DXFC.OUT}">${p.w}×${p.h}</text>`;
     if(p.text&&W>=14&&H>=10)s+=`<text x="${(X+W/2).toFixed(1)}" y="${(Y+H/2+1.4).toFixed(1)}" font-size="3.6" font-family="Arial" text-anchor="middle" fill="${p.isBack?'#dc2626':'#0f172a'}">${esc(p.text)}</text>`;
-    if(p.grain&&W>=8&&H>=8)s+=`<text x="${(X+W-1.4).toFixed(1)}" y="${(Y+4).toFixed(1)}" font-size="3.6" font-family="Arial" text-anchor="end" fill="#16a34a">↕</text>`;
-    return s;
+    if(p.grain&&W>=8&&H>=8)s+=`<text x="${(X+W-1.4).toFixed(1)}" y="${(Y+4).toFixed(1)}" font-size="3.6" font-family="Arial" text-anchor="end" fill="#16a34a">↔</text>`;
+    s+='</g>';return s;
   }
 
-  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&['qaW','qaH','qaQ'].includes(document.activeElement.id))addItem();});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&['qaW','qaH','qaQ'].includes(document.activeElement.id)){addItem();return;}
+    if(editMode&&selKey&&(e.key==='9'||e.key==='0')){
+      if(/INPUT|SELECT|TEXTAREA/.test((document.activeElement||{}).tagName||''))return;
+      materialize();const pl=placements[selKey];if(pl){pl.rot=pl.rot?0:90;render();}
+    }
+  });
   buildMatUI();
   render();
 </script>
