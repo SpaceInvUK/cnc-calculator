@@ -21,8 +21,8 @@
   .tab.active{background:var(--ink);color:#fff}
   .tab.alt{background:var(--blue);color:#fff}
 
-  .wrap{max-width:1180px;margin:12px auto;padding:0 14px}
-  .topstrip{max-width:1180px;margin:14px auto 0;padding:0 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+  .wrap{max-width:none;margin:12px 0;padding:0 14px}
+  .topstrip{max-width:none;margin:14px 0 0;padding:0 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
   @media(max-width:920px){.topstrip{grid-template-columns:1fr}}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
   .card h2{margin:0 0 4px;font-size:15px}
@@ -123,9 +123,9 @@
   .zoombox{background:#fff;border-radius:12px;padding:12px;width:94vw;height:92vh;max-width:1100px;display:flex;flex-direction:column;gap:8px}
   .zoomhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .zoomscroll{flex:1;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
-  .main2col{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;align-items:start}
-  @media(max-width:920px){.main2col{grid-template-columns:1fr}}
-  .inspector-card{position:sticky;top:10px;padding:0;overflow:hidden}
+  .main2col{display:grid;grid-template-columns:340px minmax(0,1fr);gap:14px;align-items:start}
+  @media(max-width:920px){.main2col{grid-template-columns:1fr}.inspector-card{order:0;position:static}}
+  .inspector-card{position:sticky;top:10px;padding:0;overflow:hidden;order:-1}
   .item-row{cursor:pointer}
   .item.sel{outline:2px solid var(--blue);outline-offset:-1px}
   .item.sel .item-row{background:rgba(37,99,235,.05)}
@@ -298,14 +298,17 @@
     return {mat:'MR MDF '+insTh+'mm',w:cav.w+overlay,h:cav.h+overlay,insTh,kind:it.type,color:TYPES[it.type].color};
   }
   // Hinge count rule (production hingeLayoutForPlacement): 2; >900 -> 3; >1500 -> 4. Side auto: H>=W -> left, else top.
+  // Default rule: hinges go on the LONGEST side of the piece (so W/H order doesn't matter).
+  // sideAuto lets the drawing recompute the edge from the part's real orientation on the sheet.
   function hingeInfo(it){
     if(!it.hinges||!it.hinges.on)return{on:false};
     const W=+it.w||0,H=+it.h||0;
-    let side=(it.hinges.side&&it.hinges.side!=='auto')?it.hinges.side:(H>=W?'left':'top');
-    const span=(side==='left'||side==='right')?H:W;
+    const sideAuto=(!it.hinges.side||it.hinges.side==='auto');
+    let side=sideAuto?(H>=W?'left':'top'):it.hinges.side;
+    const span=Math.max(W,H);
     let count=2; if(span>1500)count=4; else if(span>900)count=3;
     if(it.hinges.count&&it.hinges.count!=='auto')count=+it.hinges.count;
-    return{on:true,side,count,offset:+it.hinges.offset||100,span,auto:(!it.hinges.count||it.hinges.count==='auto')};
+    return{on:true,side,count,offset:+it.hinges.offset||100,span,sideAuto,auto:(!it.hinges.count||it.hinges.count==='auto')};
   }
 
   // ---- offset profiles (reusable line sets) ----
@@ -461,8 +464,9 @@
   function dxfRoundRect(layer,x,y,w,h,r){r=Math.min(r,w/2-0.1,h/2-0.1);if(r<=0)return dxfRect(layer,x,y,w,h);const k=0.41421356;return dxfPoly(layer,[{x:x+r,y:y},{x:x+w-r,y:y,b:k},{x:x+w,y:y+r},{x:x+w,y:y+h-r,b:k},{x:x+w-r,y:y+h},{x:x+r,y:y+h,b:k},{x:x,y:y+h-r},{x:x,y:y+r,b:k}],true);}
   function hingeCenters(p,bx,by){
     const h=p.hinge,out=[],inset=22.5,eo=h.offset||100,n=h.count;
-    if(h.side==='left'||h.side==='right'){const cx=h.side==='left'?bx+inset:bx+p.w-inset;const y1=by+eo,y2=by+p.h-eo;for(let k=0;k<n;k++)out.push({x:cx,y:n===1?(y1+y2)/2:y1+(y2-y1)*k/(n-1)});}
-    else{const cy=h.side==='bottom'?by+inset:by+p.h-inset;const x1=bx+eo,x2=bx+p.w-eo;for(let k=0;k<n;k++)out.push({x:n===1?(x1+x2)/2:x1+(x2-x1)*k/(n-1),y:cy});}
+    const side=h.sideAuto?(p.h>=p.w?'left':'top'):h.side;   // longest side as the part actually sits
+    if(side==='left'||side==='right'){const cx=side==='left'?bx+inset:bx+p.w-inset;const y1=by+eo,y2=by+p.h-eo;for(let k=0;k<n;k++)out.push({x:cx,y:n===1?(y1+y2)/2:y1+(y2-y1)*k/(n-1)});}
+    else{const cy=side==='bottom'?by+inset:by+p.h-inset;const x1=bx+eo,x2=bx+p.w-eo;for(let k=0;k<n;k++)out.push({x:n===1?(x1+x2)/2:x1+(x2-x1)*k/(n-1),y:cy});}
     return out;
   }
   function dxfForThickness(th,list){
@@ -906,9 +910,10 @@
     });
     if(p.hinge&&p.hinge.on){
       const h=p.hinge,r=Math.max(0.5,Math.min(1.2,Math.min(W,H)/12)),eo=h.offset/10,ins2=2.25;
+      const side=h.sideAuto?(p.h>=p.w?'left':'top'):h.side;   // longest side as the part actually sits
       const dot=(dx,dy)=>`<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="${r.toFixed(2)}" fill="#dc2626"/>`;
-      if(h.side==='left'||h.side==='right'){const ex=h.side==='left'?X+ins2:X+W-ins2;const y1=Y+eo,y2=Y+H-eo;for(let k=0;k<h.count;k++){const dy=h.count===1?(y1+y2)/2:y1+(y2-y1)*k/(h.count-1);if(dy>Y+0.8&&dy<Y+H-0.8)s+=dot(ex,dy);}}
-      else{const ey=h.side==='top'?Y+ins2:Y+H-ins2;const x1=X+eo,x2=X+W-eo;for(let k=0;k<h.count;k++){const dx=h.count===1?(x1+x2)/2:x1+(x2-x1)*k/(h.count-1);if(dx>X+0.8&&dx<X+W-0.8)s+=dot(dx,ey);}}
+      if(side==='left'||side==='right'){const ex=side==='left'?X+ins2:X+W-ins2;const y1=Y+eo,y2=Y+H-eo;for(let k=0;k<h.count;k++){const dy=h.count===1?(y1+y2)/2:y1+(y2-y1)*k/(h.count-1);if(dy>Y+0.8&&dy<Y+H-0.8)s+=dot(ex,dy);}}
+      else{const ey=side==='top'?Y+ins2:Y+H-ins2;const x1=X+eo,x2=X+W-eo;for(let k=0;k<h.count;k++){const dx=h.count===1?(x1+x2)/2:x1+(x2-x1)*k/(h.count-1);if(dx>X+0.8&&dx<X+W-0.8)s+=dot(dx,ey);}}
     }
     if(W>=11&&H>=8)s+=`<text x="${(X+1.8).toFixed(1)}" y="${(Y+4.2).toFixed(1)}" font-size="3" font-family="Arial" font-weight="700" fill="${DXFC.OUT}">${p.w}×${p.h}</text>`;
     if(p.text&&W>=14&&H>=10)s+=`<text x="${(X+W/2).toFixed(1)}" y="${(Y+H/2+1.4).toFixed(1)}" font-size="3.6" font-family="Arial" text-anchor="middle" fill="${p.isBack?'#dc2626':'#0f172a'}">${esc(p.text)}</text>`;
