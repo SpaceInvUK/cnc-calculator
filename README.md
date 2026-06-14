@@ -50,6 +50,9 @@ http://127.0.0.1:8765/Cnc%20Calculator%20UI%20Test.html
 
 - `Cnc Calculator UI Test.html` - official version 1.0 app and GitHub Pages entry point.
 - `CNC Calculator 1.0.html` - identical local mirror of the official version 1.0 app.
+- `prototypes/new-design/index.html` - separate New Design prototype.
+- `prototypes/order-entry/index.html` - separate Order Entry prototype.
+- `prototypes/order-entry/beta.html` - related Order Entry beta prototype.
 - `CNC Calculator Handoff - regras e pendencias.txt` - full original handoff with all broad app rules and pending items.
 - `docs/PANNELING_IMPLEMENTATION_2026-05-19.md` - what was changed in this pass, current Panneling rules, QA notes, and GitHub instructions.
 - `docs/PANNELING_RULES_2026-05-20.md` - current confirmed Panneling rules after the latest annotation review.
