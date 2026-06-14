@@ -41,6 +41,12 @@ Related beta file:
 C:\Users\ednei\Documents\CNC App\prototypes\order-entry\beta.html
 ```
 
+Original/root beta URL kept for compatibility:
+
+```text
+https://spaceinvuk.github.io/cnc-calculator/order-entry-beta.html
+```
+
 Beta GitHub Pages:
 
 ```text
