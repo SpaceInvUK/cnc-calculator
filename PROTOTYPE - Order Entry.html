@@ -173,7 +173,7 @@
           <input type="file" id="fileIn" accept=".json,.fastcnc.json" style="display:none" onchange="onFile(event)">
           <button class="btn ghost tiny" style="margin-left:auto" onclick="document.getElementById('fileIn').click()">⤒ Load .fastcnc</button>
           <button class="btn ghost tiny" onclick="downloadFastCnc()">⤓ Save .fastcnc</button>
-          <button class="btn ghost tiny" onclick="exportDxfNote()">⤓ Export DXF</button>
+          <button class="btn ghost tiny" onclick="downloadDxf()">⤓ Export DXF</button>
           <div class="mode"><button class="on">Doors</button><button>Panelling</button></div>
         </div>
         <datalist id="matList"></datalist>
@@ -271,7 +271,8 @@
     if(!insTh)return null;
     const overlay=it.type==='trad'?24:28;
     const cav=cavityOf(it);
-    return {mat:m.name+' '+insTh+'mm',w:cav.w+overlay,h:cav.h+overlay,insTh,kind:it.type,color:TYPES[it.type].color};
+    // Inserts are always MR MDF (Ednei's rule), keeping the computed insert thickness.
+    return {mat:'MR MDF '+insTh+'mm',w:cav.w+overlay,h:cav.h+overlay,insTh,kind:it.type,color:TYPES[it.type].color};
   }
   // Hinge count rule (production hingeLayoutForPlacement): 2; >900 -> 3; >1500 -> 4. Side auto: H>=W -> left, else top.
   function hingeInfo(it){
@@ -423,10 +424,73 @@
     return base;
   }
   function downloadFastCnc(){const doc=buildFastCnc();const blob=new Blob([JSON.stringify(doc,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ORDER.fastcnc.json';document.body.appendChild(a);a.click();a.remove();}
-  function exportDxfNote(){alert('Faithful DXF export (production layers: OUT, OFFSET_A–G, hinges, OUT_INSERT/POKET_INSERT/SHADOW/IN/REEDED, BACK_SHEET, OFFCUT) is the next step.\\n\\nFor now the on-screen nesting already uses the same colours/geometry, and Save .fastcnc gives you a file you can open in the real app to export DXF.');}
+  // ---- faithful DXF export: 1 file per thickness, production layer scheme + colours ----
+  const DXF_LAYERS={'0':7,'text':7,'SHEET':7,'BOARD':24,'OUT':150,'OFFCUT':6,'hinges':7,'IN':5,'REEDED':132,'OFFSET_A':30,'OFFSET_B':1,'OFFSET_C':5,'OFFSET_D':210,'OFFSET_E':94,'OFFSET_F':30,'OFFSET_G':32};
+  function fnum(n){return (Math.round(n*100)/100).toString();}
+  function dxfText(layer,x,y,h,txt,center){
+    if(center)return '0\nTEXT\n8\n'+layer+'\n10\n'+fnum(x)+'\n20\n'+fnum(y)+'\n11\n'+fnum(x)+'\n21\n'+fnum(y)+'\n72\n1\n73\n2\n40\n'+fnum(h)+'\n1\n'+txt+'\n';
+    return '0\nTEXT\n8\n'+layer+'\n10\n'+fnum(x)+'\n20\n'+fnum(y)+'\n40\n'+fnum(h)+'\n1\n'+txt+'\n';
+  }
+  function dxfCircle(layer,cx,cy,r){return '0\nCIRCLE\n8\n'+layer+'\n10\n'+fnum(cx)+'\n20\n'+fnum(cy)+'\n40\n'+fnum(r)+'\n';}
+  function dxfLine(layer,x1,y1,x2,y2){return '0\nLINE\n8\n'+layer+'\n10\n'+fnum(x1)+'\n20\n'+fnum(y1)+'\n11\n'+fnum(x2)+'\n21\n'+fnum(y2)+'\n';}
+  function dxfPoly(layer,pts,closed){let s='0\nPOLYLINE\n8\n'+layer+'\n66\n1\n70\n'+(closed?1:0)+'\n';pts.forEach(p=>{s+='0\nVERTEX\n8\n'+layer+'\n10\n'+fnum(p.x)+'\n20\n'+fnum(p.y)+'\n30\n0\n';if(p.b)s+='42\n'+p.b+'\n';});s+='0\nSEQEND\n8\n'+layer+'\n';return s;}
+  function dxfRect(layer,x,y,w,h){return dxfPoly(layer,[{x:x,y:y},{x:x+w,y:y},{x:x+w,y:y+h},{x:x,y:y+h}],true);}
+  function dxfRoundRect(layer,x,y,w,h,r){r=Math.min(r,w/2-0.1,h/2-0.1);if(r<=0)return dxfRect(layer,x,y,w,h);const k=0.41421356;return dxfPoly(layer,[{x:x+r,y:y},{x:x+w-r,y:y,b:k},{x:x+w,y:y+r},{x:x+w,y:y+h-r,b:k},{x:x+w-r,y:y+h},{x:x+r,y:y+h,b:k},{x:x,y:y+h-r},{x:x,y:y+r,b:k}],true);}
+  function hingeCenters(p,bx,by){
+    const h=p.hinge,out=[],inset=22.5,eo=h.offset||100,n=h.count;
+    if(h.side==='left'||h.side==='right'){const cx=h.side==='left'?bx+inset:bx+p.w-inset;const y1=by+eo,y2=by+p.h-eo;for(let k=0;k<n;k++)out.push({x:cx,y:n===1?(y1+y2)/2:y1+(y2-y1)*k/(n-1)});}
+    else{const cy=h.side==='bottom'?by+inset:by+p.h-inset;const x1=bx+eo,x2=bx+p.w-eo;for(let k=0;k<n;k++)out.push({x:n===1?(x1+x2)/2:x1+(x2-x1)*k/(n-1),y:cy});}
+    return out;
+  }
+  function dxfForThickness(th,list){
+    const SHEETGAP=250;let body='';const layers=new Set(['0','text']);let yOrigin=0,sheetNo=0;
+    list.forEach(entry=>{
+      const sh=entry.sh,mat=entry.mat,S=sh.S;sheetNo++;
+      const sheetLayer=(sheetNo%2===0)?'BOARD':'SHEET';layers.add(sheetLayer);
+      body+=dxfRect(sheetLayer,0,yOrigin,S.w,S.h);
+      body+=dxfText('text',60,yOrigin+S.h-30,22,'SHEET '+sheetNo+' '+(parseMat(mat).name)+' '+th,false);
+      sh.parts.forEach(p=>{
+        const bx=p.x,by=yOrigin+(S.h-p.y-p.h);             // flip Y (DXF is bottom-up)
+        const round=(p.lines||[]).some(l=>l.rd);
+        layers.add('OUT');
+        if(round)body+=dxfRoundRect('OUT',bx,by,p.w,p.h,2.5);else body+=dxfRect('OUT',bx,by,p.w,p.h);
+        const f=p.frame||{t:0,r:0,b:0,l:0};
+        (p.lines||[]).forEach(l=>{
+          const lyr='OFFSET_'+l.L;layers.add(lyr);
+          const ix=bx+f.l+l.mm,iy=by+f.b+l.mm,iw=p.w-f.l-f.r-2*l.mm,ih=p.h-f.t-f.b-2*l.mm;
+          if(iw>1&&ih>1){if(l.rd)body+=dxfRoundRect(lyr,ix,iy,iw,ih,2.5);else body+=dxfRect(lyr,ix,iy,iw,ih);}
+        });
+        if(p.isInsert){
+          layers.add('IN');
+          [7,14].forEach(o=>{if(o<Math.min(p.w,p.h)/2-1)body+=dxfRect('IN',bx+o,by+o,p.w-2*o,p.h-2*o);});
+          if(p.kind==='reeded'){layers.add('REEDED');for(let yy=by+12.5;yy<by+p.h-6;yy+=12.5)body+=dxfLine('REEDED',bx+8,yy,bx+p.w-8,yy);}
+        }
+        if(p.hinge&&p.hinge.on){layers.add('hinges');hingeCenters(p,bx,by).forEach(c=>{body+=dxfCircle('hinges',c.x,c.y,17.5);});}
+        if(p.text)body+=dxfText('text',bx+p.w/2,by+p.h/2,18,p.text,true);
+      });
+      yOrigin+=S.h+SHEETGAP;
+    });
+    const layerArr=Array.from(layers);
+    let s='0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n';
+    s+='0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n'+layerArr.length+'\n';
+    layerArr.forEach(l=>{s+='0\nLAYER\n2\n'+l+'\n70\n0\n62\n'+(DXF_LAYERS[l]||7)+'\n6\nCONTINUOUS\n';});
+    s+='0\nENDTAB\n0\nENDSEC\n';
+    s+='0\nSECTION\n2\nENTITIES\n'+body+'0\nENDSEC\n0\nEOF\n';
+    return s;
+  }
+  function buildDxfByThickness(){
+    const groups=buildSheetGroups(),byTh=new Map();
+    groups.forEach((sheets,mat)=>{const th=parseMat(mat).th;sheets.forEach(sh=>{if(!byTh.has(th))byTh.set(th,[]);byTh.get(th).push({mat,sh});});});
+    const files={};byTh.forEach((list,th)=>{files[th]=dxfForThickness(th,list);});return files;
+  }
+  function downloadDxf(){
+    const files=buildDxfByThickness(),ths=Object.keys(files);
+    if(!ths.length){alert('No parts to export.');return;}
+    ths.forEach((th,i)=>{setTimeout(()=>{const blob=new Blob([files[th]],{type:'application/dxf'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ORDER_'+th+'.dxf';document.body.appendChild(a);a.click();a.remove();},i*350);});
+  }
 
   // ---- pricing tables (sample of the production book) ----
-  const PRICES={'MDF':{'6mm':25,'9mm':35,'12mm':40,'15mm':45,'18mm':55,'22mm':65,'25mm':75},'MR MDF':{'6mm':35,'12mm':50,'15mm':55,'18mm':65,'22mm':75,'25mm':85},'FR MDF':{'12mm':60,'18mm':80,'25mm':100},'Veneered MDF':{'18mm':85,'25mm':105},'Black MDF':{'18mm':90},'MDF Hidrofugo Plus':{'12mm':50,'18mm':65},'Birch Ply':{'12mm':75,'18mm':95,'24mm':120},'Marine Ply':{'12mm':120,'18mm':160},'MFC':{'18mm':55,'25mm':65},'Veneered Chipboard':{'18mm':80,'25mm':100},'Melamine board':{'18mm':55},'Laminated HPL':{'18mm':90}};
+  const PRICES={'MDF':{'6mm':25,'9mm':35,'12mm':40,'15mm':45,'18mm':55,'22mm':65,'25mm':75},'MR MDF':{'6mm':35,'9mm':40,'12mm':50,'15mm':55,'18mm':65,'22mm':75,'25mm':85},'FR MDF':{'12mm':60,'18mm':80,'25mm':100},'Veneered MDF':{'18mm':85,'25mm':105},'Black MDF':{'18mm':90},'MDF Hidrofugo Plus':{'12mm':50,'18mm':65},'Birch Ply':{'12mm':75,'18mm':95,'24mm':120},'Marine Ply':{'12mm':120,'18mm':160},'MFC':{'18mm':55,'25mm':65},'Veneered Chipboard':{'18mm':80,'25mm':100},'Melamine board':{'18mm':55},'Laminated HPL':{'18mm':90}};
   const FAVS=['MDF 18mm','MDF Hidrofugo Plus 18mm','MR MDF 18mm','Veneered Chipboard 18mm','MFC 18mm','Birch Ply 18mm'];
   const SHEETS={'8x4':{w:2440,h:1220,label:'8x4'},'10x4':{w:3050,h:1220,label:'10x4'},'10x5':{w:3050,h:1525,label:'10x5'},'jumbo':{w:2800,h:2070,uh:2050,label:'Jumbo'}};
   function priceForSheet(combined,size){const m=parseMat(combined);let base=(PRICES[m.name]&&PRICES[m.name][m.th])||0;if(!base)base=55;const S=SHEETS[size]||SHEETS['8x4'],B=SHEETS['8x4'];const ratio=(size==='8x4')?1:(S.w*S.h)/(B.w*B.h);return Math.round(base*ratio);}
@@ -624,8 +688,8 @@
   function openZoom(i){const d=nestSvgs[i];if(!d)return;let ov=document.getElementById('zoomOverlay');if(!ov){ov=document.createElement('div');ov.id='zoomOverlay';ov.className='zoomov';ov.addEventListener('click',e=>{if(e.target===ov)closeZoom();});document.body.appendChild(ov);}ov.innerHTML=`<div class="zoombox"><div class="zoomhead"><b>${esc(d.label)}</b><span><label class="sub">zoom <input type="range" min="120" max="700" value="220" oninput="document.getElementById('zoomInner').style.width=this.value+'%'"></label> <button class="btn ghost tiny" onclick="closeZoom()">Close ✕</button></span></div><div class="zoomscroll"><div id="zoomInner" style="width:220%">${d.svg}</div></div></div>`;ov.classList.add('show');}
   function closeZoom(){const ov=document.getElementById('zoomOverlay');if(ov)ov.classList.remove('show');}
 
-  function renderNest(){
-    const box=document.getElementById('nest');if(!box)return;
+  // shared packer — returns Map(material -> [sheets]) used by BOTH the on-screen nesting and DXF export
+  function buildSheetGroups(){
     const gapFor=sz=>(sz==='jumbo'?13:7);
     const groups=new Map();
     const addPart=(mat,p)=>{if(!groups.has(mat))groups.set(mat,[]);groups.get(mat).push(p);};
@@ -634,10 +698,10 @@
       for(let n=0;n<(+it.q||0);n++){
         addPart(it.mat,{w:+it.w||0,h:+it.h||0,color:TYPES[it.type].color,name:TYPES[it.type].name,type:it.type,text:it.text||'',grain:!!it.grain,frame:f,lines:el,hinge:h});
         if(it.pocketSide==='front-back') addPart(it.mat,{w:+it.w||0,h:+it.h||0,color:TYPES[it.type].color,name:TYPES[it.type].name+' (back)',type:it.type,text:'BACK',grain:!!it.grain,frame:f,lines:el.slice(0,1),hinge:{on:false},isBack:true});
-        if(ins) addPart(ins.mat,{w:ins.w,h:ins.h,color:ins.color,name:'Insert',isInsert:true,insTh:ins.insTh,kind:ins.kind,text:'',grain:false,frame:{t:0,r:0,b:0,l:0},lines:[],hinge:{on:false}});
+        if(ins) addPart(ins.mat,{w:ins.w,h:ins.h,color:ins.color,name:'Insert',isInsert:true,insTh:ins.insTh,kind:ins.kind,text:(it.text||TYPES[it.type].name),grain:false,frame:{t:0,r:0,b:0,l:0},lines:[],hinge:{on:false}});
       }
     });
-    let html='',nMat=0,nCnc=0,nSheets=0;nestSvgs=[];
+    const out=new Map();
     groups.forEach((parts,mat)=>{
       parts.sort((a,b)=>b.h-a.h);
       const sheets=[];let si=-1,cur=null;
@@ -651,6 +715,15 @@
         cur.parts.push(Object.assign({},p,{x:cur.x,y:cur.y,w:pw,h:ph}));
         cur.x+=pw+cur.g;cur.rowH=Math.max(cur.rowH,ph);
       });
+      out.set(mat,sheets);
+    });
+    return out;
+  }
+  function renderNest(){
+    const box=document.getElementById('nest');if(!box)return;
+    const groups=buildSheetGroups();
+    let html='',nMat=0,nCnc=0,nSheets=0;nestSvgs=[];
+    groups.forEach((sheets,mat)=>{
       const matInp=`<input list="matList" value="${esc(mat)}" onchange="setGroupMat('${esc(mat)}',this.value)" style="font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 6px;width:175px">`;
       sheets.forEach((sh,idx)=>{
         const S=sh.S,vbW=Math.round(S.w/10),vbH=Math.round(S.h/10);const bcolSheet=blockColor(mat,sh.sz);
