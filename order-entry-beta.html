@@ -123,6 +123,20 @@
   .zoombox{background:#fff;border-radius:12px;padding:12px;width:94vw;height:92vh;max-width:1100px;display:flex;flex-direction:column;gap:8px}
   .zoomhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .zoomscroll{flex:1;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .main2col{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;align-items:start}
+  @media(max-width:920px){.main2col{grid-template-columns:1fr}}
+  .inspector-card{position:sticky;top:10px;padding:0;overflow:hidden}
+  .item-row{cursor:pointer}
+  .item.sel{outline:2px solid var(--blue);outline-offset:-1px}
+  .item.sel .item-row{background:rgba(37,99,235,.05)}
+  .insp-head{display:flex;align-items:center;gap:8px;padding:11px 12px;border-bottom:1px solid var(--line)}
+  .insp-title{font-weight:700;font-size:12px;color:var(--muted)}
+  .insp-tabs{display:flex;gap:2px;padding:8px 8px 0;flex-wrap:wrap;border-bottom:1px solid var(--line);background:#f8fafc}
+  .insp-tab{padding:6px 9px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:0}
+  .insp-tab.on{background:#fff;color:var(--ink);border-color:var(--line)}
+  .insp-body{padding:12px;max-height:74vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .insp-body .ed-field{gap:4px}
+  .insp-empty{padding:26px 14px;color:var(--muted);font-size:13px;text-align:center}
 </style>
 </head>
 <body>
@@ -168,7 +182,7 @@
   </div>
 
   <div class="wrap">
-    <div>
+    <div class="main2col">
       <div class="card">
         <h2>New order — add the customer's items</h2>
         <div class="hint">One list. Each line is a door/part with its own type, size, finish and offset. Mix Flat / Traditional / Flushback / Reeded in the same list — no separate blocks.</div>
@@ -212,6 +226,8 @@
 
         <div class="order-list" id="list"></div>
       </div>
+      <aside class="card inspector-card"><div id="inspector"></div></aside>
+    </div>
 
       <div class="card" style="margin-top:16px">
         <h2>Nesting — sheet layout</h2>
@@ -230,7 +246,6 @@
         <div id="nest"></div>
         <div class="hint">Click a sheet to zoom. Colours match the DXF layers: outer = black, offset A–G = their own colour, hinges = red.</div>
       </div>
-    </div>
   </div>
 
 <script>
@@ -318,7 +333,7 @@
       mkItem('flat',1000,600,1,M,'8x4',{t:60,r:70,b:80,l:50},{A:{mm:0}},'Flat',{on:false},{offsetName:'Custom'})
     ];
   }
-  let openIdx=-1;
+  let selItem=0, inspTab='part';
 
   // ---- import .fastcnc.json ----
   function typeFromDoor(dt){dt=(dt||'').toLowerCase();if(dt==='traditional')return'trad';if(dt==='flushback')return'flush';if(dt==='reeded')return'reeded';return'flat';}
@@ -367,7 +382,7 @@
       });
     });
     if(!out.length){alert('No doors-mode parts found in that file.');return;}
-    items=out; openIdx=-1; orderMaterial=items[0].mat;
+    items=out; selItem=0; orderMaterial=items[0].mat;
     const q=document.getElementById('qaMat'); if(q){q.innerHTML=matOptionsHtml(orderMaterial);q.value=orderMaterial;}
     render();
   }
@@ -514,10 +529,9 @@
   // ---- list actions ----
   function qtyAdd(i,d){items[i].q=Math.max(1,(+items[i].q||1)+d);render();}
   function qtySet(i,v){items[i].q=Math.max(1,Math.round(+v||1));render();}
-  function splitOne(i){const it=items[i];if((+it.q||1)<=1)return;it.q=(+it.q)-1;const copy=JSON.parse(JSON.stringify(it));copy.q=1;items.splice(i+1,0,copy);openIdx=i+1;render();}
+  function splitOne(i){const it=items[i];if((+it.q||1)<=1)return;it.q=(+it.q)-1;const copy=JSON.parse(JSON.stringify(it));copy.q=1;items.splice(i+1,0,copy);selItem=i+1;render();}
   function dup(i){items.splice(i+1,0,JSON.parse(JSON.stringify(items[i])));render();}
-  function del(i){items.splice(i,1);if(openIdx>=items.length)openIdx=-1;render();}
-  function toggle(i){openIdx=(openIdx===i?-1:i);render();}
+  function del(i){items.splice(i,1);if(selItem>=items.length)selItem=items.length-1;render();}
   function upd(i,k,v){items[i][k]=v;render();}
   function addItem(){
     const qt=document.getElementById('qaText'),qm=document.getElementById('qaMat'),qf=document.getElementById('qaFrame');
@@ -551,14 +565,16 @@
     // manual nesting is invalidated when the part set / sheet sizing changes (footprint signature)
     const sig=items.map(it=>[it.type,it.w,it.h,it.q,it.mat,it.size,it.pocketSide,it.grain?1:0].join(',')).join('|')+'#'+nestSize+'#'+JSON.stringify(sheetSizeOv);
     if(sig!==lastSig){placements=null;selKey=null;lastSig=sig;}
+    if(selItem>=items.length)selItem=items.length-1;
+    if(selItem<0&&items.length)selItem=0;
     const L=document.getElementById('list');L.innerHTML='';
     items.forEach((it,i)=>{
       const d=TYPES[it.type],c=d.color;
-      const el=document.createElement('div');el.className='item'+(i===openIdx?' open':'');
+      const el=document.createElement('div');el.className='item'+(i===selItem?' sel':'');
       el.style.borderLeft='5px solid '+blockColor(it.mat,it.size);el.style.background=blockColor(it.mat,it.size)+'0c';
       const offc=offsetChip(it),hc=hingeChip(it);
       el.innerHTML=`
-        <div class="item-row">
+        <div class="item-row" onclick="sel(${i})">
           <div class="idx">${i+1}</div>
           <div class="typecell">${d.icon(c)}<span class="badge ${d.badge}">${d.name}</span></div>
           <div><span class="dim">${it.w} × ${it.h} mm</span>
@@ -566,22 +582,35 @@
               ${frameLabel(it)?'<span class="chip off">'+frameLabel(it)+'</span>':''}
               ${offc?'<span class="chip alt">'+offc+'</span>':''}
               ${hc?'<span class="chip">'+hc+'</span>':''}
-              ${it.grain?'<span class="chip">↕ grain</span>':''}
+              ${it.grain?'<span class="chip">↔ rigid</span>':''}
               ${it.spray?'<span class="chip">spray</span>':''}
               ${it.text?'<span class="chip">“'+esc(it.text)+'”</span>':''}
               <span class="chip alt">⬩ ${esc(it.mat)}</span>
             </div>
           </div>
-          <div class="qtycell">
+          <div class="qtycell" onclick="event.stopPropagation()">
             <div class="qstep"><button class="iconbtn" onclick="qtyAdd(${i},-1)">−</button><input type="number" class="qinput" value="${it.q}" onchange="qtySet(${i},this.value)"><button class="iconbtn" onclick="qtyAdd(${i},1)">+</button></div>
             ${(+it.q>1)?`<button class="splitbtn" title="Separate 1 piece to edit on its own" onclick="splitOne(${i})">✂ edit 1</button>`:''}
           </div>
-          <div class="pricecell"><div class="actions"><button class="iconbtn" title="Edit details" onclick="toggle(${i})">✎</button><button class="iconbtn" title="Duplicate" onclick="dup(${i})">⧉</button><button class="iconbtn" title="Remove" onclick="del(${i})">✕</button></div></div>
-        </div>
-        <div class="editor">${i===openIdx?editorHtml(i,it):''}</div>`;
+          <div class="pricecell" onclick="event.stopPropagation()"><div class="actions"><button class="iconbtn" title="Edit details" onclick="sel(${i})">✎</button><button class="iconbtn" title="Duplicate" onclick="dup(${i})">⧉</button><button class="iconbtn" title="Remove" onclick="del(${i})">✕</button></div></div>
+        </div>`;
       L.appendChild(el);
     });
+    renderInspector();
     renderProfiles();renderNest();updateMatPricing();summary();
+  }
+  function sel(i){selItem=i;document.querySelectorAll('#list .item').forEach((el,idx)=>el.classList.toggle('sel',idx===i));renderInspector();}
+  function setInspTab(t){inspTab=t;renderInspector();}
+  // ---- right docked inspector (tabbed) ----
+  function renderInspector(){
+    const box=document.getElementById('inspector');if(!box)return;
+    if(selItem<0||selItem>=items.length){box.innerHTML='<div class="insp-empty">Select an item on the left to edit it here.</div>';return;}
+    const i=selItem,it=items[i],d=TYPES[it.type];
+    const tabs=[['part','Part'],['offset','Frame & offset'],['hinges','Hinges'],['spray','Spray']];
+    box.innerHTML=`
+      <div class="insp-head">${d.icon(d.color)}<span class="badge ${d.badge}">${d.name}</span><span class="insp-title">Item ${i+1} · ${it.w}×${it.h} mm</span></div>
+      <div class="insp-tabs">${tabs.map(([k,lbl])=>`<span class="insp-tab ${inspTab===k?'on':''}" onclick="setInspTab('${k}')">${lbl}</span>`).join('')}</div>
+      <div class="insp-body">${inspTab==='part'?tabPart(i,it):inspTab==='offset'?tabOffset(i,it):inspTab==='hinges'?tabHinges(i,it):tabSpray(i,it)}</div>`;
   }
 
   // ---- Apply to All / Apply to Same Group ----
@@ -605,72 +634,64 @@
     render();
   }
   function ap(i,field){return `<span class="apf"><span class="t">→</span><span class="aplink" onclick="applyField(${i},'${field}','group')" title="Apply this value to every part in the same group (same material, sheet size, W×H and type)">group</span><span class="aplink" onclick="applyField(${i},'${field}','all')" title="Apply this value to every part in the order">all</span></span>`;}
-  function editorHtml(i,it){
-    const f=resolveFrame(it);
-    return `
-      <div class="ed-grid">
-        <div class="ed-field"><label>Shaker type</label><select onchange="upd(${i},'type',this.value)">${Object.keys(TYPES).map(k=>`<option value="${k}" ${k===it.type?'selected':''}>${TYPES[k].name}</option>`).join('')}</select>${ap(i,'type')}</div>
-        <div class="ed-field"><label>Width (mm)</label><input type="number" value="${it.w}" onchange="upd(${i},'w',+this.value)">${ap(i,'w')}</div>
-        <div class="ed-field"><label>Height (mm)</label><input type="number" value="${it.h}" onchange="upd(${i},'h',+this.value)">${ap(i,'h')}</div>
-        <div class="ed-field"><label>Quantity</label><input type="number" value="${it.q}" onchange="upd(${i},'q',+this.value)"></div>
-        <div class="ed-field"><label>Material</label><select onchange="upd(${i},'mat',this.value)">${matOptionsHtml(it.mat)}</select>${ap(i,'mat')}</div>
-        <div class="ed-field"><label>Rigid (grain)</label><label class="tg" style="height:34px"><input type="checkbox" ${it.grain?'checked':''} onchange="upd(${i},'grain',this.checked)"> Rigid — grain along longest side</label>${ap(i,'grain')}</div>
-        <div class="ed-field"><label>Text / engraving</label><input type="text" value="${esc(it.text||'')}" onchange="upd(${i},'text',this.value)" placeholder="e.g. Pantry">${ap(i,'text')}</div>
-      </div>
-      <div class="spray-wrap">
-        <label class="tg"><input type="checkbox" ${it.spray?'checked':''} onchange="sprayOn(${i},this.checked)"> Spray finish</label>${ap(i,'spray')}
-        ${it.spray?sprayEditorHtml(i,it):''}
-      </div>
-      <div class="hinge-wrap" style="margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:8px">
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <b style="font-size:13px">Hinges</b>
-          <label class="tg"><input type="checkbox" ${it.hinges.on?'checked':''} onchange="setHingeOn(${i},this.checked)"> on</label>${ap(i,'hinges')}
-          ${it.hinges.on?`
-          <label class="sub">Side <select onchange="setHingeSide(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${['auto','left','right','top','bottom'].map(o=>`<option ${o===it.hinges.side?'selected':''}>${o}</option>`).join('')}</select></label>
-          <label class="sub">Count <select onchange="setHingeCount(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${['auto',2,3,4,5].map(o=>`<option ${String(o)===String(it.hinges.count)?'selected':''}>${o}</option>`).join('')}</select></label>
-          ${hingeDiagram(it)}
-          <span class="sub">${(function(){var h=hingeInfo(it);return h.side+' edge · '+h.count+' hinges · 100mm from ends · auto-spaced';})()}</span>`:'<span class="sub">No hinges</span>'}
-        </div>
-      </div>
-      <div class="offset-wrap">
-        <div class="offset-head"><h4>Frame &amp; offset</h4><span class="sub">cavity = part − frames · lines A–G from the frame inward</span>${ap(i,'offset')}</div>
-        <div class="frame-ctl" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-          <span class="sub" style="font-weight:700">Frame:</span>
-          ${it.frameLink?`<input type="number" value="${f.t}" onchange="setFrame(${i},this.value)" style="width:66px;padding:6px;border:1px solid var(--line);border-radius:8px"><span class="sub">mm all sides</span>`:['t','r','b','l'].map(sd=>`<span class="sub" style="text-transform:uppercase">${sd}</span><input type="number" value="${f[sd]}" onchange="setFrameSide(${i},'${sd}',this.value)" style="width:50px;padding:6px;border:1px solid var(--line);border-radius:8px">`).join('')}
-          <label class="tg" style="font-size:12px;margin-left:6px"><input type="checkbox" ${it.frameLink?'checked':''} onchange="toggleFrameLink(${i})"> link all</label>
-          <span class="sub">→ cavity ${cavityOf(it).w} × ${cavityOf(it).h} mm</span>${ap(i,'frame')}
-        </div>
-        <div class="offset-body">
-          <div>${offsetPreview(it)}</div>
-          <div>
-            <div class="prof-pick">
-              <span class="sub" style="font-weight:700">Profile:</span>
-              <select onchange="applyProfile(${i},this.value)">${Object.keys(profiles).map(p=>`<option ${p===it.offsetName?'selected':''}>${p}</option>`).join('')}${profiles[it.offsetName]?'':`<option selected>${esc(it.offsetName)}</option>`}</select>
-              <span class="link" onclick="saveAsProfile(${i})">＋ Save as profile</span>
-            </div>
-            <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px">
-              <label class="sub" style="font-weight:700">Pocket side
-                <select onchange="setPocketSide(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px;margin-left:4px">
-                  <option value="front" ${it.pocketSide==='front'?'selected':''}>Front only</option>
-                  <option value="front-back" ${it.pocketSide==='front-back'?'selected':''}>Front + Back</option>
-                </select></label>
-              <label class="tg" style="font-size:12px"><input type="checkbox" ${it.pocketRound==='Yes'?'checked':''} onchange="roundAll(${i},this.checked)"> round corners (all)</label>
-            </div>
-            <div style="margin-top:10px">
-              <div class="sub" style="font-weight:700;display:grid;grid-template-columns:16px 92px 60px 96px 92px;gap:8px"><span></span><span>Line</span><span>On</span><span>From frame</span><span>Round</span></div>
-              ${OFFLINES.map((ol,li)=>{const l=it.lines[li];return `<div class="pline">
-                <span class="oswatch" style="background:${OFFCOL[ol.L]}"></span>
-                <span class="lt">${ol.name}</span>
-                <span class="switch ${l.en?'':'off'}" onclick="setLineEn(${i},${li})">${l.en?'ON':'OFF'}</span>
-                <span class="sub"><input type="number" class="miniin" value="${l.mm}" ${l.en?'':'disabled'} onchange="setLineMm(${i},${li},this.value)"> mm</span>
-                <label class="tg" style="font-weight:500"><input type="checkbox" ${l.rd?'checked':''} ${l.en?'':'disabled'} onchange="setLineRd(${i},${li},this.checked)"> round</label>
-              </div>`;}).join('')}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style="margin-top:12px;text-align:right"><button class="btn ghost tiny" onclick="toggle(${i})">Close</button></div>`;
-  }
+  function tabPart(i,it){return `
+    <div class="ed-field"><label>Shaker type</label><select onchange="upd(${i},'type',this.value)">${Object.keys(TYPES).map(k=>`<option value="${k}" ${k===it.type?'selected':''}>${TYPES[k].name}</option>`).join('')}</select>${ap(i,'type')}</div>
+    <div style="display:flex;gap:8px">
+      <div class="ed-field" style="flex:1"><label>Width (mm)</label><input type="number" value="${it.w}" onchange="upd(${i},'w',+this.value)">${ap(i,'w')}</div>
+      <div class="ed-field" style="flex:1"><label>Height (mm)</label><input type="number" value="${it.h}" onchange="upd(${i},'h',+this.value)">${ap(i,'h')}</div>
+    </div>
+    <div class="ed-field"><label>Quantity</label><input type="number" value="${it.q}" onchange="upd(${i},'q',+this.value)"></div>
+    <div class="ed-field"><label>Material</label><select onchange="upd(${i},'mat',this.value)">${matOptionsHtml(it.mat)}</select>${ap(i,'mat')}</div>
+    <div class="ed-field"><label>Rigid (grain)</label><label class="tg"><input type="checkbox" ${it.grain?'checked':''} onchange="upd(${i},'grain',this.checked)"> grain runs along the longest side</label>${ap(i,'grain')}</div>
+    <div class="ed-field"><label>Text / engraving</label><input type="text" value="${esc(it.text||'')}" onchange="upd(${i},'text',this.value)" placeholder="e.g. Pantry">${ap(i,'text')}</div>`;}
+
+  function tabOffset(i,it){const f=resolveFrame(it);return `
+    <div class="frame-ctl" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      <span class="sub" style="font-weight:700">Frame:</span>
+      ${it.frameLink?`<input type="number" value="${f.t}" onchange="setFrame(${i},this.value)" style="width:60px;padding:6px;border:1px solid var(--line);border-radius:8px"><span class="sub">mm</span>`:['t','r','b','l'].map(sd=>`<span class="sub" style="text-transform:uppercase">${sd}</span><input type="number" value="${f[sd]}" onchange="setFrameSide(${i},'${sd}',this.value)" style="width:44px;padding:6px;border:1px solid var(--line);border-radius:8px">`).join('')}
+      <label class="tg" style="font-size:12px"><input type="checkbox" ${it.frameLink?'checked':''} onchange="toggleFrameLink(${i})"> link</label>
+      ${ap(i,'frame')}
+    </div>
+    <div class="sub" style="margin:-4px 0 8px">cavity ${cavityOf(it).w} × ${cavityOf(it).h} mm</div>
+    <div style="max-width:130px;margin:0 auto 10px">${offsetPreview(it)}</div>
+    <div class="prof-pick">
+      <span class="sub" style="font-weight:700">Profile:</span>
+      <select onchange="applyProfile(${i},this.value)">${Object.keys(profiles).map(p=>`<option ${p===it.offsetName?'selected':''}>${p}</option>`).join('')}${profiles[it.offsetName]?'':`<option selected>${esc(it.offsetName)}</option>`}</select>
+      <span class="link" onclick="saveAsProfile(${i})">＋ Save</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
+      <label class="sub" style="font-weight:700">Pocket side
+        <select onchange="setPocketSide(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px;margin-left:4px">
+          <option value="front" ${it.pocketSide==='front'?'selected':''}>Front only</option>
+          <option value="front-back" ${it.pocketSide==='front-back'?'selected':''}>Front + Back</option>
+        </select></label>
+      <label class="tg" style="font-size:12px"><input type="checkbox" ${it.pocketRound==='Yes'?'checked':''} onchange="roundAll(${i},this.checked)"> round all</label>
+    </div>
+    <div style="margin-top:10px">
+      <div class="sub" style="font-weight:700;display:grid;grid-template-columns:16px 78px 56px 1fr 64px;gap:6px"><span></span><span>Line</span><span>On</span><span>From frame</span><span>Round</span></div>
+      ${OFFLINES.map((ol,li)=>{const l=it.lines[li];return `<div class="pline" style="grid-template-columns:16px 78px 56px 1fr 64px">
+        <span class="oswatch" style="background:${OFFCOL[ol.L]}"></span>
+        <span class="lt">${ol.name}</span>
+        <span class="switch ${l.en?'':'off'}" onclick="setLineEn(${i},${li})">${l.en?'ON':'OFF'}</span>
+        <span class="sub"><input type="number" class="miniin" value="${l.mm}" ${l.en?'':'disabled'} onchange="setLineMm(${i},${li},this.value)"> mm</span>
+        <label class="tg" style="font-weight:500"><input type="checkbox" ${l.rd?'checked':''} ${l.en?'':'disabled'} onchange="setLineRd(${i},${li},this.checked)"> rd</label>
+      </div>`;}).join('')}
+    </div>
+    <div style="margin-top:10px;text-align:right">${ap(i,'offset')}</div>`;}
+
+  function tabHinges(i,it){return `
+    <label class="tg" style="margin-bottom:8px"><input type="checkbox" ${it.hinges.on?'checked':''} onchange="setHingeOn(${i},this.checked)"> Hinges on</label>${ap(i,'hinges')}
+    ${it.hinges.on?`
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+      <label class="sub">Side <select onchange="setHingeSide(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${['auto','left','right','top','bottom'].map(o=>`<option ${o===it.hinges.side?'selected':''}>${o}</option>`).join('')}</select></label>
+      <label class="sub">Count <select onchange="setHingeCount(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${['auto',2,3,4,5].map(o=>`<option ${String(o)===String(it.hinges.count)?'selected':''}>${o}</option>`).join('')}</select></label>
+      ${hingeDiagram(it)}
+    </div>
+    <div class="sub" style="margin-top:8px">${(function(){var h=hingeInfo(it);return h.side+' edge · '+h.count+' hinges · 100mm from ends · auto-spaced · +5% CNC (drilling)';})()}</div>`:'<div class="sub" style="margin-top:8px">No hinges on this part.</div>'}`;}
+
+  function tabSpray(i,it){return `
+    <label class="tg"><input type="checkbox" ${it.spray?'checked':''} onchange="sprayOn(${i},this.checked)"> Spray finish</label>${ap(i,'spray')}
+    ${it.spray?sprayEditorHtml(i,it):'<div class="sub" style="margin-top:8px">Standard = no spray. Turn on to mark which faces/edges get painted.</div>'}`;}
 
   function offsetPreview(it){
     const W=92,H=130,X=14,Y=10; let s=`<svg viewBox="0 0 120 150" style="width:100%;border:1px solid var(--line);border-radius:8px;background:#fff">`;
