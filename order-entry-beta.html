@@ -269,20 +269,23 @@
     return {mat:m.name+' '+insTh+'mm', w:cavW+overlay, h:cavH+overlay, insTh, color:displayType(it).color};
   }
 
-  // Offset profiles = saved sets of "pocket lines" (matches the real app's offset lines)
+  // Offset profiles = reusable sets of offset lines (apply to any insert/door)
   let profiles={
     'None':[],
-    'Shaker 60mm':[{name:'Outer frame',on:true,off:60,round:'No'},{name:'Inner pocket',on:true,off:0,round:'Yes'}],
-    'V-groove 6mm':[{name:'V-groove line',on:true,off:6,round:'No'}]
+    'Shaker':[{name:'Outer frame',on:true,off:60,round:'No'},{name:'Inner pocket',on:true,off:0,round:'Yes'}]
   };
+  // DXF export colours (doc Section 5) + a colour per material block (thickness/size)
+  const DXFC={OUT:'#111827',A:'#b45309',B:'#dc2626',C:'#2563eb',D:'#7c3aed',E:'#0f766e',F:'#f97316',G:'#a16207'};
+  const BLOCK_PALETTE=['#2563eb','#16a34a','#9333ea','#0891b2','#d97706','#db2777','#0d9488','#7c3aed','#ca8a04','#dc2626'];
+  function blockColor(mat,size){const key=(mat||'')+'|'+(size||'8x4');let h=0;for(let i=0;i<key.length;i++)h=(h*31+key.charCodeAt(i))>>>0;return BLOCK_PALETTE[h%BLOCK_PALETTE.length];}
 
   let orderMaterial='MDF 18mm';
   let items=[
     {type:'flat',w:600,h:400,q:10,mat:'MDF 18mm',size:'8x4',frameSize:0,text:'Kitchen base',spray:false,hinges:'No',grainLock:false,offset:'None'},
-    {type:'flat',w:600,h:400,q:3,mat:'MDF 18mm',size:'8x4',frameSize:60,text:'',spray:false,hinges:'No',grainLock:false,offset:'Shaker 60mm'},
-    {type:'trad',w:700,h:400,q:2,mat:'MDF 18mm',size:'8x4',frameSize:60,text:'Pantry',spray:true,sprayCfg:{front:true,back:true,eT:true,eB:true,eL:true,eR:true},hinges:'Left',hingeCount:3,grainLock:true,offset:'Shaker 60mm'},
+    {type:'flat',w:600,h:400,q:3,mat:'MDF 18mm',size:'8x4',frameSize:60,text:'',spray:false,hinges:'No',grainLock:false,offset:'Shaker'},
+    {type:'trad',w:700,h:400,q:2,mat:'MDF 18mm',size:'8x4',frameSize:60,text:'Pantry',spray:true,sprayCfg:{front:true,back:true,eT:true,eB:true,eL:true,eR:true},hinges:'Left',hingeCount:3,grainLock:true,offset:'Shaker'},
     {type:'flush',w:600,h:900,q:1,mat:'MDF 18mm',size:'8x4',frameSize:60,text:'',spray:false,hinges:'No',grainLock:true,offset:'None'},
-    {type:'reeded',w:500,h:500,q:1,mat:'Veneered Chipboard 18mm',size:'8x4',frameSize:60,text:'',spray:true,sprayCfg:{front:true,eL:true,eR:true},hinges:'Right',hingeCount:2,grainLock:false,offset:'V-groove 6mm'}
+    {type:'reeded',w:500,h:500,q:1,mat:'Veneered Chipboard 18mm',size:'8x4',frameSize:60,text:'',spray:true,sprayCfg:{front:true,eL:true,eR:true},hinges:'Right',hingeCount:2,grainLock:false,offset:'None'}
   ];
   let openIdx=-1;
 
@@ -320,7 +323,7 @@
     items.forEach((it,i)=>{
       const d=displayType(it), c=d.color;
       const matChip = `<span class="chip alt">⬩ ${it.mat}</span>`;
-      const el=document.createElement('div'); el.className='item'+(i===openIdx?' open':'');
+      const el=document.createElement('div'); el.className='item'+(i===openIdx?' open':''); el.style.borderLeft='5px solid '+blockColor(it.mat,it.size); el.style.background=blockColor(it.mat,it.size)+'0c';
       el.innerHTML=`
         <div class="item-row">
           <div class="idx">${i+1}</div>
@@ -453,7 +456,7 @@
       const d=displayType(it);
       const ins=insertSpecFor(it);
       for(let n=0;n<(+it.q||0);n++){
-        groups.get(it.mat).push({w:+it.w||0,h:+it.h||0,color:d.color,name:d.name,text:it.text||'',grainLock:!!it.grainLock,frame:(+it.frameSize||0),frameSides:it.frameSides||null});
+        groups.get(it.mat).push({w:+it.w||0,h:+it.h||0,color:d.color,name:d.name,text:it.text||'',grainLock:!!it.grainLock,frame:(+it.frameSize||0),frameSides:it.frameSides||null,hinges:it.hinges,hingeCount:it.hingeCount});
         if(ins){ if(!groups.has(ins.mat))groups.set(ins.mat,[]); groups.get(ins.mat).push({w:ins.w,h:ins.h,color:ins.color,name:'Insert',isInsert:true,insTh:ins.insTh,text:'',grainLock:false,frame:0,frameSides:null}); }
       }
     });
@@ -469,12 +472,12 @@
         if(!p.grainLock && pw>cur.uW && ph<=cur.uW){const t=pw;pw=ph;ph=t;}
         if(cur.x+pw>cur.g+cur.uW){cur.x=cur.g;cur.y+=cur.rowH+cur.g;cur.rowH=0;}
         if(cur.y+ph>cur.g+cur.uH){startSheet();pw=p.w;ph=p.h;if(!p.grainLock&&pw>cur.uW&&ph<=cur.uW){const t=pw;pw=ph;ph=t;}}
-        cur.parts.push({x:cur.x,y:cur.y,w:pw,h:ph,color:p.color,name:p.name,text:p.text,grainLock:p.grainLock,isInsert:p.isInsert,insTh:p.insTh,frame:p.frame,frameSides:p.frameSides});
+        cur.parts.push({x:cur.x,y:cur.y,w:pw,h:ph,color:p.color,name:p.name,text:p.text,grainLock:p.grainLock,isInsert:p.isInsert,insTh:p.insTh,frame:p.frame,frameSides:p.frameSides,hinges:p.hinges,hingeCount:p.hingeCount});
         cur.x+=pw+cur.g; cur.rowH=Math.max(cur.rowH,ph);
       });
       const matInp=`<input list="matList" value="${mat}" onchange="setGroupMat('${mat}',this.value)" style="font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 6px;width:165px">`;
       sheets.forEach((sh,idx)=>{
-        const S=sh.S, vbW=Math.round(S.w/10), vbH=Math.round(S.h/10);
+        const S=sh.S, vbW=Math.round(S.w/10), vbH=Math.round(S.h/10); const bcolSheet=blockColor(mat,sh.sz);
         const used=sh.parts.reduce((s,p)=>s+p.w*p.h,0)/(S.w*S.h)*100;
         nSheets++; nMat+=priceForSheet(mat,sh.sz); nCnc+=cncForThickness(mat);
         const sizeSel=`<select onchange="setSheetSize('${mat}',${idx},this.value)" style="font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 4px">`+['8x4','10x4','10x5','jumbo'].map(k=>`<option value="${k}" ${k===sh.sz?'selected':''}>${SHEETS[k].label}</option>`).join('')+`</select>`;
@@ -482,28 +485,34 @@
         let svg=`<svg class="sheet-svg" onclick="openZoom(${zi})" style="cursor:zoom-in" viewBox="0 0 ${vbW} ${vbH}"><rect x="0.25" y="0.25" width="${(vbW-0.5).toFixed(1)}" height="${(vbH-0.5).toFixed(1)}" fill="#fff" stroke="#cbd5e1" stroke-width="0.4"/>`;
         if(S.uh && S.uh<S.h) svg+=`<rect x="0.25" y="${(S.uh/10).toFixed(1)}" width="${(vbW-0.5).toFixed(1)}" height="${((S.h-S.uh)/10).toFixed(1)}" fill="#fee2e2"/>`;
         sh.parts.forEach(p=>{
-          const X=p.x/10, Y=p.y/10, W=p.w/10, H=p.h/10, col=p.color;
-          svg+=`<rect x="${X.toFixed(1)}" y="${Y.toFixed(1)}" width="${W.toFixed(1)}" height="${H.toFixed(1)}" fill="${col}14" stroke="${col}" stroke-width="0.3"><title>${p.name} ${p.w}×${p.h}</title></rect>`;
+          const X=p.x/10, Y=p.y/10, W=p.w/10, H=p.h/10;
+          svg+=`<rect x="${X.toFixed(1)}" y="${Y.toFixed(1)}" width="${W.toFixed(1)}" height="${H.toFixed(1)}" fill="${bcolSheet}1f" stroke="${DXFC.OUT}" stroke-width="0.35"><title>${p.name} ${p.w}×${p.h}</title></rect>`;
           const fmm = p.frame || (p.frameSides ? (p.frameSides.t+p.frameSides.b+p.frameSides.l+p.frameSides.r)/4 : 0);
           if(p.isInsert){
             const a=Math.min(W,H);
-            [0.7,1.5].forEach(o=>{ if(o<a/2-0.4) svg+=`<rect x="${(X+o).toFixed(1)}" y="${(Y+o).toFixed(1)}" width="${(W-2*o).toFixed(1)}" height="${(H-2*o).toFixed(1)}" fill="none" stroke="${col}" stroke-width="0.25"/>`; });
+            [{o:0.7,c:DXFC.A},{o:1.5,c:DXFC.B}].forEach(L=>{ if(L.o<a/2-0.4) svg+=`<rect x="${(X+L.o).toFixed(1)}" y="${(Y+L.o).toFixed(1)}" width="${(W-2*L.o).toFixed(1)}" height="${(H-2*L.o).toFixed(1)}" fill="none" stroke="${L.c}" stroke-width="0.3"/>`; });
           } else if(fmm>0 || p.name==='Insert Traditional' || p.name==='Insert Flushback' || p.name==='Reeded'){
             const fi=Math.max(1.3, (fmm>0?fmm:50)/10), cx=X+fi, cy=Y+fi, cw=W-2*fi, ch=H-2*fi;
             if(cw>1 && ch>1){
               const dash=(p.name==='Insert Flushback')?' stroke-dasharray="1.4 1"':'';
-              svg+=`<rect x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" width="${cw.toFixed(1)}" height="${ch.toFixed(1)}" fill="none" stroke="${col}" stroke-width="0.3"${dash}/>`;
-              if(p.name==='Reeded') for(let lx=cx+1; lx<cx+cw-0.8; lx+=2.2) svg+=`<line x1="${lx.toFixed(1)}" y1="${(cy+0.8).toFixed(1)}" x2="${lx.toFixed(1)}" y2="${(cy+ch-0.8).toFixed(1)}" stroke="${col}" stroke-width="0.18"/>`;
+              svg+=`<rect x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" width="${cw.toFixed(1)}" height="${ch.toFixed(1)}" fill="none" stroke="${DXFC.A}" stroke-width="0.3"${dash}/>`;
+              if(p.name==='Reeded') for(let lx=cx+1; lx<cx+cw-0.8; lx+=2.2) svg+=`<line x1="${lx.toFixed(1)}" y1="${(cy+0.8).toFixed(1)}" x2="${lx.toFixed(1)}" y2="${(cy+ch-0.8).toFixed(1)}" stroke="${DXFC.E}" stroke-width="0.18"/>`;
             }
           }
-          if(W>=11&&H>=8) svg+=`<text x="${(X+1.8).toFixed(1)}" y="${(Y+4.2).toFixed(1)}" font-size="3" font-family="Arial" font-weight="700" fill="${col}">${p.w}×${p.h}</text>`;
+          if(p.hinges && p.hinges!=='No'){
+            const n=Math.max(2,+p.hingeCount||2), eo=10, ins2=2, r=Math.max(0.5,Math.min(1.2,Math.min(W,H)/12));
+            const dot=(dx,dy)=>`<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="${r.toFixed(2)}" fill="${DXFC.B}"/>`;
+            if(p.hinges==='Left'||p.hinges==='Right'){const ex=p.hinges==='Left'?X+ins2:X+W-ins2;const y1=Y+eo,y2=Y+H-eo;for(let k=0;k<n;k++){const dy=n===1?(y1+y2)/2:y1+(y2-y1)*k/(n-1);if(dy>Y+0.8&&dy<Y+H-0.8)svg+=dot(ex,dy);}}
+            else {const ey=p.hinges==='Top'?Y+ins2:Y+H-ins2;const x1=X+eo,x2=X+W-eo;for(let k=0;k<n;k++){const dx=n===1?(x1+x2)/2:x1+(x2-x1)*k/(n-1);if(dx>X+0.8&&dx<X+W-0.8)svg+=dot(dx,ey);}}
+          }
+          if(W>=11&&H>=8) svg+=`<text x="${(X+1.8).toFixed(1)}" y="${(Y+4.2).toFixed(1)}" font-size="3" font-family="Arial" font-weight="700" fill="${DXFC.OUT}">${p.w}×${p.h}</text>`;
           if(p.text&&W>=14&&H>=10) svg+=`<text x="${(X+W/2).toFixed(1)}" y="${(Y+H/2+1.4).toFixed(1)}" font-size="3.6" font-family="Arial" text-anchor="middle" fill="#0f172a">${esc(p.text)}</text>`;
-          if(p.isInsert&&W>=9&&H>=8) svg+=`<text x="${(X+W/2).toFixed(1)}" y="${(Y+H/2+1.2).toFixed(1)}" font-size="3.4" font-family="Arial" text-anchor="middle" fill="${col}">Ins ${p.insTh}mm</text>`;
+          if(p.isInsert&&W>=9&&H>=8) svg+=`<text x="${(X+W/2).toFixed(1)}" y="${(Y+H/2+1.2).toFixed(1)}" font-size="3.4" font-family="Arial" text-anchor="middle" fill="${DXFC.OUT}">Ins ${p.insTh}mm</text>`;
           if(p.grainLock&&W>=8&&H>=8) svg+=`<text x="${(X+W-1.4).toFixed(1)}" y="${(Y+4).toFixed(1)}" font-size="3.6" font-family="Arial" text-anchor="end" fill="#16a34a">↕</text>`;
         });
         svg+='</svg>';
         nestSvgs.push({label:parseMat(mat).name+' · '+parseMat(mat).th+' · '+S.label+' · gap '+sh.g+'mm', svg});
-        html+=`<div class="sheet-card"><div class="sheet-head"><span>${matInp} ${sizeSel} <span style="color:#94a3b8">· ${sh.parts.length} part${sh.parts.length===1?'':'s'} · gap ${sh.g}mm</span></span><span>${used.toFixed(0)}% used</span></div>${svg}</div>`;
+        html+=`<div class="sheet-card" style="border-left:5px solid ${bcolSheet}"><div class="sheet-head"><span>${matInp} ${sizeSel} <span style="color:#94a3b8">· ${sh.parts.length} part${sh.parts.length===1?'':'s'} · gap ${sh.g}mm</span></span><span>${used.toFixed(0)}% used</span></div>${svg}</div>`;
       });
     });
     nestMatCost=nMat; nestCncCost=nCnc; nestSheets=nSheets;
@@ -514,7 +523,7 @@
   function sprayOn(i,on){items[i].spray=on;if(on&&!items[i].sprayCfg)items[i].sprayCfg={front:true,eT:true,eB:true,eL:true,eR:true};render();}
   function sprayApplyAll(i){const cfg=JSON.parse(JSON.stringify(items[i].sprayCfg||{}));items.forEach(it=>{it.spray=true;it.sprayCfg=JSON.parse(JSON.stringify(cfg));});render();}
   function setHingeSide(i,v){items[i].hinges=v;if(v!=='No'&&!items[i].hingeCount)items[i].hingeCount=2;render();}
-  function hingeDiagram(it){const side=it.hinges,n=Math.max(2,+it.hingeCount||2);const x0=15,y0=8,w=40,h=74,off=12;let dots='';const dot=(cx,cy)=>`<circle cx="${cx}" cy="${cy}" r="3" fill="#dc2626"/>`;if(side==='Left'||side==='Right'){const ex=side==='Left'?x0:x0+w;const y1=y0+off,y2=y0+h-off;for(let k=0;k<n;k++){const cy=n===1?(y1+y2)/2:y1+(y2-y1)*k/(n-1);dots+=dot(ex,cy);}}else if(side==='Top'||side==='Bottom'){const ey=side==='Top'?y0:y0+h;const x1=x0+off,x2=x0+w-off;for(let k=0;k<n;k++){const cx=n===1?(x1+x2)/2:x1+(x2-x1)*k/(n-1);dots+=dot(cx,ey);}}return `<svg viewBox="0 0 70 90" style="width:64px;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff"><rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>${dots}</svg>`;}
+  function hingeDiagram(it){const side=it.hinges,n=Math.max(2,+it.hingeCount||2);const x0=15,y0=8,w=40,h=74,off=12;let dots='';const dot=(cx,cy)=>`<circle cx="${cx}" cy="${cy}" r="3" fill="#dc2626"/>`;if(side==='Left'||side==='Right'){const ex=side==='Left'?x0+3:x0+w-3;const y1=y0+off,y2=y0+h-off;for(let k=0;k<n;k++){const cy=n===1?(y1+y2)/2:y1+(y2-y1)*k/(n-1);dots+=dot(ex,cy);}}else if(side==='Top'||side==='Bottom'){const ey=side==='Top'?y0:y0+h;const x1=x0+off,x2=x0+w-off;for(let k=0;k<n;k++){const cx=n===1?(x1+x2)/2:x1+(x2-x1)*k/(n-1);dots+=dot(cx,ey);}}return `<svg viewBox="0 0 70 90" style="width:64px;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff"><rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>${dots}</svg>`;}
   function sprayToggle(i,key){const it=items[i];it.sprayCfg=it.sprayCfg||{};it.sprayCfg[key]=!it.sprayCfg[key];if(it.sprayCfg[key]&&(key[0]==='e'||key[0]==='i'))it.sprayCfg.front=true;render();}
   function sprayDesc(it){const c=it.sprayCfg||{};const faces=[c.front&&'front',c.back&&'back'].filter(Boolean);const edges=[c.eT&&'top',c.eB&&'bottom',c.eL&&'left',c.eR&&'right'].filter(Boolean);const inner=[c.iT,c.iB,c.iL,c.iR].filter(Boolean).length;if(!faces.length&&!edges.length&&!inner)return 'Click the faces / edges to mark what gets painted.';const parts=[];if(faces.length)parts.push(faces.join('+'));if(edges.length)parts.push(edges.length+' edge'+(edges.length>1?'s':''));if(inner)parts.push(inner+' inner');return 'Painted: '+parts.join(' · ');}
   function sprayChip(it){const c=it.sprayCfg||{};const f=[c.front&&'F',c.back&&'B'].filter(Boolean).join('+');const e=[c.eT,c.eB,c.eL,c.eR].filter(Boolean).length;const inr=[c.iT,c.iB,c.iL,c.iR].filter(Boolean).length;return 'spray'+(f?' '+f:'')+(e?' · '+e+'s':'')+(inr?' · '+inr+'i':'');}
