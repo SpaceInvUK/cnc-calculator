@@ -8,9 +8,14 @@ Use this branch in Codex Cloud:
 
 - `main`
 
-Current active calculator file:
+Current official calculator version:
 
-- `CNC Calculator 1.0.html`
+- Version: `1.0`
+- Source-of-truth page path: `Cnc Calculator UI Test.html`
+- Local mirror for clarity: `CNC Calculator 1.0.html`
+- Published URL: `https://spaceinvuk.github.io/cnc-calculator/Cnc%20Calculator%20UI%20Test.html`
+
+`Cnc Calculator UI Test.html` is kept because that is the GitHub Pages URL already used in production. `CNC Calculator 1.0.html` is kept as an identical local mirror so the current version is obvious when working from the folder.
 
 The earlier handoff branch was `codex/update-calculator-1-0`, but the latest calculator work is intended to continue from `main`.
 
@@ -25,7 +30,7 @@ Main file:
 If this repository is published with GitHub Pages, open:
 
 ```text
-https://<github-user>.github.io/<repo-name>/Cnc%20Calculator%20UI%20Test.html
+https://spaceinvuk.github.io/cnc-calculator/Cnc%20Calculator%20UI%20Test.html
 ```
 
 Local test server:
@@ -43,15 +48,31 @@ http://127.0.0.1:8765/Cnc%20Calculator%20UI%20Test.html
 
 ## Important Files
 
-- `Cnc Calculator UI Test.html` - active development/test app.
+- `Cnc Calculator UI Test.html` - official version 1.0 app and GitHub Pages entry point.
+- `CNC Calculator 1.0.html` - identical local mirror of the official version 1.0 app.
 - `CNC Calculator Handoff - regras e pendencias.txt` - full original handoff with all broad app rules and pending items.
 - `docs/PANNELING_IMPLEMENTATION_2026-05-19.md` - what was changed in this pass, current Panneling rules, QA notes, and GitHub instructions.
 - `docs/PANNELING_RULES_2026-05-20.md` - current confirmed Panneling rules after the latest annotation review.
 
+## Backup
+
+The current 1.0 file was backed up locally outside the repository:
+
+```text
+C:\Users\ednei\Documents\CNC App Backups\FAST CNC Calculator 1.0 - GitHub Pages backup - 2026-06-14.html
+```
+
+Backup note with the source URL and SHA256:
+
+```text
+C:\Users\ednei\Documents\CNC App Backups\FAST CNC Calculator 1.0 - backup note - 2026-06-14.txt
+```
+
 ## Hard Rules
 
 - Keep the tab spelling as `Panneling`.
-- Do not touch `Cnc Calculator 1.0.html` unless explicitly requested.
+- Treat `Cnc Calculator UI Test.html` as the official 1.0 entry point unless the user explicitly switches versions.
+- Keep `CNC Calculator 1.0.html` synchronized when the user asks for the current 1.0 file to be updated.
 - Do not deploy to Netlify unless explicitly requested.
 - Keep this app as a single-file HTML app unless a later task explicitly asks for a build system.
 - Preserve 7mm sheet margin and 7mm spacing between nested parts.
