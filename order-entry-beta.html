@@ -298,17 +298,23 @@
     return {mat:'MR MDF '+insTh+'mm',w:cav.w+overlay,h:cav.h+overlay,insTh,kind:it.type,color:TYPES[it.type].color};
   }
   // Hinge count rule (production hingeLayoutForPlacement): 2; >900 -> 3; >1500 -> 4. Side auto: H>=W -> left, else top.
-  // Default rule: hinges go on the LONGEST side of the piece (so W/H order doesn't matter).
-  // sideAuto lets the drawing recompute the edge from the part's real orientation on the sheet.
+  // Hinges ALWAYS run along the LONGEST side. raw = 'auto' | first | second long edge.
+  // Resolved from the given w,h so it follows the part's real orientation (entered or placed).
+  function resolveHingeSide(w,h,raw){
+    const horiz=(+w>=+h);                 // is the long side horizontal?
+    const first=horiz?'top':'left', second=horiz?'bottom':'right';
+    if(!raw||raw==='auto')return first;
+    return (raw==='bottom'||raw==='right')?second:first;
+  }
   function hingeInfo(it){
     if(!it.hinges||!it.hinges.on)return{on:false};
     const W=+it.w||0,H=+it.h||0;
-    const sideAuto=(!it.hinges.side||it.hinges.side==='auto');
-    let side=sideAuto?(H>=W?'left':'top'):it.hinges.side;
+    const raw=it.hinges.side||'auto';
+    const side=resolveHingeSide(W,H,raw);
     const span=Math.max(W,H);
     let count=2; if(span>1500)count=4; else if(span>900)count=3;
     if(it.hinges.count&&it.hinges.count!=='auto')count=+it.hinges.count;
-    return{on:true,side,count,offset:+it.hinges.offset||100,span,sideAuto,auto:(!it.hinges.count||it.hinges.count==='auto')};
+    return{on:true,side,count,offset:+it.hinges.offset||100,span,rawSide:raw,auto:(!it.hinges.count||it.hinges.count==='auto')};
   }
 
   // ---- offset profiles (reusable line sets) ----
@@ -336,7 +342,7 @@
       mkItem('flat',1000,600,1,M,'8x4',{t:60,r:70,b:80,l:50},{A:{mm:0}},'Flat',{on:false},{offsetName:'Custom'})
     ];
   }
-  let selItem=0, inspTab='part';
+  let selItem=0, inspTab='part', groupSnap=null, lastInspected=-1;
 
   // ---- import .fastcnc.json ----
   function typeFromDoor(dt){dt=(dt||'').toLowerCase();if(dt==='traditional')return'trad';if(dt==='flushback')return'flush';if(dt==='reeded')return'reeded';return'flat';}
@@ -464,7 +470,7 @@
   function dxfRoundRect(layer,x,y,w,h,r){r=Math.min(r,w/2-0.1,h/2-0.1);if(r<=0)return dxfRect(layer,x,y,w,h);const k=0.41421356;return dxfPoly(layer,[{x:x+r,y:y},{x:x+w-r,y:y,b:k},{x:x+w,y:y+r},{x:x+w,y:y+h-r,b:k},{x:x+w-r,y:y+h},{x:x+r,y:y+h,b:k},{x:x,y:y+h-r},{x:x,y:y+r,b:k}],true);}
   function hingeCenters(p,bx,by){
     const h=p.hinge,out=[],inset=22.5,eo=h.offset||100,n=h.count;
-    const side=h.sideAuto?(p.h>=p.w?'left':'top'):h.side;   // longest side as the part actually sits
+    const side=resolveHingeSide(p.w,p.h,h.rawSide);   // longest side as the part actually sits
     if(side==='left'||side==='right'){const cx=side==='left'?bx+inset:bx+p.w-inset;const y1=by+eo,y2=by+p.h-eo;for(let k=0;k<n;k++)out.push({x:cx,y:n===1?(y1+y2)/2:y1+(y2-y1)*k/(n-1)});}
     else{const cy=side==='bottom'?by+inset:by+p.h-inset;const x1=bx+eo,x2=bx+p.w-eo;for(let k=0;k<n;k++)out.push({x:n===1?(x1+x2)/2:x1+(x2-x1)*k/(n-1),y:cy});}
     return out;
@@ -540,8 +546,8 @@
   function addItem(){
     const qt=document.getElementById('qaText'),qm=document.getElementById('qaMat'),qf=document.getElementById('qaFrame');
     const mat=qm&&qm.value?qm.value:orderMaterial;const f=Math.max(0,Math.round(+(qf?qf.value:50)||0));
-    const it=mkItem(qaType.value,+qaW.value,+qaH.value,+qaQ.value,mat,nestSize,{t:f,r:f,b:f,l:f},{A:{mm:0}},qt?qt.value:'',{on:false},{offsetName:'Shaker'});
-    items.push(it);orderMaterial=mat;if(qt)qt.value='';render();
+    const it=mkItem(qaType.value,+qaW.value,+qaH.value,+qaQ.value,mat,nestSize,{t:f,r:f,b:f,l:f},null,qt?qt.value:'',{on:false},{offsetName:'None'});
+    items.push(it);orderMaterial=mat;selItem=items.length-1;if(qt)qt.value='';render();
   }
 
   // ---- frame / pocket / hinge editor setters ----
@@ -610,6 +616,7 @@
     const box=document.getElementById('inspector');if(!box)return;
     if(selItem<0||selItem>=items.length){box.innerHTML='<div class="insp-empty">Select an item on the left to edit it here.</div>';return;}
     const i=selItem,it=items[i],d=TYPES[it.type];
+    if(lastInspected!==selItem){groupSnap={mat:it.mat,size:it.size,type:it.type};lastInspected=selItem;}
     const tabs=[['part','Part'],['offset','Frame & offset'],['hinges','Hinges'],['spray','Spray']];
     box.innerHTML=`
       <div class="insp-head">${d.icon(d.color)}<span class="badge ${d.badge}">${d.name}</span><span class="insp-title">Item ${i+1} · ${it.w}×${it.h} mm</span></div>
@@ -623,8 +630,10 @@
   function sameGroup(a,b){return a.mat===b.mat&&a.size===b.size&&a.type===b.type;}
   function applyField(i,field,scope){
     const src=items[i];
+    // match the group as it was BEFORE this edit, so changing a key field (material/type) still propagates
+    const g=groupSnap||{mat:src.mat,size:src.size,type:src.type};
     items.forEach((it,j)=>{
-      if(j===i)return; if(scope==='group'&&!sameGroup(src,it))return;
+      if(j===i)return; if(scope==='group'&&!(it.mat===g.mat&&it.size===g.size&&it.type===g.type))return;
       if(field==='frame'){it.frame=JSON.parse(JSON.stringify(src.frame));it.frameLink=src.frameLink;}
       else if(field==='offset'){it.lines=JSON.parse(JSON.stringify(src.lines));it.pocketSide=src.pocketSide;it.pocketRound=src.pocketRound;it.offsetName=src.offsetName;}
       else if(field==='hinges'){it.hinges=JSON.parse(JSON.stringify(src.hinges));}
@@ -636,6 +645,7 @@
       else if(field==='h'){it.h=src.h;}
       else if(field==='text'){it.text=src.text;}
     });
+    groupSnap={mat:src.mat,size:src.size,type:src.type};
     render();
   }
   function ap(i,field){return `<span class="apf"><span class="t">→</span><span class="aplink" onclick="applyField(${i},'${field}','group')" title="Apply this value to every part in the same group (same material, sheet size and type — any part size)">group</span><span class="aplink" onclick="applyField(${i},'${field}','all')" title="Apply this value to every part in the order">all</span></span>`;}
@@ -684,31 +694,37 @@
     </div>
     <div style="margin-top:10px;text-align:right">${ap(i,'offset')}</div>`;}
 
-  function tabHinges(i,it){return `
+  function tabHinges(i,it){
+    const horiz=(+it.w>=+it.h);
+    const opts=horiz?['auto','top','bottom']:['auto','left','right'];   // only the two LONG edges
+    const cur=opts.indexOf(it.hinges.side)>=0?it.hinges.side:'auto';
+    return `
     <label class="tg" style="margin-bottom:8px"><input type="checkbox" ${it.hinges.on?'checked':''} onchange="setHingeOn(${i},this.checked)"> Hinges on</label>${ap(i,'hinges')}
     ${it.hinges.on?`
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
-      <label class="sub">Side <select onchange="setHingeSide(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${['auto','left','right','top','bottom'].map(o=>`<option ${o===it.hinges.side?'selected':''}>${o}</option>`).join('')}</select></label>
+      <label class="sub">Long edge <select onchange="setHingeSide(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${opts.map(o=>`<option ${o===cur?'selected':''}>${o}</option>`).join('')}</select></label>
       <label class="sub">Count <select onchange="setHingeCount(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${['auto',2,3,4,5].map(o=>`<option ${String(o)===String(it.hinges.count)?'selected':''}>${o}</option>`).join('')}</select></label>
       ${hingeDiagram(it)}
     </div>
-    <div class="sub" style="margin-top:8px">${(function(){var h=hingeInfo(it);return h.side+' edge · '+h.count+' hinges · 100mm from ends · auto-spaced · +5% CNC (drilling)';})()}</div>`:'<div class="sub" style="margin-top:8px">No hinges on this part.</div>'}`;}
+    <div class="sub" style="margin-top:8px">${(function(){var h=hingeInfo(it);return 'always on the longest side ('+h.span+'mm) · '+h.count+' hinges · 100mm from ends · +5% CNC';})()}</div>`:'<div class="sub" style="margin-top:8px">No hinges (off by default — turn on only if this part needs them).</div>'}`;}
 
   function tabSpray(i,it){return `
     <label class="tg"><input type="checkbox" ${it.spray?'checked':''} onchange="sprayOn(${i},this.checked)"> Spray finish</label>${ap(i,'spray')}
     ${it.spray?sprayEditorHtml(i,it):'<div class="sub" style="margin-top:8px">Standard = no spray. Turn on to mark which faces/edges get painted.</div>'}`;}
 
+  // preview box matches the part's real W×H aspect (landscape parts draw landscape)
   function offsetPreview(it){
-    const W=92,H=130,X=14,Y=10; let s=`<svg viewBox="0 0 120 150" style="width:100%;border:1px solid var(--line);border-radius:8px;background:#fff">`;
-    s+=`<rect x="${X}" y="${Y}" width="${W}" height="${H}" fill="#f8fafc" stroke="#334155" stroke-width="2"/>`;
-    const f=resolveFrame(it); const maxd=Math.max(it.w,it.h,1); const sc=Math.min((W-8)/it.w, (H-8)/it.h);
+    const VW=160,VH=120,pad=10,w=Math.max(1,+it.w||1),h=Math.max(1,+it.h||1);
+    const sc=Math.min((VW-2*pad)/w,(VH-2*pad)/h);
+    const bw=w*sc,bh=h*sc,x0=(VW-bw)/2,y0=(VH-bh)/2,f=resolveFrame(it);
+    let s=`<svg viewBox="0 0 ${VW} ${VH}" style="width:100%;border:1px solid var(--line);border-radius:8px;background:#fff">`;
+    s+=`<rect x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>`;
     enabledLines(it).forEach(l=>{
-      const li=OFFLINES.findIndex(o=>o.L===l.L); const lr=it.lines[li];
-      const insL=(f.l+lr.mm)*sc, insR=(f.r+lr.mm)*sc, insT=(f.t+lr.mm)*sc, insB=(f.b+lr.mm)*sc;
-      const rx=X+(W-it.w*sc)/2+insL, ry=Y+(H-it.h*sc)/2+insT, rw=it.w*sc-insL-insR, rh=it.h*sc-insT-insB;
-      if(rw>1&&rh>1) s+=`<rect x="${rx.toFixed(1)}" y="${ry.toFixed(1)}" width="${rw.toFixed(1)}" height="${rh.toFixed(1)}" rx="${lr.rd?2:0}" fill="none" stroke="${OFFCOL[l.L]}" stroke-width="1.6"/>`;
+      const li=OFFLINES.findIndex(o=>o.L===l.L),lr=it.lines[li];
+      const rx=x0+(f.l+lr.mm)*sc, ry=y0+(f.t+lr.mm)*sc, rw=bw-(f.l+f.r+2*lr.mm)*sc, rh=bh-(f.t+f.b+2*lr.mm)*sc;
+      if(rw>1&&rh>1) s+=`<rect x="${rx.toFixed(1)}" y="${ry.toFixed(1)}" width="${rw.toFixed(1)}" height="${rh.toFixed(1)}" rx="${lr.rd?2:0}" fill="none" stroke="${OFFCOL[l.L]}" stroke-width="1.4"/>`;
     });
-    s+=`<text x="60" y="148" font-size="8" text-anchor="middle" fill="#64748b">offset preview (A–G)</text></svg>`;
+    s+=`</svg>`;
     return s;
   }
 
@@ -911,7 +927,7 @@
     });
     if(p.hinge&&p.hinge.on){
       const h=p.hinge,r=Math.max(0.5,Math.min(1.2,Math.min(W,H)/12)),eo=h.offset/10,ins2=2.25;
-      const side=h.sideAuto?(p.h>=p.w?'left':'top'):h.side;   // longest side as the part actually sits
+      const side=resolveHingeSide(p.w,p.h,h.rawSide);   // longest side as the part actually sits
       const dot=(dx,dy)=>`<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="${r.toFixed(2)}" fill="#dc2626"/>`;
       if(side==='left'||side==='right'){const ex=side==='left'?X+ins2:X+W-ins2;const y1=Y+eo,y2=Y+H-eo;for(let k=0;k<h.count;k++){const dy=h.count===1?(y1+y2)/2:y1+(y2-y1)*k/(h.count-1);if(dy>Y+0.8&&dy<Y+H-0.8)s+=dot(ex,dy);}}
       else{const ey=side==='top'?Y+ins2:Y+H-ins2;const x1=X+eo,x2=X+W-eo;for(let k=0;k<h.count;k++){const dx=h.count===1?(x1+x2)/2:x1+(x2-x1)*k/(h.count-1);if(dx>X+0.8&&dx<X+W-0.8)s+=dot(dx,ey);}}
