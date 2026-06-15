@@ -14,8 +14,15 @@
   *{box-sizing:border-box}
   body{margin:0;font-family:Inter,Segoe UI,system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
   .proto-banner{background:#fef3c7;border-bottom:1px solid #fcd34d;color:#92400e;padding:6px 14px;font-size:12px;font-weight:700;text-align:center}
-  .topbar{background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px;padding:8px 14px}
-  .menus{display:flex;gap:14px;color:var(--muted);font-size:13px}
+  .topbar{background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px;padding:8px 14px;position:sticky;top:0;z-index:30}
+  .menus{display:flex;gap:6px;color:var(--muted);font-size:13px}
+  .menu{position:relative;cursor:pointer;padding:3px 8px;border-radius:7px}
+  .menu:hover{background:#f1f5f9;color:var(--ink)}
+  .menu .dd{position:absolute;top:calc(100% + 4px);left:0;min-width:190px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 22px rgba(15,23,42,.14);padding:5px;display:none;z-index:50}
+  .menu.open .dd{display:block}
+  .dd-item{padding:7px 10px;border-radius:7px;font-size:13px;color:var(--ink);white-space:nowrap}
+  .dd-item:hover{background:#eff6ff}
+  .dd-sep{height:1px;background:var(--line);margin:5px 4px}
   .tabs{display:flex;gap:6px;margin-left:auto}
   .tab{padding:6px 14px;border-radius:999px;font-weight:700;font-size:13px;color:var(--muted);cursor:pointer}
   .tab.active{background:var(--ink);color:#fff}
@@ -144,12 +151,22 @@
 
   <div class="topbar">
     <strong style="color:#2563eb">FAST CNC</strong>
-    <div class="menus"><span>File</span><span>Edit</span><span>View</span><span>Print</span><span>Checklist</span></div>
+    <div class="menus">
+      <span class="menu" onclick="toggleMenu(this,event)">File
+        <div class="dd">
+          <div class="dd-item" onclick="event.stopPropagation();document.getElementById('fileIn').click();closeMenus()">Open .fastcnc…</div>
+          <div class="dd-item" onclick="event.stopPropagation();downloadFastCnc();closeMenus()">Save .fastcnc</div>
+          <div class="dd-item" onclick="event.stopPropagation();downloadDxf();closeMenus()">Export DXF</div>
+          <div class="dd-sep"></div>
+          <div class="dd-item" onclick="event.stopPropagation();dxfTemplates();closeMenus()">DXF Templates…</div>
+        </div>
+      </span>
+      <span class="menu">Edit</span><span class="menu">View</span><span class="menu">Print</span><span class="menu">Checklist</span>
+    </div>
     <div class="tabs">
       <span class="tab alt">Calculate</span>
       <span class="tab active">Order entry</span>
       <span class="tab">Takeoff</span>
-      <span class="tab">DXF Templates</span>
       <span class="tab">Toolpaths</span>
     </div>
   </div>
@@ -945,6 +962,11 @@
       materialize();const pl=placements[selKey];if(pl){pl.rot=pl.rot?0:90;render();}
     }
   });
+  // ---- top app-bar menus ----
+  function closeMenus(){document.querySelectorAll('.menu.open').forEach(m=>m.classList.remove('open'));}
+  function toggleMenu(el,e){e.stopPropagation();const o=el.classList.contains('open');closeMenus();if(!o)el.classList.add('open');}
+  function dxfTemplates(){alert('DXF Templates — manage your saved DXF profile / single-part / offcut templates here (e.g. the Circle 300 offcut). Mockup placeholder; lives under File now.');}
+  document.addEventListener('click',closeMenus);
   buildMatUI();
   render();
 </script>
