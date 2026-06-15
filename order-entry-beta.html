@@ -618,8 +618,9 @@
   }
 
   // ---- Apply to All / Apply to Same Group ----
-  // "Same group" = same material + same sheet size + same dimensions (W&H) + same part type.
-  function sameGroup(a,b){return a.mat===b.mat&&a.size===b.size&&(+a.w===+b.w)&&(+a.h===+b.h)&&a.type===b.type;}
+  // "Same group" = same material + same SHEET size (8x4/10x4) + same part type. Part W×H is ignored,
+  // so different-sized doors of the same material/stock/type apply together (Ednei's rule).
+  function sameGroup(a,b){return a.mat===b.mat&&a.size===b.size&&a.type===b.type;}
   function applyField(i,field,scope){
     const src=items[i];
     items.forEach((it,j)=>{
@@ -637,7 +638,7 @@
     });
     render();
   }
-  function ap(i,field){return `<span class="apf"><span class="t">→</span><span class="aplink" onclick="applyField(${i},'${field}','group')" title="Apply this value to every part in the same group (same material, sheet size, W×H and type)">group</span><span class="aplink" onclick="applyField(${i},'${field}','all')" title="Apply this value to every part in the order">all</span></span>`;}
+  function ap(i,field){return `<span class="apf"><span class="t">→</span><span class="aplink" onclick="applyField(${i},'${field}','group')" title="Apply this value to every part in the same group (same material, sheet size and type — any part size)">group</span><span class="aplink" onclick="applyField(${i},'${field}','all')" title="Apply this value to every part in the order">all</span></span>`;}
   function tabPart(i,it){return `
     <div class="ed-field"><label>Shaker type</label><select onchange="upd(${i},'type',this.value)">${Object.keys(TYPES).map(k=>`<option value="${k}" ${k===it.type?'selected':''}>${TYPES[k].name}</option>`).join('')}</select>${ap(i,'type')}</div>
     <div style="display:flex;gap:8px">
