@@ -23,6 +23,9 @@
   .dd-item{padding:7px 10px;border-radius:7px;font-size:13px;color:var(--ink);white-space:nowrap}
   .dd-item:hover{background:#eff6ff}
   .dd-sep{height:1px;background:var(--line);margin:5px 4px}
+  .appicons{display:flex;gap:5px;align-items:center}
+  .appicons button{border:1px solid var(--line);background:#fff;border-radius:7px;height:28px;min-width:30px;cursor:pointer;font-size:14px;color:#334155;line-height:1}
+  .appicons button:hover{background:#f1f5f9}
   .tabs{display:flex;gap:6px;margin-left:auto}
   .tab{padding:6px 14px;border-radius:999px;font-weight:700;font-size:13px;color:var(--muted);cursor:pointer}
   .tab.active{background:var(--ink);color:#fff}
@@ -154,14 +157,20 @@
     <div class="menus">
       <span class="menu" onclick="toggleMenu(this,event)">File
         <div class="dd">
-          <div class="dd-item" onclick="event.stopPropagation();document.getElementById('fileIn').click();closeMenus()">Open .fastcnc…</div>
+          <div class="dd-item" onclick="event.stopPropagation();document.getElementById('fileIn').click();closeMenus()">Open / Load .fastcnc…</div>
           <div class="dd-item" onclick="event.stopPropagation();downloadFastCnc();closeMenus()">Save .fastcnc</div>
+          <div class="dd-item" onclick="event.stopPropagation();saveAsFastCnc();closeMenus()">Save As…</div>
           <div class="dd-item" onclick="event.stopPropagation();downloadDxf();closeMenus()">Export DXF</div>
           <div class="dd-sep"></div>
           <div class="dd-item" onclick="event.stopPropagation();dxfTemplates();closeMenus()">DXF Templates…</div>
         </div>
       </span>
       <span class="menu">Edit</span><span class="menu">View</span><span class="menu">Print</span><span class="menu">Checklist</span>
+    </div>
+    <div class="appicons">
+      <button title="Open / Load .fastcnc" onclick="document.getElementById('fileIn').click()">⤒</button>
+      <button title="Save .fastcnc" onclick="downloadFastCnc()">⤓</button>
+      <button title="Export DXF" onclick="downloadDxf()" style="width:auto;padding:0 8px;font-size:11px;font-weight:800">DXF</button>
     </div>
     <div class="tabs">
       <span class="tab alt">Calculate</span>
@@ -209,10 +218,7 @@
           <span class="favs" id="favChips" style="display:inline-flex;gap:5px;flex-wrap:wrap"></span>
           <span class="sub">— or pick per item.</span>
           <input type="file" id="fileIn" accept=".json,.fastcnc.json" style="display:none" onchange="onFile(event)">
-          <button class="btn ghost tiny" style="margin-left:auto" onclick="document.getElementById('fileIn').click()">⤒ Load .fastcnc</button>
-          <button class="btn ghost tiny" onclick="downloadFastCnc()">⤓ Save .fastcnc</button>
-          <button class="btn ghost tiny" onclick="downloadDxf()">⤓ Export DXF</button>
-          <div class="mode"><button class="on">Doors</button><button>Panelling</button></div>
+          <div class="mode" style="margin-left:auto"><button class="on">Doors</button><button>Panelling</button></div>
         </div>
         <datalist id="matList"></datalist>
 
@@ -472,7 +478,8 @@
     base.nextId=id+1; base.blocks=blocks; base.activeCalculatorMode='doors';
     return base;
   }
-  function downloadFastCnc(){const doc=buildFastCnc();const blob=new Blob([JSON.stringify(doc,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ORDER.fastcnc.json';document.body.appendChild(a);a.click();a.remove();}
+  function downloadFastCnc(name){const doc=buildFastCnc();const blob=new Blob([JSON.stringify(doc,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(name||'ORDER')+'.fastcnc.json';document.body.appendChild(a);a.click();a.remove();}
+  function saveAsFastCnc(){const n=prompt('Save as — file name:','ORDER');if(n)downloadFastCnc(n.replace(/\.fastcnc\.json$/i,''));}
   // ---- faithful DXF export: 1 file per thickness, production layer scheme + colours ----
   const DXF_LAYERS={'0':7,'text':7,'SHEET':7,'BOARD':24,'OUT':150,'OFFCUT':6,'hinges':7,'IN':5,'REEDED':132,'OFFSET_A':30,'OFFSET_B':1,'OFFSET_C':5,'OFFSET_D':210,'OFFSET_E':94,'OFFSET_F':30,'OFFSET_G':32};
   function fnum(n){return (Math.round(n*100)/100).toString();}
@@ -576,14 +583,19 @@
   function setLineRd(i,li,v){items[i].lines[li].rd=!!v;render();}
   function setPocketSide(i,v){items[i].pocketSide=v;render();}
   function roundAll(i,on){items[i].pocketRound=on?'Yes':'No';items[i].lines.forEach(l=>l.rd=on);render();}
-  function setHingeOn(i,v){items[i].hinges.on=v;render();}
+  function setHingeOn(i,v){const h=items[i].hinges;h.on=v;if(v&&h.side!=='left'&&h.side!=='right')h.side='left';render();}
   function setHingeSide(i,v){items[i].hinges.side=v;render();}
   function setHingeCount(i,v){items[i].hinges.count=v;render();}
+  function setHingeOffset(i,v){v=(''+v).trim();const x=Math.round(+v);items[i].hinges.offset=(v===''||isNaN(x)||x<0)?100:x;render();}
   function newProfile(){const n=prompt('New offset profile name:');if(n){profiles[n]={side:'front',lines:mkLines({A:{mm:0}})};render();}}
   function saveAsProfile(i){const n=prompt('Save this item’s offset lines as a profile named:');if(n){profiles[n]={side:items[i].pocketSide,lines:JSON.parse(JSON.stringify(items[i].lines))};items[i].offsetName=n;render();}}
 
   // ---- chips / labels ----
-  function frameLabel(it){const f=resolveFrame(it);if(f.t===f.r&&f.r===f.b&&f.b===f.l)return f.t>0?'frame '+f.t+'mm':'';return 'frame T'+f.t+' R'+f.r+' B'+f.b+' L'+f.l;}
+  function frameLabel(it){
+    // only show a frame when it's actually active: offset line A on, OR an insert type (frame defines the cavity)
+    const active=(it.lines&&it.lines[0]&&it.lines[0].en)||it.type==='trad'||it.type==='flush'||it.type==='reeded';
+    if(!active)return '';
+    const f=resolveFrame(it);if(f.t===f.r&&f.r===f.b&&f.b===f.l)return f.t>0?'frame '+f.t+'mm':'';return 'frame T'+f.t+' R'+f.r+' B'+f.b+' L'+f.l;}
   function offsetChip(it){const e=enabledLines(it);if(!e.length)return '';const letters=e.map(l=>l.L).join('');const side=it.pocketSide==='front-back'?' ⇄F+B':'';const rd=e.some(l=>l.rd)?' ◜round':'';return 'offset '+letters+side+rd;}
   function hingeChip(it){const h=hingeInfo(it);if(!h.on)return '';return 'hinges '+h.side+' ×'+h.count+(h.auto?' (auto)':'');}
 
@@ -712,18 +724,17 @@
     <div style="margin-top:10px;text-align:right">${ap(i,'offset')}</div>`;}
 
   function tabHinges(i,it){
-    const horiz=(+it.w>=+it.h);
-    const opts=horiz?['auto','top','bottom']:['auto','left','right'];   // only the two LONG edges
-    const cur=opts.indexOf(it.hinges.side)>=0?it.hinges.side:'auto';
+    const cur=(it.hinges.side==='right')?'right':'left';   // only the two long edges, labelled Left/Right
     return `
     <label class="tg" style="margin-bottom:8px"><input type="checkbox" ${it.hinges.on?'checked':''} onchange="setHingeOn(${i},this.checked)"> Hinges on</label>${ap(i,'hinges')}
     ${it.hinges.on?`
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
-      <label class="sub">Long edge <select onchange="setHingeSide(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${opts.map(o=>`<option ${o===cur?'selected':''}>${o}</option>`).join('')}</select></label>
+      <label class="sub">Side <select onchange="setHingeSide(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${['left','right'].map(o=>`<option ${o===cur?'selected':''}>${o}</option>`).join('')}</select></label>
+      <label class="sub">From ends <input type="number" value="${+it.hinges.offset||100}" onchange="setHingeOffset(${i},this.value)" style="width:58px;padding:5px;border:1px solid var(--line);border-radius:7px"> mm</label>
       <label class="sub">Count <select onchange="setHingeCount(${i},this.value)" style="padding:5px;border:1px solid var(--line);border-radius:7px">${['auto',2,3,4,5].map(o=>`<option ${String(o)===String(it.hinges.count)?'selected':''}>${o}</option>`).join('')}</select></label>
       ${hingeDiagram(it)}
     </div>
-    <div class="sub" style="margin-top:8px">${(function(){var h=hingeInfo(it);return 'always on the longest side ('+h.span+'mm) · '+h.count+' hinges · 100mm from ends · +5% CNC';})()}</div>`:'<div class="sub" style="margin-top:8px">No hinges (off by default — turn on only if this part needs them).</div>'}`;}
+    <div class="sub" style="margin-top:8px">${(function(){var h=hingeInfo(it);return 'always on the longest side ('+h.span+'mm) · Left/Right = the two long edges · '+h.count+' hinges · '+h.offset+'mm from ends · +5% CNC';})()}</div>`:'<div class="sub" style="margin-top:8px">No hinges (off by default — turn on only if this part needs them).</div>'}`;}
 
   function tabSpray(i,it){return `
     <label class="tg"><input type="checkbox" ${it.spray?'checked':''} onchange="sprayOn(${i},this.checked)"> Spray finish</label>${ap(i,'spray')}
@@ -768,7 +779,15 @@
   function sprayDesc(it){const c=it.sprayCfg||{};const faces=[c.front&&'front',c.back&&'back'].filter(Boolean);const edges=[c.eT&&'top',c.eB&&'bottom',c.eL&&'left',c.eR&&'right'].filter(Boolean);const inner=[c.iT,c.iB,c.iL,c.iR].filter(Boolean).length;if(!faces.length&&!edges.length&&!inner)return 'Click the faces / edges to mark what gets painted.';const parts=[];if(faces.length)parts.push(faces.join('+'));if(edges.length)parts.push(edges.length+' edge'+(edges.length>1?'s':''));if(inner)parts.push(inner+' inner');return 'Painted: '+parts.join(' · ');}
   function sprayEditorHtml(i,it){const c=it.sprayCfg||{};const hasFrame=enabledLines(it).length>0||it.type!=='flat';const col=p=>c[p]?'#16a34a':'#e2e8f0';const faceFill=c.front?'#bbf7d0':'#f8fafc';let s='<div class="spray-edit">';s+=`<svg viewBox="0 0 110 84" style="width:150px;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff">`;s+=`<rect x="22" y="16" width="66" height="50" fill="${faceFill}" stroke="#94a3b8" stroke-width="0.8" style="cursor:pointer" onclick="sprayToggle(${i},'front')"></rect>`;s+=`<text x="55" y="43" font-size="5" text-anchor="middle" fill="#475569" style="pointer-events:none">${c.front?'FACE ✓':'face'}</text>`;s+=`<rect x="75" y="17.5" width="11" height="8" rx="1.5" fill="${c.back?'#16a34a':'#fff'}" stroke="#16a34a" stroke-width="0.6" style="cursor:pointer" onclick="sprayToggle(${i},'back')"></rect>`;s+=`<text x="80.5" y="23.4" font-size="4.6" text-anchor="middle" fill="${c.back?'#fff':'#16a34a'}" style="pointer-events:none">B</text>`;s+=`<rect x="22" y="10.5" width="66" height="4.5" fill="${col('eT')}" stroke="#64748b" stroke-width="0.3" style="cursor:pointer" onclick="sprayToggle(${i},'eT')"></rect>`;s+=`<rect x="22" y="67" width="66" height="4.5" fill="${col('eB')}" stroke="#64748b" stroke-width="0.3" style="cursor:pointer" onclick="sprayToggle(${i},'eB')"></rect>`;s+=`<rect x="16.5" y="16" width="4.5" height="50" fill="${col('eL')}" stroke="#64748b" stroke-width="0.3" style="cursor:pointer" onclick="sprayToggle(${i},'eL')"></rect>`;s+=`<rect x="89" y="16" width="4.5" height="50" fill="${col('eR')}" stroke="#64748b" stroke-width="0.3" style="cursor:pointer" onclick="sprayToggle(${i},'eR')"></rect>`;if(hasFrame){s+=`<rect x="40" y="30" width="30" height="22" fill="#fff" stroke="#cbd5e1" stroke-width="0.5" style="pointer-events:none"></rect>`;s+=`<rect x="40" y="30" width="30" height="3" fill="${col('iT')}" style="cursor:pointer" onclick="sprayToggle(${i},'iT')"></rect>`;s+=`<rect x="40" y="49" width="30" height="3" fill="${col('iB')}" style="cursor:pointer" onclick="sprayToggle(${i},'iB')"></rect>`;s+=`<rect x="40" y="30" width="3" height="22" fill="${col('iL')}" style="cursor:pointer" onclick="sprayToggle(${i},'iL')"></rect>`;s+=`<rect x="67" y="30" width="3" height="22" fill="${col('iR')}" style="cursor:pointer" onclick="sprayToggle(${i},'iR')"></rect>`;}s+=`</svg>`;s+=`<div class="sub" style="flex:1;min-width:150px">Click the <b>face</b> (front) · small <b>B</b> = back · the <b>edges</b>${hasFrame?' · inner frame edges':''}.<br><b>${sprayDesc(it)}</b><br><span class="link" onclick="sprayApplyAll(${i})">↧ Apply this spray to all items</span></div>`;s+='</div>';return s;}
 
-  function hingeDiagram(it){const h=hingeInfo(it);const x0=15,y0=8,w=40,hh=74,off=12;let dots='';const dot=(cx,cy)=>`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="#dc2626"/>`;const n=h.count;if(h.side==='left'||h.side==='right'){const ex=h.side==='left'?x0+3:x0+w-3;const y1=y0+off,y2=y0+hh-off;for(let k=0;k<n;k++){const cy=n===1?(y1+y2)/2:y1+(y2-y1)*k/(n-1);dots+=dot(ex,cy);}}else{const ey=h.side==='top'?y0:y0+hh;const x1=x0+off,x2=x0+w-off;for(let k=0;k<n;k++){const cx=n===1?(x1+x2)/2:x1+(x2-x1)*k/(n-1);dots+=dot(cx,ey);}}return `<svg viewBox="0 0 70 90" style="width:60px;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff"><rect x="${x0}" y="${y0}" width="${w}" height="${hh}" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>${dots}</svg>`;}
+  // aspect-aware: box matches the part shape; dots sit on the resolved LONG edge
+  function hingeDiagram(it){
+    const h=hingeInfo(it);if(!h.on)return '';
+    const VW=72,VH=72,pad=8,w=Math.max(1,+it.w||1),hh=Math.max(1,+it.h||1);
+    const sc=Math.min((VW-2*pad)/w,(VH-2*pad)/hh),bw=w*sc,bh=hh*sc,x0=(VW-bw)/2,y0=(VH-bh)/2;
+    const inset=3,n=h.count;let dots='';const dot=(cx,cy)=>`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="2.6" fill="#dc2626"/>`;
+    if(h.side==='left'||h.side==='right'){const eo=Math.min(h.offset*sc,bh/2-1),ex=h.side==='left'?x0+inset:x0+bw-inset,y1=y0+eo,y2=y0+bh-eo;for(let k=0;k<n;k++){const cy=n===1?(y1+y2)/2:y1+(y2-y1)*k/(n-1);dots+=dot(ex,cy);}}
+    else{const eo=Math.min(h.offset*sc,bw/2-1),ey=h.side==='top'?y0+inset:y0+bh-inset,x1=x0+eo,x2=x0+bw-eo;for(let k=0;k<n;k++){const cx=n===1?(x1+x2)/2:x1+(x2-x1)*k/(n-1);dots+=dot(cx,ey);}}
+    return `<svg viewBox="0 0 ${VW} ${VH}" style="width:62px;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff"><rect x="${x0.toFixed(1)}" y="${y0.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="#f8fafc" stroke="#94a3b8" stroke-width="0.8"/>${dots}</svg>`;}
 
   // ---- nesting ----
   let nestSize='8x4',sheetSizeOv={},nestSvgs=[];
