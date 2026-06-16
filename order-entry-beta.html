@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cabacal — Order Entry (prototype)</title>
+<title>Kabacal — Order Entry (prototype)</title>
 <style>
   :root{
     --bg:#f1f5f9; --card:#fff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
@@ -26,6 +26,28 @@
   .appicons{display:flex;gap:5px;align-items:center}
   .appicons button{border:1px solid var(--line);background:#fff;border-radius:7px;height:28px;min-width:30px;cursor:pointer;font-size:14px;color:#334155;line-height:1}
   .appicons button:hover{background:#f1f5f9}
+  .ksc{margin-left:auto;color:var(--muted);font-size:11px;padding-left:14px}
+  .dd-item{display:flex;align-items:center;gap:6px}
+  .soon{font-size:9px;font-weight:800;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:999px;padding:0 5px;margin-left:4px;text-transform:uppercase;letter-spacing:.03em}
+  .client-bar{display:flex;gap:10px;flex-wrap:wrap;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:10px}
+  .cb-field{display:flex;flex-direction:column;gap:3px}
+  .cb-field label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+  .cb-field input{padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff}
+  .warn{border-radius:9px;padding:8px 12px;font-size:12px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .warn.err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
+  .warn.amber{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+  .warn .btn.tiny{background:#fff;border:1px solid currentColor}
+  .ptbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  .ptbl th,.ptbl td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+  .ptbl th{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase}
+  .ptbl input{padding:4px 6px;border:1px solid var(--line);border-radius:6px}
+  .quote{border:1px solid var(--line);border-radius:12px;padding:18px;background:#fff}
+  .q-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:10px}
+  .q-brand{font-size:22px;font-weight:900;color:var(--blue);letter-spacing:.3px}
+  .q-client{margin:6px 0 4px}
+  .q-tot{margin-top:12px;max-width:280px;margin-left:auto}
+  .psvc{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:13px}
+  @media print{body *{visibility:hidden}#modalOv,#modalOv *{visibility:visible}#modalOv{position:absolute;inset:0;background:#fff;display:block}#modalOv .zoomhead,#modalOv .zoomhead *{visibility:hidden}#modalOv .zoombox{box-shadow:none;width:auto;height:auto;max-width:100%}}
   .tabs{display:flex;gap:6px;margin-left:auto}
   .tab{padding:6px 14px;border-radius:999px;font-weight:700;font-size:13px;color:var(--muted);cursor:pointer}
   .tab.active{background:var(--ink);color:#fff}
@@ -153,7 +175,7 @@
   <div class="proto-banner">⚠ VISUAL MOCKUP — not the production app. Reads/writes the same <b>.fastcnc.json</b> so it stays 100% compatible. Nothing here touches the live app.</div>
 
   <div class="topbar">
-    <strong style="color:#2563eb;font-size:16px;letter-spacing:.2px">Cabacal</strong>
+    <strong style="color:#2563eb;font-size:16px;letter-spacing:.2px">Kabacal</strong>
     <div class="menus">
       <span class="menu" onclick="toggleMenu(this,event)">File
         <div class="dd">
@@ -165,7 +187,28 @@
           <div class="dd-item" onclick="event.stopPropagation();dxfTemplates();closeMenus()">DXF Templates…</div>
         </div>
       </span>
-      <span class="menu">Edit</span><span class="menu">View</span><span class="menu">Print</span><span class="menu">Checklist</span>
+      <span class="menu" onclick="toggleMenu(this,event)">Edit
+        <div class="dd">
+          <div class="dd-item" onclick="event.stopPropagation();undo();closeMenus()">Undo <span class="ksc">Ctrl+Z</span></div>
+          <div class="dd-item" onclick="event.stopPropagation();redo();closeMenus()">Redo <span class="ksc">Ctrl+Y</span></div>
+        </div>
+      </span>
+      <span class="menu" onclick="toggleMenu(this,event)">View
+        <div class="dd">
+          <div class="dd-item" onclick="event.stopPropagation();toggleHideValues();closeMenus()"><span id="hvCheck">☐</span> Hide values (prices)</div>
+          <div class="dd-item" onclick="event.stopPropagation();openDxfTemplates();closeMenus()">DXF Templates…</div>
+        </div>
+      </span>
+      <span class="menu" onclick="toggleMenu(this,event)">Print
+        <div class="dd">
+          <div class="dd-item" onclick="event.stopPropagation();openQuote();closeMenus()">PDF / Quote…</div>
+          <div class="dd-item" onclick="event.stopPropagation();comingSoon('Doors only (print nesting)');closeMenus()">Doors only <span class="soon">soon</span></div>
+          <div class="dd-item" onclick="event.stopPropagation();comingSoon('Print labels');closeMenus()">Print labels <span class="soon">soon</span></div>
+          <div class="dd-item" onclick="event.stopPropagation();comingSoon('Spray labels / scheme');closeMenus()">Spray labels <span class="soon">soon</span></div>
+          <div class="dd-item" onclick="event.stopPropagation();comingSoon('Cut list');closeMenus()">Cut list <span class="soon">soon</span></div>
+        </div>
+      </span>
+      <span class="menu" onclick="event.stopPropagation();comingSoon('Checklist')">Checklist <span class="soon">soon</span></span>
     </div>
     <div class="appicons">
       <button title="Open / Load .fastcnc" onclick="document.getElementById('fileIn').click()">⤒</button>
@@ -173,10 +216,10 @@
       <button title="Export DXF" onclick="downloadDxf()" style="width:auto;padding:0 8px;font-size:11px;font-weight:800">DXF</button>
     </div>
     <div class="tabs">
-      <span class="tab alt">Calculate</span>
+      <span class="tab alt" onclick="openQuote()" title="Customer / quote view">Calculate</span>
       <span class="tab active">Order entry</span>
-      <span class="tab">Takeoff</span>
-      <span class="tab">Toolpaths</span>
+      <span class="tab" onclick="comingSoonTakeoff()">Takeoff <span class="soon">soon</span></span>
+      <span class="tab" onclick="comingSoon('Toolpaths')">Toolpaths <span class="soon">soon</span></span>
     </div>
   </div>
 
@@ -187,7 +230,7 @@
       <div class="mp-row"><span>Material</span><b id="mpMat">MDF 18mm</b></div>
       <div class="mp-row"><span>£ / sheet (auto)</span><b id="mpSheet">£55</b></div>
       <div class="mp-row"><span>£ / CNC per sheet</span><b id="mpCnc">£85</b></div>
-      <div style="margin-top:8px"><span class="link">⚙ Edit individual sheet prices…</span></div>
+      <div style="margin-top:8px"><span class="link" onclick="openPricing()">⚙ Pricing settings…</span></div>
     </div>
     <div class="card">
       <h2>Offset profiles</h2>
@@ -197,7 +240,7 @@
     </div>
     <div class="card">
       <h2>Order summary</h2>
-      <div class="sub" style="margin:-4px 0 8px">Totals appear after <b>Calculate</b>.</div>
+      <div class="sub" style="margin:-4px 0 8px">Live totals. Open <b>Calculate</b> for the customer quote view.</div>
       <div class="sumrow"><span class="k">Line items</span><span id="sItems">0</span></div>
       <div class="sumrow"><span class="k">Doors (total)</span><span id="sDoors">0</span></div>
       <div class="sumrow"><span class="k">Sheets (est.)</span><span id="sSheets">0</span></div>
@@ -213,16 +256,24 @@
         <h2>New order — add the customer's items</h2>
         <div class="hint">One list. Each line is a door/part with its own type, size, finish and offset. Mix Flat / Traditional / Flushback / Reeded in the same list — no separate blocks.</div>
 
+        <div class="client-bar">
+          <div class="cb-field"><label>Client</label><input id="cbClient" type="text" placeholder="Customer name" oninput="setProject('client',this.value)"></div>
+          <div class="cb-field"><label>Order #</label><div style="display:flex;gap:4px;align-items:center"><input id="cbNum" type="text" placeholder="auto" oninput="setProject('number',this.value)"><span class="link" title="Auto-generate order number" onclick="genOrderNumber(true)">↻</span></div></div>
+          <div class="cb-field"><label>Date</label><input id="cbDate" type="date" oninput="setProject('date',this.value)"></div>
+          <div class="cb-field" style="flex:1;min-width:160px"><label>Notes / reference</label><input id="cbNotes" type="text" placeholder="optional" oninput="setProject('notes',this.value)"></div>
+        </div>
+
         <div class="matbar">
           <span class="sub" style="font-weight:700">Quick material:</span>
           <span class="favs" id="favChips" style="display:inline-flex;gap:5px;flex-wrap:wrap"></span>
           <span class="sub">— or pick per item.</span>
           <input type="file" id="fileIn" accept=".json,.fastcnc.json" style="display:none" onchange="onFile(event)">
-          <div class="mode" style="margin-left:auto"><button class="on">Doors</button><button>Panelling</button></div>
+          <div class="mode" style="margin-left:auto"><button class="on">Doors</button><button onclick="openPanelling()" title="Opens the existing panelling app in a new tab">Panelling ↗</button></div>
         </div>
         <datalist id="matList"></datalist>
 
         <div class="quickadd">
+          <div class="qa-field"><label>Material</label><select id="qaMat" onchange="orderMaterial=this.value;updateMatPricing()" style="padding:7px 8px;border:1px solid var(--line);border-radius:8px;width:170px"></select></div>
           <div class="qa-field"><label>Shaker Type</label>
             <select id="qaType">
               <option value="flat">Flat</option>
@@ -231,11 +282,10 @@
               <option value="reeded">Reeded</option>
             </select>
           </div>
+          <div class="qa-field"><label>Frame (mm)</label><input id="qaFrame" type="number" value="50" style="width:74px"></div>
           <div class="qa-field"><label>Width</label><input id="qaW" type="number" value="600"></div>
           <div class="qa-field"><label>Height</label><input id="qaH" type="number" value="400"></div>
           <div class="qa-field"><label>Qty</label><input id="qaQ" type="number" value="1"></div>
-          <div class="qa-field"><label>Material</label><select id="qaMat" onchange="orderMaterial=this.value;updateMatPricing()" style="padding:7px 8px;border:1px solid var(--line);border-radius:8px;width:170px"></select></div>
-          <div class="qa-field"><label>Frame (mm)</label><input id="qaFrame" type="number" value="50" style="width:74px"></div>
           <div class="qa-field"><label>Text</label><input id="qaText" type="text" placeholder="optional" style="padding:7px 8px;border:1px solid var(--line);border-radius:8px;width:120px"></div>
           <button class="btn primary" onclick="addItem()">+ Add to order</button>
         </div>
@@ -247,6 +297,7 @@
           <span><i style="background:var(--reeded)"></i>Reeded</span>
         </div>
 
+        <div id="orderWarn"></div>
         <div class="order-list" id="list"></div>
       </div>
       <aside class="card inspector-card"><div id="inspector"></div></aside>
@@ -415,6 +466,10 @@
     });
     if(!out.length){alert('No doors-mode parts found in that file.');return;}
     items=out; selItem=0; orderMaterial=items[0].mat;
+    if(doc.kabacal&&typeof doc.kabacal==='object')project=Object.assign({client:'',number:'',date:'',notes:''},doc.kabacal);
+    else if(doc.client&&doc.client.name)project.client=doc.client.name;
+    if(!project.number)genOrderNumber();
+    syncClientBar();
     const q=document.getElementById('qaMat'); if(q){q.innerHTML=matOptionsHtml(orderMaterial);q.value=orderMaterial;}
     render();
   }
@@ -476,6 +531,7 @@
         sourceKey:ins.parentBlockId+'|'+ins.kind+'|'+ins.insTh+'mm',sourceRole:'insert',sourceShakerType:ins.kind});
     });
     base.nextId=id+1; base.blocks=blocks; base.activeCalculatorMode='doors';
+    base.client={name:project.client||'',contact:''}; base.kabacal=JSON.parse(JSON.stringify(project));
     return base;
   }
   function downloadFastCnc(name){const doc=buildFastCnc();const blob=new Blob([JSON.stringify(doc,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(name||'ORDER')+'.fastcnc.json';document.body.appendChild(a);a.click();a.remove();}
@@ -541,6 +597,7 @@
     const files={};byTh.forEach((list,th)=>{files[th]=dxfForThickness(th,list);});return files;
   }
   function downloadDxf(){
+    const v=validateOrder();if(v.errs.length){alert('Fix invalid parts before exporting DXF:\n'+v.errs.map(e=>'• item '+(e.i+1)+': '+e.b.join(', ')).join('\n'));return;}
     const files=buildDxfByThickness(),ths=Object.keys(files);
     if(!ths.length){alert('No parts to export.');return;}
     ths.forEach((th,i)=>{setTimeout(()=>{const blob=new Blob([files[th]],{type:'application/dxf'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ORDER_'+th+'.dxf';document.body.appendChild(a);a.click();a.remove();},i*350);});
@@ -550,12 +607,12 @@
   const PRICES={'MDF':{'6mm':25,'9mm':35,'12mm':40,'15mm':45,'18mm':55,'22mm':65,'25mm':75},'MR MDF':{'6mm':35,'9mm':40,'12mm':50,'15mm':55,'18mm':65,'22mm':75,'25mm':85},'FR MDF':{'12mm':60,'18mm':80,'25mm':100},'Veneered MDF':{'18mm':85,'25mm':105},'Black MDF':{'18mm':90},'MDF Hidrofugo Plus':{'12mm':50,'18mm':65},'Birch Ply':{'12mm':75,'18mm':95,'24mm':120},'Marine Ply':{'12mm':120,'18mm':160},'MFC':{'18mm':55,'25mm':65},'Veneered Chipboard':{'18mm':80,'25mm':100},'Melamine board':{'18mm':55},'Laminated HPL':{'18mm':90}};
   const FAVS=['MDF 18mm','MDF Hidrofugo Plus 18mm','MR MDF 18mm','Veneered Chipboard 18mm','MFC 18mm','Birch Ply 18mm'];
   const SHEETS={'8x4':{w:2440,h:1220,label:'8x4'},'10x4':{w:3050,h:1220,label:'10x4'},'10x5':{w:3050,h:1525,label:'10x5'},'jumbo':{w:2800,h:2070,uh:2050,label:'Jumbo'}};
-  function priceForSheet(combined,size){const m=parseMat(combined);let base=(PRICES[m.name]&&PRICES[m.name][m.th])||0;if(!base)base=55;const S=SHEETS[size]||SHEETS['8x4'],B=SHEETS['8x4'];const ratio=(size==='8x4')?1:(S.w*S.h)/(B.w*B.h);return Math.round(base*ratio);}
-  function cncForThickness(combined){const th=parseMat(combined).th;if(th==='18mm'||th==='22mm')return 85;const n=parseInt(th)||18;if(n<=12)return 65;if(n<=15)return 95;return 120;}
+  function priceForSheet(combined,size){const ov=(typeof priceOverrides!=='undefined')?priceOverrides['mat:'+combined]:null;let base;if(ov!=null)base=ov;else{const m=parseMat(combined);base=(PRICES[m.name]&&PRICES[m.name][m.th])||55;}const S=SHEETS[size]||SHEETS['8x4'],B=SHEETS['8x4'];const ratio=(size==='8x4')?1:(S.w*S.h)/(B.w*B.h);return Math.round(base*ratio);}
+  function cncForThickness(combined){const ov=(typeof priceOverrides!=='undefined')?priceOverrides['cnc:'+combined]:null;if(ov!=null)return ov;const th=parseMat(combined).th;if(th==='18mm'||th==='22mm')return 85;const n=parseInt(th)||18;if(n<=12)return 65;if(n<=15)return 95;return 120;}
   function matOptionsHtml(sel){const all=[];Object.keys(PRICES).forEach(n=>Object.keys(PRICES[n]).forEach(t=>all.push(n+' '+t)));if(sel&&all.indexOf(sel)<0)all.unshift(sel);return all.map(c=>`<option ${c===sel?'selected':''}>${esc(c)}</option>`).join('');}
   function buildMatUI(){const qm=document.getElementById('qaMat');if(qm)qm.innerHTML=matOptionsHtml(orderMaterial);const fc=document.getElementById('favChips');if(fc)fc.innerHTML=FAVS.map(f=>`<span class="pchip" onclick="setQaMat('${f}')">${f}</span>`).join('');const dl=document.getElementById('matList');if(dl){const all=[];Object.keys(PRICES).forEach(n=>Object.keys(PRICES[n]).forEach(t=>all.push(n+' '+t)));dl.innerHTML=all.map(c=>`<option value="${esc(c)}">`).join('');}}
   function setQaMat(v){const q=document.getElementById('qaMat');if(q){if(q.querySelector(`option[value="${v}"]`)===null)q.innerHTML=matOptionsHtml(v);q.value=v;}orderMaterial=v;updateMatPricing();}
-  function updateMatPricing(){const mm=document.getElementById('mpMat');if(mm)mm.textContent=orderMaterial;const ms=document.getElementById('mpSheet');if(ms)ms.textContent='£'+priceForSheet(orderMaterial,nestSize);const mc=document.getElementById('mpCnc');if(mc)mc.textContent='£'+cncForThickness(orderMaterial);}
+  function updateMatPricing(){const mm=document.getElementById('mpMat');if(mm)mm.textContent=orderMaterial;const ms=document.getElementById('mpSheet');if(ms)ms.textContent=money(priceForSheet(orderMaterial,nestSize));const mc=document.getElementById('mpCnc');if(mc)mc.textContent=money(cncForThickness(orderMaterial));}
 
   // ---- pricing per item / summary ----
   function priceOf(it){const base=(it.w*it.h)/1e6*40+12;const ex=enabledLines(it).length*5;return Math.round((base+ex)*(+it.q||1));}
@@ -570,8 +627,12 @@
   function addItem(){
     const qt=document.getElementById('qaText'),qm=document.getElementById('qaMat'),qf=document.getElementById('qaFrame');
     const mat=qm&&qm.value?qm.value:orderMaterial;const f=Math.max(0,Math.round(+(qf?qf.value:50)||0));
-    const it=mkItem(qaType.value,+qaW.value,+qaH.value,+qaQ.value,mat,nestSize,{t:f,r:f,b:f,l:f},null,qt?qt.value:'',{on:false},{offsetName:'None'});
-    items.push(it);orderMaterial=mat;selItem=items.length-1;if(qt)qt.value='';render();
+    const w=+qaW.value,h=+qaH.value;
+    if(!w||!h||w<=0||h<=0||isNaN(w)||isNaN(h)){alert('Enter a valid width and height first.');const ww=document.getElementById('qaW');if(ww){ww.focus();ww.select();}return;}
+    const it=mkItem(qaType.value,w,h,+qaQ.value,mat,nestSize,{t:f,r:f,b:f,l:f},null,qt?qt.value:'',{on:false},{offsetName:'None'});
+    items.push(it);orderMaterial=mat;selItem=items.length-1;if(qt)qt.value='';
+    if(oversizeOf(it)){const k=smallestSheetFor(w,h);if(k&&k!==nestSize){if(confirm('This part ('+w+'×'+h+') does not fit the current sheet ('+SHEETS[nestSize].label+').\nUse a larger sheet ('+SHEETS[k].label+')?')){nestSize=k;const ns=document.getElementById('nestSizeSel');if(ns)ns.value=k;}}else if(!k){alert('Warning: this part ('+w+'×'+h+') is bigger than any available sheet size.');}}
+    render();
   }
 
   // ---- frame / pocket / hinge editor setters ----
@@ -637,6 +698,7 @@
     });
     renderInspector();
     renderProfiles();renderNest();updateMatPricing();summary();
+    renderWarn();updateHVCheck();captureHistory();
   }
   function sel(i){selItem=i;document.querySelectorAll('#list .item').forEach((el,idx)=>el.classList.toggle('sel',idx===i));renderInspector();}
   function setInspTab(t){inspTab=t;renderInspector();}
@@ -769,7 +831,7 @@
   function summary(){
     const doors=items.reduce((s,i)=>s+(+i.q||0),0);
     sItems.textContent=items.length;sDoors.textContent=doors;sSheets.textContent=nestSheets;
-    sMat.textContent='£'+nestMatCost;sCnc.textContent='£'+nestCncCost;sTotal.textContent='£'+(nestMatCost+nestCncCost);
+    sMat.textContent=money(nestMatCost);sCnc.textContent=money(nestCncCost);sTotal.textContent=money(nestMatCost+nestCncCost);
   }
 
   // ---- spray editor (kept) ----
@@ -975,18 +1037,93 @@
   }
 
   document.addEventListener('keydown',e=>{
-    if(e.key==='Enter'&&['qaW','qaH','qaQ'].includes(document.activeElement.id)){addItem();return;}
+    var tag=(document.activeElement||{}).tagName||'';
+    if((e.ctrlKey||e.metaKey)&&(e.key==='z'||e.key==='Z')){e.preventDefault();undo();return;}
+    if((e.ctrlKey||e.metaKey)&&(e.key==='y'||e.key==='Y')){e.preventDefault();redo();return;}
+    var qaIds=['qaMat','qaType','qaFrame','qaW','qaH','qaQ','qaText'];
+    if(e.key==='Enter'&&qaIds.indexOf(document.activeElement.id)>=0){addItem();const w=document.getElementById('qaW');if(w){w.focus();w.select();}return;}
     if(editMode&&selKey&&(e.key==='9'||e.key==='0')){
-      if(/INPUT|SELECT|TEXTAREA/.test((document.activeElement||{}).tagName||''))return;
+      if(/INPUT|SELECT|TEXTAREA/.test(tag))return;
       materialize();const pl=placements[selKey];if(pl){pl.rot=pl.rot?0:90;render();}
     }
   });
-  // ---- top app-bar menus ----
+
+  // ---- top app-bar menus + modals ----
   function closeMenus(){document.querySelectorAll('.menu.open').forEach(m=>m.classList.remove('open'));}
   function toggleMenu(el,e){e.stopPropagation();const o=el.classList.contains('open');closeMenus();if(!o)el.classList.add('open');}
-  function dxfTemplates(){alert('DXF Templates — manage your saved DXF profile / single-part / offcut templates here (e.g. the Circle 300 offcut). Mockup placeholder; lives under File now.');}
   document.addEventListener('click',closeMenus);
+  function openModal(title,html,wide){let ov=document.getElementById('modalOv');if(!ov){ov=document.createElement('div');ov.id='modalOv';ov.className='zoomov';ov.addEventListener('click',e=>{if(e.target===ov)closeModal();});document.body.appendChild(ov);}ov.innerHTML=`<div class="zoombox" style="max-width:${wide?900:640}px;height:auto;max-height:92vh"><div class="zoomhead"><b>${esc(title)}</b><button class="btn ghost tiny" onclick="closeModal()">Close ✕</button></div><div class="zoomscroll" style="padding:14px">${html}</div></div>`;ov.classList.add('show');}
+  function closeModal(){const ov=document.getElementById('modalOv');if(ov)ov.classList.remove('show');}
+  function comingSoon(name){openModal(name,'<div class="sub">'+esc(name)+" isn't built yet — it's on the roadmap. <b>Coming soon.</b></div>");}
+  function comingSoonTakeoff(){openModal('Takeoff — coming soon',"<div class=\"sub\">Takeoff will let you paste measurements, job info, images and DXF, then turn them into doors/parts. I'll rebuild it from the old app — send me the old Takeoff details when you're ready and I'll wire it up.</div>");}
+  function openPanelling(){window.open('https://spaceinvuk.github.io/cnc-calculator/Cnc%20Calculator%20UI%20Test.html','_blank');}
+  function dxfTemplates(){openDxfTemplates();}
+  function openDxfTemplates(){openModal('DXF Templates',"<div class=\"sub\">Saved DXF templates (profile / single-part / offcut, e.g. the Circle 300 offcut) will live here, stored locally for now. I'll rebuild this from the old app — send me the old DXF Templates details and I'll match it.</div><div class=\"soon\" style=\"display:inline-block;margin-top:8px\">coming soon</div>");}
+
+  // ---- state: hide values, project, pricing overrides ----
+  let hideValues=false;
+  let project={client:'',number:'',date:new Date().toISOString().slice(0,10),notes:''};
+  let priceOverrides={};try{priceOverrides=JSON.parse(localStorage.getItem('kab_prices')||'{}');}catch(e){priceOverrides={};}
+  function money(n){return hideValues?'•••':('£'+Math.round(+n||0));}
+  function toggleHideValues(){hideValues=!hideValues;render();}
+  function updateHVCheck(){const c=document.getElementById('hvCheck');if(c)c.textContent=hideValues?'☑':'☐';}
+  function setProject(k,v){project[k]=v;}
+  function syncClientBar(){const m={cbClient:'client',cbNum:'number',cbDate:'date',cbNotes:'notes'};for(const id in m){const el=document.getElementById(id);if(el)el.value=project[m[id]]||'';}}
+  function genOrderNumber(force){if(project.number&&!force)return;const ini=((project.client||'').match(/[A-Za-z]+/g)||[]).map(w=>w[0]).join('').slice(0,3).toUpperCase()||'ORD';const d=(project.date||new Date().toISOString().slice(0,10)).replace(/-/g,'');let seq=(+(localStorage.getItem('kab_seq')||'0'))+1;try{localStorage.setItem('kab_seq',seq);}catch(e){}project.number=ini+'-'+d+'-'+String(seq).padStart(3,'0');syncClientBar();}
+
+  // ---- undo / redo (auto-snapshot on change) ----
+  let undoStack=[],redoStack=[],lastSnap=null,isRestoring=false;
+  function snapshot(){return JSON.stringify({items:items,project:project,profiles:profiles,nestSize:nestSize});}
+  function restoreSnap(s){const o=JSON.parse(s);items=o.items;project=o.project;profiles=o.profiles;if(o.nestSize)nestSize=o.nestSize;}
+  function captureHistory(){if(isRestoring)return;const s=snapshot();if(lastSnap!==null&&s!==lastSnap){undoStack.push(lastSnap);if(undoStack.length>60)undoStack.shift();redoStack=[];}lastSnap=s;}
+  function undo(){if(!undoStack.length)return;redoStack.push(snapshot());const prev=undoStack.pop();isRestoring=true;restoreSnap(prev);lastSnap=prev;placements=null;selKey=null;render();isRestoring=false;syncClientBar();}
+  function redo(){if(!redoStack.length)return;undoStack.push(snapshot());const nx=redoStack.pop();isRestoring=true;restoreSnap(nx);lastSnap=nx;placements=null;selKey=null;render();isRestoring=false;syncClientBar();}
+
+  // ---- validation ----
+  function partIssues(it){const w=+it.w,h=+it.h,bad=[];if(it.w===''||it.w==null||isNaN(w)||w<=0)bad.push('width');if(it.h===''||it.h==null||isNaN(h)||h<=0)bad.push('height');if(w>6000||h>6000)bad.push('too large');return bad;}
+  function sheetUsable(sz){const S=SHEETS[sz]||SHEETS['8x4'],g=(sz==='jumbo'?13:7);return {uW:S.w-2*g,uH:(S.uh||S.h)-2*g};}
+  function fitsSheet(w,h,sz){const u=sheetUsable(sz);return (w<=u.uW&&h<=u.uH)||(h<=u.uW&&w<=u.uH);}
+  function oversizeOf(it){const w=+it.w||0,h=+it.h||0;if(w<=0||h<=0)return false;return !fitsSheet(w,h,nestSize);}
+  function smallestSheetFor(w,h){const order=['8x4','10x4','10x5','jumbo'];for(const k of order)if(fitsSheet(w,h,k))return k;return null;}
+  function validateOrder(){const errs=[],over=[];items.forEach((it,i)=>{const b=partIssues(it);if(b.length)errs.push({i:i,b:b});else if(oversizeOf(it))over.push(i);});return {errs:errs,over:over};}
+  function renderWarn(){const box=document.getElementById('orderWarn');if(!box)return;const v=validateOrder();let h='';if(v.errs.length)h+='<div class="warn err">⚠ '+v.errs.length+' part(s) with invalid size ('+v.errs.map(e=>'#'+(e.i+1)+' '+e.b.join('/')).join(', ')+') — fix before export / quote.</div>';if(v.over.length)h+='<div class="warn amber">⚠ '+v.over.length+' part(s) bigger than the current sheet ('+SHEETS[nestSize].label+'): '+v.over.map(i=>'#'+(i+1)).join(', ')+'. <button class="btn tiny" onclick="offerLargerForAll()">Use a larger sheet…</button></div>';box.innerHTML=h;}
+  function offerLargerForAll(){const v=validateOrder(),order=['8x4','10x4','10x5','jumbo'];let need=null,none=false;v.over.forEach(i=>{const k=smallestSheetFor(+items[i].w,+items[i].h);if(!k)none=true;else if(!need||order.indexOf(k)>order.indexOf(need))need=k;});if(!need){alert(none?'Some parts are too big for any available sheet size.':'Nothing to switch.');return;}if(confirm('This part does not fit the current sheet. Use a larger sheet ('+SHEETS[need].label+')?\n\nKabacal does not change sheet size automatically without your confirmation.')){nestSize=need;const ns=document.getElementById('nestSizeSel');if(ns)ns.value=need;render();}}
+
+  // ---- pricing settings (local for now) ----
+  function setPriceOv(kind,key,v){priceOverrides[kind+':'+key]=Math.max(0,Math.round(+v||0));try{localStorage.setItem('kab_prices',JSON.stringify(priceOverrides));}catch(e){}render();}
+  function svc(k){return priceOverrides['svc:'+k]||0;}
+  function resetPricing(){priceOverrides={};try{localStorage.setItem('kab_prices','{}');}catch(e){}closeModal();render();}
+  function openPricing(){
+    const mats=[];items.forEach(it=>{const ins=insertSpecFor(it);[it.mat,ins&&ins.mat].forEach(m=>{if(m&&mats.indexOf(m)<0)mats.push(m);});});
+    const rows=mats.length?mats.map(m=>'<tr><td>'+esc(m)+'</td><td><input type="number" value="'+priceForSheet(m,'8x4')+'" onchange="setPriceOv(\'mat\',\''+esc(m)+'\',this.value)"></td><td><input type="number" value="'+cncForThickness(m)+'" onchange="setPriceOv(\'cnc\',\''+esc(m)+'\',this.value)"></td></tr>').join(''):'<tr><td colspan="3" class="sub">Add parts to the order first.</td></tr>';
+    const html='<div class="sub">Edit the prices used in the quote. Saved on this computer for now (localStorage); a proper database comes later.</div>'
+      +'<table class="ptbl"><tr><th>Material</th><th>£/sheet (8x4)</th><th>£ CNC/sheet</th></tr>'+rows+'</table>'
+      +'<div style="margin-top:12px;font-weight:700">Services (£ / hour)</div>'
+      +'<div class="psvc"><label>Design <input type="number" value="'+svc('design')+'" onchange="setPriceOv(\'svc\',\'design\',this.value)" style="width:70px"></label><label>Cutting list <input type="number" value="'+svc('cutting')+'" onchange="setPriceOv(\'svc\',\'cutting\',this.value)" style="width:70px"></label><label>Assembly <input type="number" value="'+svc('assembly')+'" onchange="setPriceOv(\'svc\',\'assembly\',this.value)" style="width:70px"></label></div>'
+      +'<div style="margin-top:12px;text-align:right"><button class="btn ghost tiny" onclick="resetPricing()">Reset to defaults</button></div>';
+    openModal('Pricing settings',html);
+  }
+
+  // ---- Calculate / customer quote view ----
+  function openQuote(){
+    const v=validateOrder();if(v.errs.length){alert('Fix invalid parts before the quote:\n'+v.errs.map(e=>'• item '+(e.i+1)+': '+e.b.join(', ')).join('\n'));return;}
+    const groups=buildSheetGroups();let matRows='',mTot=0,cTot=0,sheetN=0;
+    groups.forEach((sheets,mat)=>{let mc=0,cc=0;sheets.forEach(s=>{mc+=priceForSheet(mat,s.sz);cc+=cncForThickness(mat);});sheetN+=sheets.length;mTot+=mc;cTot+=cc;matRows+='<tr><td>'+esc(mat)+'</td><td style="text-align:center">'+sheets.length+'</td><td style="text-align:right">'+money(mc)+'</td><td style="text-align:right">'+money(cc)+'</td></tr>';});
+    const doors=items.reduce((s,i)=>s+(+i.q||0),0),sub=mTot+cTot,vat=Math.round(sub*0.2),total=sub+vat;
+    const html='<div class="quote">'
+      +'<div class="q-head"><div><div class="q-brand">Kabacal</div><div class="sub">Quote</div></div><div style="text-align:right"><div><b>'+esc(project.number||'(no order #)')+'</b></div><div class="sub">'+esc(project.date||'')+'</div></div></div>'
+      +'<div class="q-client"><b>'+esc(project.client||'(client name)')+'</b>'+(project.notes?'<div class="sub">'+esc(project.notes)+'</div>':'')+'</div>'
+      +'<table class="ptbl"><tr><th>Material</th><th style="text-align:center">Sheets</th><th style="text-align:right">Material</th><th style="text-align:right">CNC</th></tr>'+(matRows||'<tr><td colspan="4" class="sub">No parts.</td></tr>')+'</table>'
+      +'<div class="q-tot"><div class="sumrow"><span class="k">Doors</span><span>'+doors+'</span></div><div class="sumrow"><span class="k">Sheets</span><span>'+sheetN+'</span></div><div class="sumrow"><span class="k">Material</span><span>'+money(mTot)+'</span></div><div class="sumrow"><span class="k">CNC service</span><span>'+money(cTot)+'</span></div><div class="sumrow"><span class="k">Subtotal</span><span>'+money(sub)+'</span></div><div class="sumrow"><span class="k">VAT 20%</span><span>'+money(vat)+'</span></div><div class="sumrow"><span class="k">Total</span><span class="total">'+money(total)+'</span></div></div>'
+      +'<div class="sub" style="margin-top:8px">Prices shown by material (not per line).'+(hideValues?' Values hidden — turn off View ▸ Hide values to show prices.':'')+'</div>'
+      +'</div>'
+      +'<div style="margin-top:10px;text-align:right"><button class="btn ghost tiny" onclick="window.print()">Print</button> <button class="btn ghost tiny" onclick="comingSoon(\'Download PDF (matching your template)\')">Download PDF (soon)</button></div>';
+    openModal('Calculate — customer quote view',html,true);
+  }
+
   buildMatUI();
+  genOrderNumber();
+  syncClientBar();
   render();
 </script>
 </body>
