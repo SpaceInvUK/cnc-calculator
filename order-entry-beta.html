@@ -47,6 +47,16 @@
   .q-client{margin:6px 0 4px}
   .q-tot{margin-top:12px;max-width:280px;margin-left:auto}
   .psvc{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:13px}
+  .tkText{width:100%;min-height:120px;border:1px solid var(--line);border-radius:8px;padding:8px;font-family:ui-monospace,Consolas,monospace;font-size:13px;margin-top:8px}
+  .tkDrop{border:2px dashed var(--line);border-radius:8px;padding:14px;text-align:center;color:var(--muted);font-size:13px;margin-top:8px}
+  .tkDrop.over{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
+  .tk-actions{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .tpl-add{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  .tpl-add input,.tpl-add select{padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff}
+  .tpl-list{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .tpl-item{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff}
+  .tpl-meta{flex:1;min-width:0}
+  .tpl-act{display:flex;gap:4px;align-items:center}
   @media print{body *{visibility:hidden}#modalOv,#modalOv *{visibility:visible}#modalOv{position:absolute;inset:0;background:#fff;display:block}#modalOv .zoomhead,#modalOv .zoomhead *{visibility:hidden}#modalOv .zoombox{box-shadow:none;width:auto;height:auto;max-width:100%}}
   .tabs{display:flex;gap:6px;margin-left:auto}
   .tab{padding:6px 14px;border-radius:999px;font-weight:700;font-size:13px;color:var(--muted);cursor:pointer}
@@ -218,7 +228,7 @@
     <div class="tabs">
       <span class="tab alt" onclick="openQuote()" title="Customer / quote view">Calculate</span>
       <span class="tab active">Order entry</span>
-      <span class="tab" onclick="comingSoonTakeoff()">Takeoff <span class="soon">soon</span></span>
+      <span class="tab" onclick="openTakeoff()">Takeoff</span>
       <span class="tab" onclick="comingSoon('Toolpaths')">Toolpaths <span class="soon">soon</span></span>
     </div>
   </div>
@@ -1058,7 +1068,104 @@
   function comingSoonTakeoff(){openModal('Takeoff — coming soon',"<div class=\"sub\">Takeoff will let you paste measurements, job info, images and DXF, then turn them into doors/parts. I'll rebuild it from the old app — send me the old Takeoff details when you're ready and I'll wire it up.</div>");}
   function openPanelling(){window.open('https://spaceinvuk.github.io/cnc-calculator/Cnc%20Calculator%20UI%20Test.html','_blank');}
   function dxfTemplates(){openDxfTemplates();}
-  function openDxfTemplates(){openModal('DXF Templates',"<div class=\"sub\">Saved DXF templates (profile / single-part / offcut, e.g. the Circle 300 offcut) will live here, stored locally for now. I'll rebuild this from the old app — send me the old DXF Templates details and I'll match it.</div><div class=\"soon\" style=\"display:inline-block;margin-top:8px\">coming soon</div>");}
+  // ===== DXF reader (Smart Takeoff + DXF Templates) =====
+  function dxfReadPairs(text){const L=String(text||'').replace(/\r/g,'').split('\n');const p=[];for(let i=0;i+1<L.length;i+=2)p.push([L[i].trim(),L[i+1]]);return p;}
+  function readDxfEntities(text){
+    const P=dxfReadPairs(text),n=P.length,ents=[];let start=0;
+    for(let k=0;k<n;k++){if(P[k][0]==='2'&&(P[k][1]||'').trim().toUpperCase()==='ENTITIES'){start=k+1;break;}}
+    let cur=null;const flush=()=>{if(cur){ents.push(cur);cur=null;}};
+    for(let k=start;k<n;k++){
+      const code=P[k][0],val=(P[k][1]==null?'':P[k][1]).trim();
+      if(code==='0'){const t=val.toUpperCase();
+        if(t==='ENDSEC'){flush();break;}
+        if(t==='VERTEX'){if(cur&&cur.sub==='pl')cur.inV=true;continue;}
+        if(t==='SEQEND')continue;
+        flush();
+        if(t==='LWPOLYLINE')cur={type:'POLY',sub:'lw',layer:'0',xs:[],ys:[],closed:false};
+        else if(t==='POLYLINE')cur={type:'POLY',sub:'pl',layer:'0',xs:[],ys:[],closed:false,inV:false};
+        else if(t==='LINE')cur={type:'LINE',layer:'0',xs:[],ys:[]};
+        else if(t==='CIRCLE'||t==='ARC')cur={type:t,layer:'0',cx:0,cy:0,r:0};
+        else cur=null;
+        continue;
+      }
+      if(!cur)continue;
+      if(code==='8'){cur.layer=val;continue;}
+      if(code==='70'){if(cur.type==='POLY')cur.closed=!!((parseInt(val)||0)&1);continue;}
+      const num=parseFloat(val);if(isNaN(num))continue;
+      if(code==='10'){if(cur.type==='CIRCLE'||cur.type==='ARC')cur.cx=num;else if(cur.sub==='pl'){if(cur.inV)cur.xs.push(num);}else cur.xs.push(num);continue;}
+      if(code==='20'){if(cur.type==='CIRCLE'||cur.type==='ARC')cur.cy=num;else if(cur.sub==='pl'){if(cur.inV)cur.ys.push(num);}else cur.ys.push(num);continue;}
+      if(code==='11'&&cur.type==='LINE'){cur.xs.push(num);continue;}
+      if(code==='21'&&cur.type==='LINE'){cur.ys.push(num);continue;}
+      if(code==='40'&&(cur.type==='CIRCLE'||cur.type==='ARC')){cur.r=num;continue;}
+    }
+    return ents.map(e=>{let xs=e.xs||[],ys=e.ys||[];if(e.type==='CIRCLE'||e.type==='ARC'){xs=[e.cx-e.r,e.cx+e.r];ys=[e.cy-e.r,e.cy+e.r];}if(!xs.length||!ys.length)return null;const minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs),minY=Math.min.apply(null,ys),maxY=Math.max.apply(null,ys);return {type:e.type,layer:e.layer,closed:!!e.closed,minX,maxX,minY,maxY,w:+(maxX-minX).toFixed(2),h:+(maxY-minY).toFixed(2),nPts:xs.length};}).filter(Boolean);
+  }
+  function dxfBounds(ents){if(!ents||!ents.length)return null;let a=1e9,b=-1e9,c=1e9,d=-1e9;ents.forEach(e=>{a=Math.min(a,e.minX);b=Math.max(b,e.maxX);c=Math.min(c,e.minY);d=Math.max(d,e.maxY);});return {minX:a,maxX:b,minY:c,maxY:d,w:+(b-a).toFixed(2),h:+(d-c).toFixed(2)};}
+  function parseDxfTemplate(text){const entities=readDxfEntities(text);const bounds=dxfBounds(entities);if(!entities.length||!bounds)throw new Error('No supported 2D DXF geometry found.');return {entities,layers:[...new Set(entities.map(e=>e.layer))].sort(),bounds};}
+  const TK_IGNORE=/sheet|offcut|^text$|offset|hinge|board|dim|shadow|poket|pocket|back_|reeded|out_10|in_22|out_insert/i;
+  function dxfTakeoffRects(text){const {entities}=parseDxfTemplate(text);const rects=entities.filter(e=>e.type==='POLY'&&e.closed&&e.w>20&&e.h>20&&!TK_IGNORE.test(e.layer));const map=new Map();rects.forEach(r=>{const k=Math.round(r.w)+'x'+Math.round(r.h);if(!map.has(k))map.set(k,{width:Math.round(r.w),height:Math.round(r.h),quantity:0});map.get(k).quantity++;});return [...map.values()];}
+
+  // ===== Smart Takeoff (paste text / drop DXF or text) =====
+  function tkShortcut(c){return ({D:'Door',E:'End panel',P:'Panel',G:'Glass',W:'Wall'})[c.toUpperCase()]||'';}
+  function parseTakeoffLine(line){
+    let raw=String(line||'').replace(/[×]/g,'x').replace(/\bby\b/gi,'x').replace(/[,;]/g,' ').replace(/\s+/g,' ').trim();
+    if(!raw)return null;let text='';
+    const sc=raw.match(/^\s*([DEPWG])(?:\b|:|-)/i);
+    if(sc){text=tkShortcut(sc[1]);raw=raw.slice(sc[0].length).trim();}
+    let m=raw.match(/(?:^|\s)(\d{1,2})\s*x\s*(\d+(?:\.\d+)?)\s*(?:mm)?\s*x\s*(\d+(?:\.\d+)?)/i);
+    if(m)return {quantity:+m[1],width:Math.round(+m[2]),height:Math.round(+m[3]),text};
+    m=raw.match(/(?:^|\s)(\d+(?:\.\d+)?)\s*(?:mm)?\s*x\s*(\d+(?:\.\d+)?)(?:\s*mm)?\s*x\s*(\d{1,2})/i);
+    if(m)return {quantity:+m[3],width:Math.round(+m[1]),height:Math.round(+m[2]),text};
+    m=raw.match(/(?:^|\s)(\d+(?:\.\d+)?)\s*(?:mm)?\s*x\s*(\d+(?:\.\d+)?)/i);
+    if(m)return {quantity:1,width:Math.round(+m[1]),height:Math.round(+m[2]),text};
+    return null;
+  }
+  function parseTakeoffText(text){
+    const lines=String(text||'').replace(/\r/g,'\n').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+    let parsed=lines.map(parseTakeoffLine).filter(it=>it&&it.width>0&&it.height>0);
+    if(parsed.length)return parsed;
+    const chunks=String(text||'').match(/(?:[DEPWG]\s+)?(?:\d{1,2}\s*x\s*)?\d+(?:\.\d+)?\s*(?:mm)?\s*x\s*\d+(?:\.\d+)?(?:\s*mm)?(?:\s*x\s*\d{1,2})?/gi)||[];
+    return chunks.map(parseTakeoffLine).filter(it=>it&&it.width>0&&it.height>0);
+  }
+  function addTakeoffItems(list){if(!list||!list.length)return 0;list.forEach(p=>{items.push(mkItem('flat',+p.width,+p.height,Math.max(1,+p.quantity||1),orderMaterial,nestSize,{t:0,r:0,b:0,l:0},null,p.text||'',{on:false},{offsetName:'None'}));});selItem=items.length-1;render();return list.reduce((s,p)=>s+Math.max(1,+p.quantity||1),0);}
+  function openTakeoff(){
+    const html='<div class="sub">Paste measurements (one per line) — e.g. <code>3 x 600 x 400</code>, <code>600x400</code>, or <code>D 450x900</code> (D/E/P/W/G = label). Or drop a <b>.dxf</b> / <b>.txt</b> file. Parts are added in the current material ('+esc(orderMaterial)+'). Image OCR — coming soon.</div>'
+      +'<textarea id="tkText" class="tkText" placeholder="3 x 600 x 400&#10;500 x 720&#10;D 450 x 900"></textarea>'
+      +'<div id="tkDrop" class="tkDrop">⤓ Drop a .dxf or .txt file here</div>'
+      +'<div class="tk-actions"><button class="btn primary" onclick="tkAddText()">Add parts</button> <button class="btn ghost" onclick="(document.getElementById(\'tkText\').value=\'\')">Clear</button> <span id="tkStatus" class="sub"></span></div>';
+    openModal('Smart Takeoff',html);
+    setTimeout(()=>{const d=document.getElementById('tkDrop');if(d){d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over');});d.addEventListener('dragleave',()=>d.classList.remove('over'));d.addEventListener('drop',tkDrop);}},30);
+  }
+  function tkAddText(){const t=document.getElementById('tkText'),st=document.getElementById('tkStatus');const n=addTakeoffItems(parseTakeoffText(t.value));st.textContent=n?('Added '+n+' part(s).'):'No dimensions found.';if(n)t.value='';}
+  function tkDrop(e){e.preventDefault();const d=e.currentTarget;d.classList.remove('over');const files=Array.from((e.dataTransfer&&e.dataTransfer.files)||[]);files.forEach(async f=>{const st=document.getElementById('tkStatus');try{if(/\.dxf$/i.test(f.name)){const n=addTakeoffItems(dxfTakeoffRects(await f.text()));st.textContent=n?('Added '+n+' part(s) from DXF.'):'No closed rectangles found in the DXF.';}else{const ta=document.getElementById('tkText');ta.value+=(ta.value?'\n':'')+await f.text();st.textContent='File loaded — review then press Add parts.';}}catch(err){st.textContent='Error: '+err.message;}});}
+
+  // ===== DXF Templates (door + offcut), saved locally =====
+  let customDoorTemplates=[],customOffcutTemplates=[];
+  try{customDoorTemplates=JSON.parse(localStorage.getItem('kab_doorTpl')||'[]');}catch(e){customDoorTemplates=[];}
+  try{customOffcutTemplates=JSON.parse(localStorage.getItem('kab_offcutTpl')||'[]');}catch(e){customOffcutTemplates=[];}
+  function saveDoorTpl(){try{localStorage.setItem('kab_doorTpl',JSON.stringify(customDoorTemplates));}catch(e){}}
+  function saveOffcutTpl(){try{localStorage.setItem('kab_offcutTpl',JSON.stringify(customOffcutTemplates));}catch(e){}}
+  function tplPreview(t){const b=t.bounds;if(!b)return '';const W=84,H=58,pad=4,sc=Math.min((W-2*pad)/(b.w||1),(H-2*pad)/(b.h||1));let s='<svg viewBox="0 0 '+W+' '+H+'" style="width:84px;height:58px;border:1px solid var(--line);border-radius:6px;background:#fff">';(t.entities||[]).forEach(e=>{const x=pad+(e.minX-b.minX)*sc,y=pad+(b.maxY-e.maxY)*sc,w=Math.max(0.5,e.w*sc),h=Math.max(0.5,e.h*sc);if(e.type==='CIRCLE'||e.type==='ARC')s+='<ellipse cx="'+(x+w/2).toFixed(1)+'" cy="'+(y+h/2).toFixed(1)+'" rx="'+(w/2).toFixed(1)+'" ry="'+(h/2).toFixed(1)+'" fill="none" stroke="#334155" stroke-width="0.6"/>';else s+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" fill="none" stroke="#334155" stroke-width="0.6"/>';});return s+'</svg>';}
+  function renderTplLists(){
+    const dl=document.getElementById('doorTplList'),ol=document.getElementById('offcutTplList');
+    if(dl)dl.innerHTML=customDoorTemplates.length?customDoorTemplates.map((t,i)=>'<div class="tpl-item">'+tplPreview(t)+'<div class="tpl-meta"><b>'+esc(t.name)+'</b><div class="sub">'+(t.construction||'profile')+' · '+Math.round(t.bounds.w)+'×'+Math.round(t.bounds.h)+'mm · '+t.layers.length+' layer(s)</div></div><div class="tpl-act"><button class="btn ghost tiny" onclick="useDoorTpl('+i+')">＋ Add as part</button><button class="iconbtn" title="Delete" onclick="delDoorTpl('+i+')">✕</button></div></div>').join(''):'<div class="sub">No door templates yet.</div>';
+    if(ol)ol.innerHTML=customOffcutTemplates.length?customOffcutTemplates.map((t,i)=>'<div class="tpl-item">'+tplPreview(t)+'<div class="tpl-meta"><b>'+esc(t.name)+'</b><div class="sub">'+Math.round(t.bounds.w)+'×'+Math.round(t.bounds.h)+'mm</div></div><div class="tpl-act"><button class="iconbtn" title="Delete" onclick="delOffcutTpl('+i+')">✕</button></div></div>').join(''):'<div class="sub">No offcut templates yet.</div>';
+  }
+  function openDxfTemplates(){
+    const html='<div class="sub">Saved on this computer for now (localStorage); a database comes later. Door templates can be dropped into the order; full geometry-driven cutting/offset rules come later.</div>'
+      +'<div style="margin-top:12px;font-weight:700">Door templates</div>'
+      +'<div class="tpl-add"><input id="dtName" type="text" placeholder="Door type name"><select id="dtRule"><option value="profile">Profile section</option><option value="single">Single DXF piece</option><option value="flushback-insert">Frame + insert</option></select><input id="dtFile" type="file" accept=".dxf,text/plain"><button class="btn ghost tiny" onclick="addDoorTpl()">Add door type</button></div>'
+      +'<div id="doorTplList" class="tpl-list"></div>'
+      +'<div style="margin-top:16px;font-weight:700">Offcut templates</div>'
+      +'<div class="tpl-add"><input id="ofName" type="text" placeholder="Offcut name"><input id="ofFile" type="file" accept=".dxf,text/plain"><button class="btn ghost tiny" onclick="addOffcutTpl()">Add offcut</button></div>'
+      +'<div id="offcutTplList" class="tpl-list"></div>';
+    openModal('DXF Templates',html,true);renderTplLists();
+  }
+  async function addDoorTpl(){const fi=document.getElementById('dtFile');const f=fi.files[0];if(!f){alert('Choose a DXF file first.');return;}const nm=(document.getElementById('dtName').value||f.name.replace(/\.dxf$/i,'')).trim();const rule=document.getElementById('dtRule').value;try{const parsed=parseDxfTemplate(await f.text());customDoorTemplates.push(Object.assign({id:'tpl_'+Date.now().toString(36),name:nm,construction:rule,createdAt:new Date().toISOString()},parsed));saveDoorTpl();document.getElementById('dtName').value='';fi.value='';renderTplLists();}catch(e){alert('DXF error: '+e.message);}}
+  async function addOffcutTpl(){const fi=document.getElementById('ofFile');const f=fi.files[0];if(!f){alert('Choose a DXF file first.');return;}const nm=(document.getElementById('ofName').value||f.name.replace(/\.dxf$/i,'')).trim();try{const parsed=parseDxfTemplate(await f.text());customOffcutTemplates.push(Object.assign({id:'off_'+Date.now().toString(36),name:nm,createdAt:new Date().toISOString()},parsed));saveOffcutTpl();document.getElementById('ofName').value='';fi.value='';renderTplLists();}catch(e){alert('DXF error: '+e.message);}}
+  function delDoorTpl(i){customDoorTemplates.splice(i,1);saveDoorTpl();renderTplLists();}
+  function delOffcutTpl(i){customOffcutTemplates.splice(i,1);saveOffcutTpl();renderTplLists();}
+  function useDoorTpl(i){const t=customDoorTemplates[i];if(!t)return;items.push(mkItem('flat',Math.round(t.bounds.w),Math.round(t.bounds.h),1,orderMaterial,nestSize,{t:50,r:50,b:50,l:50},null,t.name,{on:false},{offsetName:'None'}));selItem=items.length-1;closeModal();render();}
 
   // ---- state: hide values, project, pricing overrides ----
   let hideValues=false;
