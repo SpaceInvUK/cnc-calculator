@@ -67,7 +67,8 @@
   .tab.alt{background:var(--blue);color:#fff}
 
   .wrap{max-width:none;margin:12px 0;padding:0 14px}
-  .topstrip{max-width:none;margin:14px 0 0;padding:0 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+  .clientstrip{max-width:none;margin:12px 0 0;padding:0 14px}
+  .topstrip{max-width:none;margin:10px 0 0;padding:0 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
   @media(max-width:920px){.topstrip{grid-template-columns:1fr}}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
   .card h2{margin:0 0 4px;font-size:15px}
@@ -236,6 +237,18 @@
     </div>
   </div>
 
+  <div class="clientstrip">
+    <div class="card" style="padding:10px 14px">
+      <div class="client-bar" style="margin:0">
+        <div class="cb-field" style="flex:1.4;min-width:150px"><label>Client</label><input id="cbClient" type="text" placeholder="Customer name" oninput="setProject('client',this.value)"></div>
+        <div class="cb-field"><label>Phone</label><input id="cbPhone" type="text" placeholder="optional" oninput="setProject('phone',this.value)"></div>
+        <div class="cb-field"><label>Email</label><input id="cbEmail" type="text" placeholder="optional" oninput="setProject('email',this.value)"></div>
+        <div class="cb-field"><label>Order #</label><div style="display:flex;gap:4px;align-items:center"><input id="cbNum" type="text" placeholder="auto" oninput="setProject('number',this.value)"><span class="link" title="Auto-generate order number" onclick="genOrderNumber(true)">↻</span></div></div>
+        <div class="cb-field"><label>Date</label><input id="cbDate" type="date" oninput="setProject('date',this.value)"></div>
+        <div class="cb-field" style="flex:1.4;min-width:150px"><label>Notes / reference</label><input id="cbNotes" type="text" placeholder="optional" oninput="setProject('notes',this.value)"></div>
+      </div>
+    </div>
+  </div>
   <div class="topstrip">
     <div class="card">
       <h2>Material pricing</h2>
@@ -268,13 +281,6 @@
       <div class="card">
         <h2>New order — add the customer's items</h2>
         <div class="hint">One list. Each line is a door/part with its own type, size, finish and offset. Mix Flat / Traditional / Flushback / Reeded in the same list — no separate blocks.</div>
-
-        <div class="client-bar">
-          <div class="cb-field"><label>Client</label><input id="cbClient" type="text" placeholder="Customer name" oninput="setProject('client',this.value)"></div>
-          <div class="cb-field"><label>Order #</label><div style="display:flex;gap:4px;align-items:center"><input id="cbNum" type="text" placeholder="auto" oninput="setProject('number',this.value)"><span class="link" title="Auto-generate order number" onclick="genOrderNumber(true)">↻</span></div></div>
-          <div class="cb-field"><label>Date</label><input id="cbDate" type="date" oninput="setProject('date',this.value)"></div>
-          <div class="cb-field" style="flex:1;min-width:160px"><label>Notes / reference</label><input id="cbNotes" type="text" placeholder="optional" oninput="setProject('notes',this.value)"></div>
-        </div>
 
         <div class="matbar">
           <span class="sub" style="font-weight:700">Quick material:</span>
@@ -897,7 +903,8 @@
       const ins=insertSpecFor(it);const h=hingeInfo(it);const f=resolveFrame(it);const el=enabledLines(it);
       for(let n=0;n<(+it.q||0);n++){
         add(it.mat,{key:i+'_'+n,w:+it.w||0,h:+it.h||0,color:TYPES[it.type].color,name:TYPES[it.type].name,type:it.type,text:it.text||'',grain:!!it.grain,frame:f,lines:el,hinge:h});
-        if(it.pocketSide==='front-back') add(it.mat,{key:i+'_'+n+'_b',w:+it.w||0,h:+it.h||0,color:TYPES[it.type].color,name:TYPES[it.type].name+' (back)',type:it.type,text:'BACK',grain:!!it.grain,frame:f,lines:el.slice(0,1),hinge:{on:false},isBack:true});
+        // NOTE: Front+Back is the SAME physical part machined on both faces — not a separate nested part.
+        // It does not consume extra material; it adds machining only (handled in service maths). So no back part here.
         if(ins) add(ins.mat,{key:i+'_'+n+'_i',w:ins.w,h:ins.h,color:ins.color,name:'Insert',isInsert:true,insTh:ins.insTh,kind:ins.kind,text:(it.text||TYPES[it.type].name),grain:false,frame:{t:0,r:0,b:0,l:0},lines:[],hinge:{on:false}});
       }
     });
@@ -909,6 +916,8 @@
   function cavPlace(cav,pw,ph){const g=cav.g;if(cav.cx+pw<=cav.w&&cav.cy+ph<=cav.h){const r={x:cav.x0+cav.cx,y:cav.y0+cav.cy};cav.cx+=pw+g;cav.rowH=Math.max(cav.rowH,ph);return r;}const ny=cav.cy+cav.rowH+g;if(pw<=cav.w&&ny+ph<=cav.h){cav.cx=pw+g;cav.cy=ny;cav.rowH=ph;return {x:cav.x0,y:cav.y0+ny};}return null;}
   function regCavity(cavities,sheetIdx,p,px,py,pw,ph,g){const f=p.frame||{t:0,r:0,b:0,l:0};let il=f.l,ir=f.r,it2=f.t,ib=f.b;if(pw!==p.w){il=f.t;ir=f.b;it2=f.l;ib=f.r;}const cw=pw-il-ir-2*g,ch=ph-it2-ib-2*g;if(cw>=120&&ch>=120)cavities.push({sheet:sheetIdx,x0:px+il+g,y0:py+it2+g,w:cw,h:ch,cx:0,cy:0,rowH:0,g:g});}
   function fillCavity(cavities,push,p){for(const cav of cavities){let pw=p.w,ph=p.h;if(p.grain&&ph>pw){const t=pw;pw=ph;ph=t;}let pos=cavPlace(cav,pw,ph);if(!pos&&!p.grain){const r2=cavPlace(cav,ph,pw);if(r2){const t=pw;pw=ph;ph=t;pos=r2;}}if(pos){push(cav.sheet,Object.assign({},p,{x:pos.x,y:pos.y,w:pw,h:ph,rot:(pw!==p.w)?90:0,inCav:true}));return true;}}return false;}
+  // orient a part to whichever way fits the sheet — rotate ONLY if it doesn't fit as entered (item 8). Rigid keeps long side along grain.
+  function orientFor(p,uW,uH){if(p.grain){const o=rigidOrient(p);return {w:o.w,h:o.h};}const w=p.w,h=p.h,fit=(a,b)=>a<=uW&&b<=uH;if(!fit(w,h)&&fit(h,w))return {w:h,h:w};return {w:w,h:h};}
   function autoPack(mat,parts){
     parts=parts.slice().sort((a,b)=>b.h-a.h);
     const sheets=[];let idx=-1,cur=null;const cavities=[];
@@ -917,10 +926,9 @@
     const pushTo=(si,part)=>sheets[si].parts.push(part);
     parts.forEach(p=>{
       if(!isHost(p)&&!p.isInsert&&fillCavity(cavities,pushTo,p))return;
-      let o=rigidOrient(p),pw=o.w,ph=o.h;
-      if(!p.grain&&pw>cur.uW&&ph<=cur.uW){const t=pw;pw=ph;ph=t;}
+      let o=orientFor(p,cur.uW,cur.uH),pw=o.w,ph=o.h;
       if(cur.x+pw>cur.g+cur.uW){cur.x=cur.g;cur.y+=cur.rowH+cur.g;cur.rowH=0;}
-      if(cur.y+ph>cur.g+cur.uH){start();o=rigidOrient(p);pw=o.w;ph=o.h;if(!p.grain&&pw>cur.uW&&ph<=cur.uW){const t=pw;pw=ph;ph=t;}}
+      if(cur.y+ph>cur.g+cur.uH){start();o=orientFor(p,cur.uW,cur.uH);pw=o.w;ph=o.h;}
       const px=cur.x,py=cur.y;
       cur.parts.push(Object.assign({},p,{x:px,y:py,w:pw,h:ph,rot:(pw!==p.w)?90:0}));
       cur.x+=pw+cur.g;cur.rowH=Math.max(cur.rowH,ph);
@@ -929,12 +937,11 @@
     return sheets;
   }
   function packInto(m,parts){
-    const S=m.S,g=m.g,uW=S.w-2*g;let x=g,y=g,rowH=0;const out=[];const cavities=[];
+    const S=m.S,g=m.g,uW=S.w-2*g,uH=(S.uh||S.h)-2*g;let x=g,y=g,rowH=0;const out=[];const cavities=[];
     const pushTo=(si,part)=>out.push(part);
     parts.slice().sort((a,b)=>b.h-a.h).forEach(p=>{
       if(!isHost(p)&&!p.isInsert&&fillCavity(cavities,pushTo,p))return;
-      let o=rigidOrient(p),pw=o.w,ph=o.h;
-      if(!p.grain&&pw>uW&&ph<=uW){const t=pw;pw=ph;ph=t;}
+      let o=orientFor(p,uW,uH),pw=o.w,ph=o.h;
       if(x+pw>g+uW){x=g;y+=rowH+g;rowH=0;}
       const px=x,py=y;
       out.push(Object.assign({},p,{x:px,y:py,w:pw,h:ph,rot:(pw!==p.w)?90:0}));
@@ -1204,13 +1211,13 @@
 
   // ---- state: hide values, project, pricing overrides ----
   let hideValues=false;
-  let project={client:'',number:'',date:new Date().toISOString().slice(0,10),notes:''};
+  let project={client:'',phone:'',email:'',number:'',date:new Date().toISOString().slice(0,10),notes:''};
   let priceOverrides={};try{priceOverrides=JSON.parse(localStorage.getItem('kab_prices')||'{}');}catch(e){priceOverrides={};}
   function money(n){return hideValues?'•••':('£'+Math.round(+n||0));}
   function toggleHideValues(){hideValues=!hideValues;render();}
   function updateHVCheck(){const c=document.getElementById('hvCheck');if(c)c.textContent=hideValues?'☑':'☐';}
   function setProject(k,v){project[k]=v;}
-  function syncClientBar(){const m={cbClient:'client',cbNum:'number',cbDate:'date',cbNotes:'notes'};for(const id in m){const el=document.getElementById(id);if(el)el.value=project[m[id]]||'';}}
+  function syncClientBar(){const m={cbClient:'client',cbPhone:'phone',cbEmail:'email',cbNum:'number',cbDate:'date',cbNotes:'notes'};for(const id in m){const el=document.getElementById(id);if(el)el.value=project[m[id]]||'';}}
   function genOrderNumber(force){if(project.number&&!force)return;const ini=((project.client||'').match(/[A-Za-z]+/g)||[]).map(w=>w[0]).join('').slice(0,3).toUpperCase()||'ORD';const d=(project.date||new Date().toISOString().slice(0,10)).replace(/-/g,'');let seq=(+(localStorage.getItem('kab_seq')||'0'))+1;try{localStorage.setItem('kab_seq',seq);}catch(e){}project.number=ini+'-'+d+'-'+String(seq).padStart(3,'0');syncClientBar();}
 
   // ---- undo / redo (auto-snapshot on change) ----
@@ -1276,7 +1283,7 @@
   function openPrintWindow(title,inner){
     const w=window.open('','_blank');
     if(!w){alert('Popup blocked — allow popups for this page to print / save the PDF.');return;}
-    const css='*{box-sizing:border-box}body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;margin:0;padding:22px;font-size:13px}.doc{max-width:760px;margin:0 auto}.toolbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px}.toolbar button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer}.toolbar button.primary{background:#2563eb;color:#fff;border-color:#2563eb}.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0f172a;padding-bottom:10px;margin-bottom:12px}.brand{font-size:26px;font-weight:900;color:#2563eb;letter-spacing:.4px}.meta{color:#475569;margin:2px 0}.meta b{color:#0f172a}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border-bottom:1px solid #e2e8f0;padding:7px 8px;text-align:left;font-size:12px;vertical-align:top}th{background:#f8fafc;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#64748b}td.r,th.r{text-align:right}td.c,th.c{text-align:center}.totbox{max-width:300px;margin-left:auto;margin-top:10px}.totbox .row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e2e8f0}.totbox .row.grand{border-bottom:0;border-top:2px solid #0f172a;font-size:18px;font-weight:900;margin-top:4px;padding-top:8px}.notes{margin-top:14px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px}.foot{margin-top:22px;color:#94a3b8;font-size:11px;text-align:center}.qhead{text-align:center;border-bottom:2px solid #0f172a;padding-bottom:12px;margin-bottom:14px}.qbrand{font-size:30px;font-weight:900;letter-spacing:6px}.qtag{font-size:11px;letter-spacing:4px;color:#64748b}.qco{font-weight:800;margin-top:8px;font-size:13px}.qco2{font-size:11px;color:#475569}.qinfo{display:flex;gap:12px;margin:10px 0}.qbox{flex:1;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px}.qbox-l{font-size:10px;letter-spacing:.06em;color:#64748b;font-weight:700}.qbox-v{font-weight:800;font-size:15px;margin-top:2px}.qsec{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#64748b;font-weight:800;border-bottom:1px solid #e2e8f0;padding-bottom:5px;margin:18px 0 10px}.msum-card{border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:10px;break-inside:avoid}.msum-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}.msum-name{font-size:16px;font-weight:800}.msum-sub{font-size:12px;color:#64748b;font-weight:600}.msum-total{font-size:20px;font-weight:900}.msum-block{border:1px solid #eef2f7;border-radius:9px;padding:8px 10px;margin-top:8px}.msum-blab{font-size:10px;letter-spacing:.06em;color:#185fa5;font-weight:800;margin-bottom:4px}.msum-row{display:flex;justify-content:space-between;padding:3px 0;font-size:13px}.msum-row span:last-child{font-weight:700}.qtot{display:flex;justify-content:space-between;align-items:center;border:2px solid #0f172a;border-radius:12px;padding:14px 18px}.qtot-lab{font-size:13px;letter-spacing:.05em;color:#64748b;font-weight:800}.qtot-sub{font-size:12px;color:#64748b}.qtot-big{font-size:30px;font-weight:900}.qtot-inc{font-size:13px;font-weight:800;color:#185fa5}.parts-mat{font-weight:800;font-size:13px;margin:10px 0 2px}.dwg-h{font-weight:800;font-size:14px;margin:10px 0 6px}.dwg-sheet{border:1px solid #e2e8f0;border-radius:10px;padding:8px;margin-bottom:8px;break-inside:avoid}.dwg-cap{font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px}.dwg-svg{width:100%;height:auto;background:#fff;border:1px solid #eef2f7;border-radius:6px;display:block}@media print{.toolbar{display:none}body{padding:0}.doc{max-width:none}@page{margin:12mm}tr{break-inside:avoid}.qsec{break-after:avoid}}';
+    const css='*{box-sizing:border-box}body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;margin:0;padding:16px;font-size:12px}.doc{max-width:760px;margin:0 auto}.toolbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:10px}.toolbar button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer}.toolbar button.primary{background:#2563eb;color:#fff;border-color:#2563eb}.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f172a;padding-bottom:8px;margin-bottom:10px}.brand{font-size:22px;font-weight:900;color:#2563eb;letter-spacing:.4px}.meta{color:#475569;margin:1px 0}.meta b{color:#0f172a}table{width:100%;border-collapse:collapse;margin:6px 0}th,td{border-bottom:1px solid #e8edf3;padding:4px 6px;text-align:left;font-size:11px;vertical-align:top}th{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:#64748b;border-bottom:1px solid #cbd5e1}td.r,th.r{text-align:right}td.c,th.c{text-align:center}.totbox{max-width:280px;margin-left:auto;margin-top:8px}.totbox .row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #e2e8f0}.totbox .row.grand{border-bottom:0;border-top:2px solid #0f172a;font-size:16px;font-weight:900;margin-top:3px;padding-top:6px}.notes,.qnote{margin-top:8px;padding:7px 9px;background:#f8fafc;border:1px solid #e8edf3;border-radius:6px;font-size:11px}.foot{margin-top:14px;color:#94a3b8;font-size:10px;text-align:center}.qhead{text-align:center;border-bottom:2px solid #0f172a;padding-bottom:6px;margin-bottom:8px}.qbrand{font-size:22px;font-weight:900;letter-spacing:4px}.qtag{font-size:10px;color:#64748b;margin-top:2px}.qinfo{display:flex;gap:8px;margin:8px 0}.qbox{flex:1;border:1px solid #e8edf3;border-radius:7px;padding:5px 8px}.qbox-l{font-size:9px;letter-spacing:.05em;color:#64748b;font-weight:700;display:block}.qbox-v{font-weight:800;font-size:12px}.qsec{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#64748b;font-weight:800;border-bottom:1px solid #e2e8f0;padding-bottom:3px;margin:12px 0 6px}.msum tbody tr:last-child td{font-weight:700}.qtot{display:flex;justify-content:space-between;align-items:center;border:1.5px solid #0f172a;border-radius:9px;padding:9px 14px;margin-top:8px}.qtot-lab{font-size:11px;letter-spacing:.04em;color:#64748b;font-weight:800}.qtot-sub{font-size:11px;color:#64748b}.qtot-big{font-size:24px;font-weight:900}.qtot-inc{font-size:12px;font-weight:800;color:#185fa5}.parts-mat{font-weight:800;font-size:11px;margin:8px 0 1px}.dwg-page{break-inside:avoid}.dwg-sheet{border:1px solid #e8edf3;border-radius:7px;padding:5px;margin-bottom:6px;break-inside:avoid}.dwg-cap{font-size:10px;color:#64748b;font-weight:700;margin-bottom:3px}.dwg-svg{width:100%;height:auto;max-height:72mm;background:#fff;display:block}@media print{.toolbar{display:none}body{padding:0}.doc{max-width:none}@page{margin:10mm}tr{break-inside:avoid}.qsec{break-after:avoid}.dwg-page{break-after:page}.dwg-page:last-child{break-after:auto}}';
     w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body><div class="doc"><div class="toolbar"><button class="primary" onclick="window.print()">Print / Save as PDF</button><button onclick="window.close()">Close</button></div>'+inner+'</div></body></html>');
     w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch(e){}},400);
   }
@@ -1290,34 +1297,31 @@
     return h;
   }
   function printSheetsHtml(){
-    const groups=buildSheetGroups();let h='';
-    groups.forEach((sheets,mat)=>{
-      h+='<div class="dwg-h">'+esc(mat)+' — drawings</div>';
-      sheets.forEach((sh,idx)=>{
-        const S=sh.S,vbW=Math.round(S.w/10),vbH=Math.round(S.h/10);
-        let svg='<svg class="dwg-svg" viewBox="0 0 '+vbW+' '+vbH+'"><rect x="0.25" y="0.25" width="'+(vbW-0.5).toFixed(1)+'" height="'+(vbH-0.5).toFixed(1)+'" fill="#fff" stroke="#cbd5e1" stroke-width="0.4"/>';
-        if(S.uh&&S.uh<S.h)svg+='<rect x="0.25" y="'+(S.uh/10).toFixed(1)+'" width="'+(vbW-0.5).toFixed(1)+'" height="'+((S.h-S.uh)/10).toFixed(1)+'" fill="#fee2e2"/>';
-        sh.parts.forEach(p=>{svg+=drawPart(p,false);});svg+='</svg>';
-        h+='<div class="dwg-sheet"><div class="dwg-cap">Sheet '+(idx+1)+' · '+SHEETS[sh.sz].label+' · '+sh.parts.length+' part'+(sh.parts.length===1?'':'s')+'</div>'+svg+'</div>';
-      });
-    });
+    const groups=buildSheetGroups();const blocks=[];
+    groups.forEach((sheets,mat)=>{sheets.forEach((sh,idx)=>{
+      const S=sh.S,vbW=Math.round(S.w/10),vbH=Math.round(S.h/10);
+      let svg='<svg class="dwg-svg" viewBox="0 0 '+vbW+' '+vbH+'"><rect x="0.25" y="0.25" width="'+(vbW-0.5).toFixed(1)+'" height="'+(vbH-0.5).toFixed(1)+'" fill="#fff" stroke="#cbd5e1" stroke-width="0.4"/>';
+      if(S.uh&&S.uh<S.h)svg+='<rect x="0.25" y="'+(S.uh/10).toFixed(1)+'" width="'+(vbW-0.5).toFixed(1)+'" height="'+((S.h-S.uh)/10).toFixed(1)+'" fill="#fee2e2"/>';
+      sh.parts.forEach(p=>{if(!p.isBack)svg+=drawPart(p,false);});svg+='</svg>';   // back not shown in customer drawings (item 5)
+      blocks.push('<div class="dwg-sheet"><div class="dwg-cap">'+esc(parseMat(mat).name+' '+parseMat(mat).th)+' · Sheet '+(idx+1)+' · '+SHEETS[sh.sz].label+' · '+sh.parts.filter(p=>!p.isBack).length+' parts</div>'+svg+'</div>');
+    });});
+    if(!blocks.length)return '<div class="sub">No sheets.</div>';
+    let h='';for(let i=0;i<blocks.length;i+=3)h+='<div class="dwg-page">'+blocks.slice(i,i+3).join('')+'</div>';   // ~3 sheets per page (item 7)
     return h;
   }
   function buildQuoteHtml(){
     const d=quoteData();
-    const cards=d.rows.map(r=>'<div class="msum-card"><div class="msum-top"><div><div class="msum-name">'+esc(r.mat)+'</div><div class="msum-sub">'+r.sheets+' sheet'+(r.sheets===1?'':'s')+' · '+r.parts+' parts</div></div><div class="msum-total">'+moneyP(r.mc+r.cc)+'</div></div>'
-      +'<div class="msum-block"><div class="msum-blab">Material</div><div class="msum-row"><span>Sheet price</span><span>'+(r.uniform?moneyP(r.sheetUnit)+' × '+r.sheets:'—')+'</span></div><div class="msum-row"><span>Material subtotal</span><span>'+moneyP(r.mc)+'</span></div></div>'
-      +'<div class="msum-block"><div class="msum-blab">CNC service</div><div class="msum-row"><span>CNC per sheet</span><span>'+moneyP(r.cncUnit)+' × '+r.sheets+'</span></div><div class="msum-row"><span>CNC total</span><span>'+moneyP(r.cc)+'</span></div></div></div>').join('')||'<div class="sub">No parts.</div>';
-    const totals='<div class="qtot"><div><div class="qtot-lab">TOTAL EX VAT</div>'+(vatOn?'<div class="qtot-sub">Plus VAT '+moneyP(d.vat)+'</div>':'')+'</div><div style="text-align:right"><div class="qtot-big">'+moneyP(d.sub)+'</div>'+(vatOn?'<div class="qtot-inc">Total inc VAT '+moneyP(d.total)+'</div>':'')+'</div></div>';
-    return '<div class="qhead"><div class="qbrand">FAST CNC</div><div class="qtag">CUTTING SERVICE</div><div class="qco">FAST CNC SERVICES</div><div class="qco2">Upminster Lodge Farm, Tomkyns Ln, Upminster RM14 1TP</div><div class="qco2">Phone: 01708 349993 &nbsp;|&nbsp; Instagram: @fastcncservices</div></div>'
-      +'<div class="qinfo"><div class="qbox"><div class="qbox-l">QUOTE NUMBER</div><div class="qbox-v">'+esc(project.number||'—')+'</div></div><div class="qbox"><div class="qbox-l">DATE</div><div class="qbox-v">'+esc(fmtDate(project.date))+'</div></div></div>'
-      +'<div class="qinfo"><div class="qbox"><div class="qbox-l">PREPARED FOR</div><div class="qbox-v">'+esc(project.client||'—')+'</div></div><div class="qbox"><div class="qbox-l">CONTACT</div><div class="qbox-v">'+esc(project.contact||'--')+'</div></div></div>'
-      +'<div class="qsec">Materials summary</div>'+cards
-      +'<div class="qsec">Totals · '+d.partN+' parts · '+d.sheetN+' sheets</div>'+totals
+    const matRows=d.rows.map(r=>'<tr><td>'+esc(r.mat)+'</td><td class="c">'+r.sheets+'</td><td class="c">'+r.parts+'</td><td class="r">'+moneyP(r.mc)+'</td><td class="r">'+moneyP(r.cc)+'</td><td class="r">'+moneyP(r.mc+r.cc)+'</td></tr>').join('')||'<tr><td colspan="6">No parts.</td></tr>';
+    const totals='<div class="qtot"><div><div class="qtot-lab">TOTAL EX VAT</div>'+(vatOn?'<div class="qtot-sub">Plus VAT '+moneyP(d.vat)+'</div>':'')+'</div><div style="text-align:right"><div class="qtot-big">'+moneyP(d.sub)+'</div>'+(vatOn?'<div class="qtot-inc">Inc VAT '+moneyP(d.total)+'</div>':'')+'</div></div>';
+    return '<div class="qhead"><div class="qbrand">FAST CNC</div><div class="qtag">CUTTING SERVICE · Upminster Lodge Farm, Tomkyns Ln, Upminster RM14 1TP · 01708 349993 · @fastcncservices</div></div>'
+      +'<div class="qinfo"><div class="qbox"><span class="qbox-l">QUOTE</span><span class="qbox-v">'+esc(project.number||'—')+'</span></div><div class="qbox"><span class="qbox-l">DATE</span><span class="qbox-v">'+esc(fmtDate(project.date))+'</span></div><div class="qbox"><span class="qbox-l">CLIENT</span><span class="qbox-v">'+esc(project.client||'—')+'</span></div><div class="qbox"><span class="qbox-l">CONTACT</span><span class="qbox-v">'+esc([project.phone,project.email].filter(Boolean).join(' · ')||'--')+'</span></div></div>'
+      +'<div class="qsec">Materials &amp; service · '+d.partN+' parts · '+d.sheetN+' sheets</div>'
+      +'<table class="msum"><thead><tr><th>Material / sheet type</th><th class="c">Sheets</th><th class="c">Parts</th><th class="r">Material</th><th class="r">CNC / service</th><th class="r">Total</th></tr></thead><tbody>'+matRows+'</tbody></table>'
+      +totals
       +'<div class="qsec">Parts</div>'+partsTableHtml()
-      +(project.notes?'<div class="notes"><b>Notes</b><br>'+esc(project.notes)+'</div>':'')
+      +(project.notes?'<div class="qnote"><b>Notes:</b> '+esc(project.notes)+'</div>':'')
       +'<div class="qsec">Drawings</div>'+printSheetsHtml()
-      +'<div class="foot">Generated by Kabacal · FAST CNC Services</div>';
+      +'<div class="foot">Generated by Kabacal · Quote valid 30 days · FAST CNC Services</div>';
   }
   function cutFrame(it){const f=resolveFrame(it);const active=(it.lines&&it.lines[0]&&it.lines[0].en)||it.type!=='flat';if(!active)return '—';return (f.t===f.r&&f.r===f.b&&f.b===f.l)?(f.t+'mm'):('T'+f.t+' R'+f.r+' B'+f.b+' L'+f.l);}
   function cutOffset(it){const e=enabledLines(it);if(!e.length)return '—';return e.map(l=>l.L).join('')+(it.pocketSide==='front-back'?' F+B':'')+(e.some(l=>l.rd)?' rnd':'');}
