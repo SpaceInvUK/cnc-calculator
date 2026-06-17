@@ -255,7 +255,7 @@
       <h2>Order summary</h2>
       <div class="sub" style="margin:-4px 0 8px">Live totals. Open <b>Calculate</b> for the customer quote view.</div>
       <div class="sumrow"><span class="k">Line items</span><span id="sItems">0</span></div>
-      <div class="sumrow"><span class="k">Doors (total)</span><span id="sDoors">0</span></div>
+      <div class="sumrow"><span class="k">Parts (total)</span><span id="sDoors">0</span></div>
       <div class="sumrow"><span class="k">Sheets (est.)</span><span id="sSheets">0</span></div>
       <div class="sumrow"><span class="k">Material</span><span id="sMat">£0</span></div>
       <div class="sumrow"><span class="k">CNC service</span><span id="sCnc">£0</span></div>
@@ -1252,10 +1252,10 @@
   function toggleVat(v){vatOn=!!v;openQuote();}
   function moneyP(n){return '£'+Math.round(+n||0).toLocaleString('en-GB');}
   function quoteData(){
-    const groups=buildSheetGroups();const rows=[];let mTot=0,cTot=0,sheetN=0;
-    groups.forEach((sheets,mat)=>{let mc=0,cc=0;sheets.forEach(s=>{mc+=priceForSheet(mat,s.sz);cc+=cncForThickness(mat);});sheetN+=sheets.length;mTot+=mc;cTot+=cc;rows.push({mat,sheets:sheets.length,mc,cc});});
-    const sub=mTot+cTot,vat=Math.round(sub*0.2),total=sub+(vatOn?vat:0),doors=items.reduce((s,i)=>s+(+i.q||0),0);
-    return {rows,mTot,cTot,sheetN,sub,vat,total,doors};
+    const groups=buildSheetGroups();const rows=[];let mTot=0,cTot=0,sheetN=0,partN=0;
+    groups.forEach((sheets,mat)=>{let mc=0,cc=0,pc=0;const szs={};sheets.forEach(s=>{mc+=priceForSheet(mat,s.sz);cc+=cncForThickness(mat);pc+=s.parts.length;szs[s.sz]=1;});sheetN+=sheets.length;partN+=pc;mTot+=mc;cTot+=cc;rows.push({mat,sheets:sheets.length,parts:pc,mc,cc,cncUnit:cncForThickness(mat),sheetUnit:priceForSheet(mat,sheets[0]?sheets[0].sz:'8x4'),uniform:Object.keys(szs).length===1});});
+    const sub=mTot+cTot,vat=Math.round(sub*0.2),total=sub+(vatOn?vat:0);
+    return {rows,mTot,cTot,sheetN,partN,sub,vat,total};
   }
   function openQuote(){
     const v=validateOrder();if(v.errs.length){alert('Fix invalid parts before the quote:\n'+v.errs.map(e=>'• item '+(e.i+1)+': '+e.b.join(', ')).join('\n'));return;}
@@ -1264,7 +1264,7 @@
       +'<div class="q-head"><div><div class="q-brand">Kabacal</div><div class="sub">Quote</div></div><div style="text-align:right"><div><b>'+esc(project.number||'(no order #)')+'</b></div><div class="sub">'+esc(project.date||'')+'</div></div></div>'
       +'<div class="q-client"><b>'+esc(project.client||'(client name)')+'</b>'+(project.notes?'<div class="sub">'+esc(project.notes)+'</div>':'')+'</div>'
       +'<table class="ptbl"><tr><th>Material</th><th style="text-align:center">Sheets</th><th style="text-align:right">Material</th><th style="text-align:right">CNC</th></tr>'+(d.rows.map(r=>'<tr><td>'+esc(r.mat)+'</td><td style="text-align:center">'+r.sheets+'</td><td style="text-align:right">'+money(r.mc)+'</td><td style="text-align:right">'+money(r.cc)+'</td></tr>').join('')||'<tr><td colspan="4" class="sub">No parts.</td></tr>')+'</table>'
-      +'<div class="q-tot"><div class="sumrow"><span class="k">Doors</span><span>'+d.doors+'</span></div><div class="sumrow"><span class="k">Sheets</span><span>'+d.sheetN+'</span></div><div class="sumrow"><span class="k">Material</span><span>'+money(d.mTot)+'</span></div><div class="sumrow"><span class="k">CNC service</span><span>'+money(d.cTot)+'</span></div><div class="sumrow"><span class="k">Subtotal</span><span>'+money(d.sub)+'</span></div>'+(vatOn?'<div class="sumrow"><span class="k">VAT 20%</span><span>'+money(d.vat)+'</span></div>':'')+'<div class="sumrow"><span class="k">Total</span><span class="total">'+money(d.total)+'</span></div></div>'
+      +'<div class="q-tot"><div class="sumrow"><span class="k">Parts total</span><span>'+d.partN+'</span></div><div class="sumrow"><span class="k">Sheets</span><span>'+d.sheetN+'</span></div><div class="sumrow"><span class="k">Material</span><span>'+money(d.mTot)+'</span></div><div class="sumrow"><span class="k">CNC service</span><span>'+money(d.cTot)+'</span></div><div class="sumrow"><span class="k">Subtotal</span><span>'+money(d.sub)+'</span></div>'+(vatOn?'<div class="sumrow"><span class="k">VAT 20%</span><span>'+money(d.vat)+'</span></div>':'')+'<div class="sumrow"><span class="k">Total</span><span class="total">'+money(d.total)+'</span></div></div>'
       +'<label class="sub" style="display:inline-flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" '+(vatOn?'checked':'')+' onchange="toggleVat(this.checked)"> Include VAT 20%</label>'
       +'<div class="sub" style="margin-top:4px">Prices by material (not per line).'+(hideValues?' Values hidden on screen — they still print.':'')+'</div>'
       +'</div>'
@@ -1276,18 +1276,48 @@
   function openPrintWindow(title,inner){
     const w=window.open('','_blank');
     if(!w){alert('Popup blocked — allow popups for this page to print / save the PDF.');return;}
-    const css='*{box-sizing:border-box}body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;margin:0;padding:22px;font-size:13px}.doc{max-width:760px;margin:0 auto}.toolbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px}.toolbar button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer}.toolbar button.primary{background:#2563eb;color:#fff;border-color:#2563eb}.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0f172a;padding-bottom:10px;margin-bottom:12px}.brand{font-size:26px;font-weight:900;color:#2563eb;letter-spacing:.4px}.meta{color:#475569;margin:2px 0}.meta b{color:#0f172a}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border-bottom:1px solid #e2e8f0;padding:7px 8px;text-align:left;font-size:12px;vertical-align:top}th{background:#f8fafc;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#64748b}td.r,th.r{text-align:right}td.c,th.c{text-align:center}.totbox{max-width:300px;margin-left:auto;margin-top:10px}.totbox .row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e2e8f0}.totbox .row.grand{border-bottom:0;border-top:2px solid #0f172a;font-size:18px;font-weight:900;margin-top:4px;padding-top:8px}.notes{margin-top:14px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px}.foot{margin-top:22px;color:#94a3b8;font-size:11px;text-align:center}@media print{.toolbar{display:none}body{padding:0}.doc{max-width:none}@page{margin:14mm}tr{break-inside:avoid}}';
+    const css='*{box-sizing:border-box}body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;margin:0;padding:22px;font-size:13px}.doc{max-width:760px;margin:0 auto}.toolbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px}.toolbar button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer}.toolbar button.primary{background:#2563eb;color:#fff;border-color:#2563eb}.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0f172a;padding-bottom:10px;margin-bottom:12px}.brand{font-size:26px;font-weight:900;color:#2563eb;letter-spacing:.4px}.meta{color:#475569;margin:2px 0}.meta b{color:#0f172a}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border-bottom:1px solid #e2e8f0;padding:7px 8px;text-align:left;font-size:12px;vertical-align:top}th{background:#f8fafc;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#64748b}td.r,th.r{text-align:right}td.c,th.c{text-align:center}.totbox{max-width:300px;margin-left:auto;margin-top:10px}.totbox .row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e2e8f0}.totbox .row.grand{border-bottom:0;border-top:2px solid #0f172a;font-size:18px;font-weight:900;margin-top:4px;padding-top:8px}.notes{margin-top:14px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px}.foot{margin-top:22px;color:#94a3b8;font-size:11px;text-align:center}.qhead{text-align:center;border-bottom:2px solid #0f172a;padding-bottom:12px;margin-bottom:14px}.qbrand{font-size:30px;font-weight:900;letter-spacing:6px}.qtag{font-size:11px;letter-spacing:4px;color:#64748b}.qco{font-weight:800;margin-top:8px;font-size:13px}.qco2{font-size:11px;color:#475569}.qinfo{display:flex;gap:12px;margin:10px 0}.qbox{flex:1;border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px}.qbox-l{font-size:10px;letter-spacing:.06em;color:#64748b;font-weight:700}.qbox-v{font-weight:800;font-size:15px;margin-top:2px}.qsec{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#64748b;font-weight:800;border-bottom:1px solid #e2e8f0;padding-bottom:5px;margin:18px 0 10px}.msum-card{border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:10px;break-inside:avoid}.msum-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}.msum-name{font-size:16px;font-weight:800}.msum-sub{font-size:12px;color:#64748b;font-weight:600}.msum-total{font-size:20px;font-weight:900}.msum-block{border:1px solid #eef2f7;border-radius:9px;padding:8px 10px;margin-top:8px}.msum-blab{font-size:10px;letter-spacing:.06em;color:#185fa5;font-weight:800;margin-bottom:4px}.msum-row{display:flex;justify-content:space-between;padding:3px 0;font-size:13px}.msum-row span:last-child{font-weight:700}.qtot{display:flex;justify-content:space-between;align-items:center;border:2px solid #0f172a;border-radius:12px;padding:14px 18px}.qtot-lab{font-size:13px;letter-spacing:.05em;color:#64748b;font-weight:800}.qtot-sub{font-size:12px;color:#64748b}.qtot-big{font-size:30px;font-weight:900}.qtot-inc{font-size:13px;font-weight:800;color:#185fa5}.parts-mat{font-weight:800;font-size:13px;margin:10px 0 2px}.dwg-h{font-weight:800;font-size:14px;margin:10px 0 6px}.dwg-sheet{border:1px solid #e2e8f0;border-radius:10px;padding:8px;margin-bottom:8px;break-inside:avoid}.dwg-cap{font-size:11px;color:#64748b;font-weight:700;margin-bottom:5px}.dwg-svg{width:100%;height:auto;background:#fff;border:1px solid #eef2f7;border-radius:6px;display:block}@media print{.toolbar{display:none}body{padding:0}.doc{max-width:none}@page{margin:12mm}tr{break-inside:avoid}.qsec{break-after:avoid}}';
     w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body><div class="doc"><div class="toolbar"><button class="primary" onclick="window.print()">Print / Save as PDF</button><button onclick="window.close()">Close</button></div>'+inner+'</div></body></html>');
     w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch(e){}},400);
   }
+  function fmtDate(s){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');if(!m)return s||'';const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return (+m[3])+' '+mo[+m[2]-1]+' '+m[1];}
+  function partsTableHtml(){
+    const byMat=new Map();items.forEach(it=>{if(!byMat.has(it.mat))byMat.set(it.mat,[]);byMat.get(it.mat).push(it);});
+    let h='';byMat.forEach((list,mat)=>{
+      const map=new Map();list.forEach(it=>{const k=it.w+'x'+it.h+'|'+it.type+'|'+(it.text||'');if(!map.has(k))map.set(k,{w:it.w,h:it.h,type:it.type,text:it.text||'',q:0});map.get(k).q+=(+it.q||1);});
+      h+='<div class="parts-mat">'+esc(mat)+'</div><table><thead><tr><th>Item</th><th class="c">Size (mm)</th><th class="c">Qty</th></tr></thead><tbody>'+[...map.values()].map(r=>'<tr><td>'+esc(TYPES[r.type].name)+(r.text?' — '+esc(r.text):'')+'</td><td class="c">'+r.w+'×'+r.h+'</td><td class="c">'+r.q+'</td></tr>').join('')+'</tbody></table>';
+    });
+    return h;
+  }
+  function printSheetsHtml(){
+    const groups=buildSheetGroups();let h='';
+    groups.forEach((sheets,mat)=>{
+      h+='<div class="dwg-h">'+esc(mat)+' — drawings</div>';
+      sheets.forEach((sh,idx)=>{
+        const S=sh.S,vbW=Math.round(S.w/10),vbH=Math.round(S.h/10);
+        let svg='<svg class="dwg-svg" viewBox="0 0 '+vbW+' '+vbH+'"><rect x="0.25" y="0.25" width="'+(vbW-0.5).toFixed(1)+'" height="'+(vbH-0.5).toFixed(1)+'" fill="#fff" stroke="#cbd5e1" stroke-width="0.4"/>';
+        if(S.uh&&S.uh<S.h)svg+='<rect x="0.25" y="'+(S.uh/10).toFixed(1)+'" width="'+(vbW-0.5).toFixed(1)+'" height="'+((S.h-S.uh)/10).toFixed(1)+'" fill="#fee2e2"/>';
+        sh.parts.forEach(p=>{svg+=drawPart(p,false);});svg+='</svg>';
+        h+='<div class="dwg-sheet"><div class="dwg-cap">Sheet '+(idx+1)+' · '+SHEETS[sh.sz].label+' · '+sh.parts.length+' part'+(sh.parts.length===1?'':'s')+'</div>'+svg+'</div>';
+      });
+    });
+    return h;
+  }
   function buildQuoteHtml(){
     const d=quoteData();
-    return '<div class="head"><div><div class="brand">Kabacal</div><div class="meta">Quote</div></div><div style="text-align:right"><div class="meta"><b>'+esc(project.number||'(no order #)')+'</b></div><div class="meta">'+esc(project.date||'')+'</div></div></div>'
-      +'<div class="meta"><b>'+esc(project.client||'(client name)')+'</b></div>'
-      +'<table><thead><tr><th>Material</th><th class="c">Sheets</th><th class="r">Material</th><th class="r">CNC service</th></tr></thead><tbody>'+(d.rows.map(r=>'<tr><td>'+esc(r.mat)+'</td><td class="c">'+r.sheets+'</td><td class="r">'+moneyP(r.mc)+'</td><td class="r">'+moneyP(r.cc)+'</td></tr>').join('')||'<tr><td colspan="4">No parts.</td></tr>')+'</tbody></table>'
-      +'<div class="totbox"><div class="row"><span>Doors</span><span>'+d.doors+'</span></div><div class="row"><span>Sheets</span><span>'+d.sheetN+'</span></div><div class="row"><span>Material</span><span>'+moneyP(d.mTot)+'</span></div><div class="row"><span>CNC service</span><span>'+moneyP(d.cTot)+'</span></div><div class="row"><span>Subtotal</span><span>'+moneyP(d.sub)+'</span></div>'+(vatOn?'<div class="row"><span>VAT 20%</span><span>'+moneyP(d.vat)+'</span></div>':'')+'<div class="row grand"><span>Total</span><span>'+moneyP(d.total)+'</span></div></div>'
+    const cards=d.rows.map(r=>'<div class="msum-card"><div class="msum-top"><div><div class="msum-name">'+esc(r.mat)+'</div><div class="msum-sub">'+r.sheets+' sheet'+(r.sheets===1?'':'s')+' · '+r.parts+' parts</div></div><div class="msum-total">'+moneyP(r.mc+r.cc)+'</div></div>'
+      +'<div class="msum-block"><div class="msum-blab">Material</div><div class="msum-row"><span>Sheet price</span><span>'+(r.uniform?moneyP(r.sheetUnit)+' × '+r.sheets:'—')+'</span></div><div class="msum-row"><span>Material subtotal</span><span>'+moneyP(r.mc)+'</span></div></div>'
+      +'<div class="msum-block"><div class="msum-blab">CNC service</div><div class="msum-row"><span>CNC per sheet</span><span>'+moneyP(r.cncUnit)+' × '+r.sheets+'</span></div><div class="msum-row"><span>CNC total</span><span>'+moneyP(r.cc)+'</span></div></div></div>').join('')||'<div class="sub">No parts.</div>';
+    const totals='<div class="qtot"><div><div class="qtot-lab">TOTAL EX VAT</div>'+(vatOn?'<div class="qtot-sub">Plus VAT '+moneyP(d.vat)+'</div>':'')+'</div><div style="text-align:right"><div class="qtot-big">'+moneyP(d.sub)+'</div>'+(vatOn?'<div class="qtot-inc">Total inc VAT '+moneyP(d.total)+'</div>':'')+'</div></div>';
+    return '<div class="qhead"><div class="qbrand">FAST CNC</div><div class="qtag">CUTTING SERVICE</div><div class="qco">FAST CNC SERVICES</div><div class="qco2">Upminster Lodge Farm, Tomkyns Ln, Upminster RM14 1TP</div><div class="qco2">Phone: 01708 349993 &nbsp;|&nbsp; Instagram: @fastcncservices</div></div>'
+      +'<div class="qinfo"><div class="qbox"><div class="qbox-l">QUOTE NUMBER</div><div class="qbox-v">'+esc(project.number||'—')+'</div></div><div class="qbox"><div class="qbox-l">DATE</div><div class="qbox-v">'+esc(fmtDate(project.date))+'</div></div></div>'
+      +'<div class="qinfo"><div class="qbox"><div class="qbox-l">PREPARED FOR</div><div class="qbox-v">'+esc(project.client||'—')+'</div></div><div class="qbox"><div class="qbox-l">CONTACT</div><div class="qbox-v">'+esc(project.contact||'--')+'</div></div></div>'
+      +'<div class="qsec">Materials summary</div>'+cards
+      +'<div class="qsec">Totals · '+d.partN+' parts · '+d.sheetN+' sheets</div>'+totals
+      +'<div class="qsec">Parts</div>'+partsTableHtml()
       +(project.notes?'<div class="notes"><b>Notes</b><br>'+esc(project.notes)+'</div>':'')
-      +'<div class="foot">Prices by material. Generated by Kabacal.</div>';
+      +'<div class="qsec">Drawings</div>'+printSheetsHtml()
+      +'<div class="foot">Generated by Kabacal · FAST CNC Services</div>';
   }
   function cutFrame(it){const f=resolveFrame(it);const active=(it.lines&&it.lines[0]&&it.lines[0].en)||it.type!=='flat';if(!active)return '—';return (f.t===f.r&&f.r===f.b&&f.b===f.l)?(f.t+'mm'):('T'+f.t+' R'+f.r+' B'+f.b+' L'+f.l);}
   function cutOffset(it){const e=enabledLines(it);if(!e.length)return '—';return e.map(l=>l.L).join('')+(it.pocketSide==='front-back'?' F+B':'')+(e.some(l=>l.rd)?' rnd':'');}
