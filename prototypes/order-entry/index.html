@@ -211,11 +211,11 @@
       </span>
       <span class="menu" onclick="toggleMenu(this,event)">Print
         <div class="dd">
-          <div class="dd-item" onclick="event.stopPropagation();openQuote();closeMenus()">PDF / Quote…</div>
+          <div class="dd-item" onclick="event.stopPropagation();openQuoteDoc();closeMenus()">PDF / Quote…</div>
           <div class="dd-item" onclick="event.stopPropagation();comingSoon('Doors only (print nesting)');closeMenus()">Doors only <span class="soon">soon</span></div>
           <div class="dd-item" onclick="event.stopPropagation();comingSoon('Print labels');closeMenus()">Print labels <span class="soon">soon</span></div>
           <div class="dd-item" onclick="event.stopPropagation();comingSoon('Spray labels / scheme');closeMenus()">Spray labels <span class="soon">soon</span></div>
-          <div class="dd-item" onclick="event.stopPropagation();comingSoon('Cut list');closeMenus()">Cut list <span class="soon">soon</span></div>
+          <div class="dd-item" onclick="event.stopPropagation();openCutList();closeMenus()">Cut list</div>
         </div>
       </span>
       <span class="menu" onclick="event.stopPropagation();comingSoon('Checklist')">Checklist <span class="soon">soon</span></span>
@@ -1212,21 +1212,64 @@
   }
 
   // ---- Calculate / customer quote view ----
+  // ===== Quote + Cut list (A6) =====
+  let vatOn=true;
+  function toggleVat(v){vatOn=!!v;openQuote();}
+  function moneyP(n){return '£'+Math.round(+n||0).toLocaleString('en-GB');}
+  function quoteData(){
+    const groups=buildSheetGroups();const rows=[];let mTot=0,cTot=0,sheetN=0;
+    groups.forEach((sheets,mat)=>{let mc=0,cc=0;sheets.forEach(s=>{mc+=priceForSheet(mat,s.sz);cc+=cncForThickness(mat);});sheetN+=sheets.length;mTot+=mc;cTot+=cc;rows.push({mat,sheets:sheets.length,mc,cc});});
+    const sub=mTot+cTot,vat=Math.round(sub*0.2),total=sub+(vatOn?vat:0),doors=items.reduce((s,i)=>s+(+i.q||0),0);
+    return {rows,mTot,cTot,sheetN,sub,vat,total,doors};
+  }
   function openQuote(){
     const v=validateOrder();if(v.errs.length){alert('Fix invalid parts before the quote:\n'+v.errs.map(e=>'• item '+(e.i+1)+': '+e.b.join(', ')).join('\n'));return;}
-    const groups=buildSheetGroups();let matRows='',mTot=0,cTot=0,sheetN=0;
-    groups.forEach((sheets,mat)=>{let mc=0,cc=0;sheets.forEach(s=>{mc+=priceForSheet(mat,s.sz);cc+=cncForThickness(mat);});sheetN+=sheets.length;mTot+=mc;cTot+=cc;matRows+='<tr><td>'+esc(mat)+'</td><td style="text-align:center">'+sheets.length+'</td><td style="text-align:right">'+money(mc)+'</td><td style="text-align:right">'+money(cc)+'</td></tr>';});
-    const doors=items.reduce((s,i)=>s+(+i.q||0),0),sub=mTot+cTot,vat=Math.round(sub*0.2),total=sub+vat;
+    const d=quoteData();
     const html='<div class="quote">'
       +'<div class="q-head"><div><div class="q-brand">Kabacal</div><div class="sub">Quote</div></div><div style="text-align:right"><div><b>'+esc(project.number||'(no order #)')+'</b></div><div class="sub">'+esc(project.date||'')+'</div></div></div>'
       +'<div class="q-client"><b>'+esc(project.client||'(client name)')+'</b>'+(project.notes?'<div class="sub">'+esc(project.notes)+'</div>':'')+'</div>'
-      +'<table class="ptbl"><tr><th>Material</th><th style="text-align:center">Sheets</th><th style="text-align:right">Material</th><th style="text-align:right">CNC</th></tr>'+(matRows||'<tr><td colspan="4" class="sub">No parts.</td></tr>')+'</table>'
-      +'<div class="q-tot"><div class="sumrow"><span class="k">Doors</span><span>'+doors+'</span></div><div class="sumrow"><span class="k">Sheets</span><span>'+sheetN+'</span></div><div class="sumrow"><span class="k">Material</span><span>'+money(mTot)+'</span></div><div class="sumrow"><span class="k">CNC service</span><span>'+money(cTot)+'</span></div><div class="sumrow"><span class="k">Subtotal</span><span>'+money(sub)+'</span></div><div class="sumrow"><span class="k">VAT 20%</span><span>'+money(vat)+'</span></div><div class="sumrow"><span class="k">Total</span><span class="total">'+money(total)+'</span></div></div>'
-      +'<div class="sub" style="margin-top:8px">Prices shown by material (not per line).'+(hideValues?' Values hidden — turn off View ▸ Hide values to show prices.':'')+'</div>'
+      +'<table class="ptbl"><tr><th>Material</th><th style="text-align:center">Sheets</th><th style="text-align:right">Material</th><th style="text-align:right">CNC</th></tr>'+(d.rows.map(r=>'<tr><td>'+esc(r.mat)+'</td><td style="text-align:center">'+r.sheets+'</td><td style="text-align:right">'+money(r.mc)+'</td><td style="text-align:right">'+money(r.cc)+'</td></tr>').join('')||'<tr><td colspan="4" class="sub">No parts.</td></tr>')+'</table>'
+      +'<div class="q-tot"><div class="sumrow"><span class="k">Doors</span><span>'+d.doors+'</span></div><div class="sumrow"><span class="k">Sheets</span><span>'+d.sheetN+'</span></div><div class="sumrow"><span class="k">Material</span><span>'+money(d.mTot)+'</span></div><div class="sumrow"><span class="k">CNC service</span><span>'+money(d.cTot)+'</span></div><div class="sumrow"><span class="k">Subtotal</span><span>'+money(d.sub)+'</span></div>'+(vatOn?'<div class="sumrow"><span class="k">VAT 20%</span><span>'+money(d.vat)+'</span></div>':'')+'<div class="sumrow"><span class="k">Total</span><span class="total">'+money(d.total)+'</span></div></div>'
+      +'<label class="sub" style="display:inline-flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" '+(vatOn?'checked':'')+' onchange="toggleVat(this.checked)"> Include VAT 20%</label>'
+      +'<div class="sub" style="margin-top:4px">Prices by material (not per line).'+(hideValues?' Values hidden on screen — they still print.':'')+'</div>'
       +'</div>'
-      +'<div style="margin-top:10px;text-align:right"><button class="btn ghost tiny" onclick="window.print()">Print</button> <button class="btn ghost tiny" onclick="comingSoon(\'Download PDF (matching your template)\')">Download PDF (soon)</button></div>';
+      +'<div style="margin-top:10px;text-align:right"><button class="btn primary" onclick="openQuoteDoc()">Print / Save as PDF</button> <button class="btn ghost" onclick="openCutList()">Cut list</button></div>';
     openModal('Calculate — customer quote view',html,true);
   }
+
+  // ---- printable documents (new window → Print or Save as PDF) ----
+  function openPrintWindow(title,inner){
+    const w=window.open('','_blank');
+    if(!w){alert('Popup blocked — allow popups for this page to print / save the PDF.');return;}
+    const css='*{box-sizing:border-box}body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;margin:0;padding:22px;font-size:13px}.doc{max-width:760px;margin:0 auto}.toolbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:14px}.toolbar button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer}.toolbar button.primary{background:#2563eb;color:#fff;border-color:#2563eb}.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0f172a;padding-bottom:10px;margin-bottom:12px}.brand{font-size:26px;font-weight:900;color:#2563eb;letter-spacing:.4px}.meta{color:#475569;margin:2px 0}.meta b{color:#0f172a}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border-bottom:1px solid #e2e8f0;padding:7px 8px;text-align:left;font-size:12px;vertical-align:top}th{background:#f8fafc;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#64748b}td.r,th.r{text-align:right}td.c,th.c{text-align:center}.totbox{max-width:300px;margin-left:auto;margin-top:10px}.totbox .row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #e2e8f0}.totbox .row.grand{border-bottom:0;border-top:2px solid #0f172a;font-size:18px;font-weight:900;margin-top:4px;padding-top:8px}.notes{margin-top:14px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px}.foot{margin-top:22px;color:#94a3b8;font-size:11px;text-align:center}@media print{.toolbar{display:none}body{padding:0}.doc{max-width:none}@page{margin:14mm}tr{break-inside:avoid}}';
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body><div class="doc"><div class="toolbar"><button class="primary" onclick="window.print()">Print / Save as PDF</button><button onclick="window.close()">Close</button></div>'+inner+'</div></body></html>');
+    w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch(e){}},400);
+  }
+  function buildQuoteHtml(){
+    const d=quoteData();
+    return '<div class="head"><div><div class="brand">Kabacal</div><div class="meta">Quote</div></div><div style="text-align:right"><div class="meta"><b>'+esc(project.number||'(no order #)')+'</b></div><div class="meta">'+esc(project.date||'')+'</div></div></div>'
+      +'<div class="meta"><b>'+esc(project.client||'(client name)')+'</b></div>'
+      +'<table><thead><tr><th>Material</th><th class="c">Sheets</th><th class="r">Material</th><th class="r">CNC service</th></tr></thead><tbody>'+(d.rows.map(r=>'<tr><td>'+esc(r.mat)+'</td><td class="c">'+r.sheets+'</td><td class="r">'+moneyP(r.mc)+'</td><td class="r">'+moneyP(r.cc)+'</td></tr>').join('')||'<tr><td colspan="4">No parts.</td></tr>')+'</tbody></table>'
+      +'<div class="totbox"><div class="row"><span>Doors</span><span>'+d.doors+'</span></div><div class="row"><span>Sheets</span><span>'+d.sheetN+'</span></div><div class="row"><span>Material</span><span>'+moneyP(d.mTot)+'</span></div><div class="row"><span>CNC service</span><span>'+moneyP(d.cTot)+'</span></div><div class="row"><span>Subtotal</span><span>'+moneyP(d.sub)+'</span></div>'+(vatOn?'<div class="row"><span>VAT 20%</span><span>'+moneyP(d.vat)+'</span></div>':'')+'<div class="row grand"><span>Total</span><span>'+moneyP(d.total)+'</span></div></div>'
+      +(project.notes?'<div class="notes"><b>Notes</b><br>'+esc(project.notes)+'</div>':'')
+      +'<div class="foot">Prices by material. Generated by Kabacal.</div>';
+  }
+  function cutFrame(it){const f=resolveFrame(it);const active=(it.lines&&it.lines[0]&&it.lines[0].en)||it.type!=='flat';if(!active)return '—';return (f.t===f.r&&f.r===f.b&&f.b===f.l)?(f.t+'mm'):('T'+f.t+' R'+f.r+' B'+f.b+' L'+f.l);}
+  function cutOffset(it){const e=enabledLines(it);if(!e.length)return '—';return e.map(l=>l.L).join('')+(it.pocketSide==='front-back'?' F+B':'')+(e.some(l=>l.rd)?' rnd':'');}
+  function cutHinge(it){const h=hingeInfo(it);return h.on?(h.side+' ×'+h.count):'—';}
+  function buildCutListHtml(){
+    const rows=items.map((it,i)=>'<tr><td class="c">'+(i+1)+'</td><td>'+esc(TYPES[it.type].name)+'</td><td class="c">'+it.w+'×'+it.h+'</td><td class="c">'+(+it.q||1)+'</td><td>'+esc(it.mat)+'</td><td>'+cutFrame(it)+'</td><td>'+cutOffset(it)+'</td><td>'+cutHinge(it)+'</td><td>'+esc(it.text||'')+'</td></tr>').join('');
+    const groups=buildSheetGroups();let sh='';groups.forEach((sheets,mat)=>{sh+='<tr><td>'+esc(mat)+'</td><td class="c">'+sheets.length+'</td><td class="c">'+sheets.map(s=>SHEETS[s.sz].label).join(', ')+'</td></tr>';});
+    const totalParts=items.reduce((s,i)=>s+(+i.q||0),0);
+    return '<div class="head"><div><div class="brand">Kabacal</div><div class="meta">Cut list — workshop</div></div><div style="text-align:right"><div class="meta"><b>'+esc(project.number||'')+'</b></div><div class="meta">'+esc(project.date||'')+'</div></div></div>'
+      +'<div class="meta"><b>'+esc(project.client||'')+'</b> · total parts: <b>'+totalParts+'</b></div>'
+      +'<table><thead><tr><th class="c">#</th><th>Type</th><th class="c">Size (mm)</th><th class="c">Qty</th><th>Material</th><th>Frame</th><th>Offset</th><th>Hinges</th><th>Notes</th></tr></thead><tbody>'+rows+'</tbody></table>'
+      +'<div style="margin-top:14px;font-weight:700">Sheets / nesting</div><table><thead><tr><th>Material</th><th class="c">Sheets</th><th class="c">Sizes</th></tr></thead><tbody>'+sh+'</tbody></table>'
+      +(project.notes?'<div class="notes"><b>Notes</b><br>'+esc(project.notes)+'</div>':'')
+      +'<div class="foot">Kabacal cut list — internal.</div>';
+  }
+  function openQuoteDoc(){const v=validateOrder();if(v.errs.length){alert('Fix invalid parts first:\n'+v.errs.map(e=>'• item '+(e.i+1)+': '+e.b.join(', ')).join('\n'));return;}openPrintWindow('Kabacal Quote '+(project.number||''),buildQuoteHtml());}
+  function openCutList(){const v=validateOrder();if(v.errs.length){alert('Fix invalid parts first:\n'+v.errs.map(e=>'• item '+(e.i+1)+': '+e.b.join(', ')).join('\n'));return;}openPrintWindow('Kabacal Cut list '+(project.number||''),buildCutListHtml());}
 
   buildMatUI();
   genOrderNumber();
