@@ -57,6 +57,9 @@
   .tpl-item{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff}
   .tpl-meta{flex:1;min-width:0}
   .tpl-act{display:flex;gap:4px;align-items:center}
+  .mc-list{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+  .mc-row{display:flex;align-items:center;gap:10px;font-size:13px}
+  .mc-row input[type=color]{width:42px;height:28px;border:1px solid var(--line);border-radius:6px;padding:0;cursor:pointer;background:#fff}
   @media print{body *{visibility:hidden}#modalOv,#modalOv *{visibility:visible}#modalOv{position:absolute;inset:0;background:#fff;display:block}#modalOv .zoomhead,#modalOv .zoomhead *{visibility:hidden}#modalOv .zoombox{box-shadow:none;width:auto;height:auto;max-width:100%}}
   .tabs{display:flex;gap:6px;margin-left:auto}
   .tab{padding:6px 14px;border-radius:999px;font-weight:700;font-size:13px;color:var(--muted);cursor:pointer}
@@ -277,6 +280,7 @@
           <span class="sub" style="font-weight:700">Quick material:</span>
           <span class="favs" id="favChips" style="display:inline-flex;gap:5px;flex-wrap:wrap"></span>
           <span class="sub">— or pick per item.</span>
+          <span class="link" onclick="openMatColors()" style="font-size:12px">🎨 Material colours</span>
           <input type="file" id="fileIn" accept=".json,.fastcnc.json" style="display:none" onchange="onFile(event)">
           <div class="mode" style="margin-left:auto"><button class="on">Doors</button><button onclick="openPanelling()" title="Opens the existing panelling app in a new tab">Panelling ↗</button></div>
         </div>
@@ -353,6 +357,11 @@
   const DXFC={OUT:'#111827'};
   const BLOCK_PALETTE=['#2563eb','#16a34a','#9333ea','#0891b2','#d97706','#db2777','#0d9488','#7c3aed','#ca8a04','#dc2626'];
   function blockColor(mat,size){const key=(mat||'')+'|'+(size||'8x4');let h=0;for(let i=0;i<key.length;i++)h=(h*31+key.charCodeAt(i))>>>0;return BLOCK_PALETTE[h%BLOCK_PALETTE.length];}
+  // editable per-material background colour (item 4): hash colour by default, override + save locally
+  let matColors={};try{matColors=JSON.parse(localStorage.getItem('kab_matColors')||'{}');}catch(e){matColors={};}
+  function matColor(mat){return matColors[mat]||blockColor(mat,'');}
+  function setMatColor(mat,hex){matColors[mat]=hex;try{localStorage.setItem('kab_matColors',JSON.stringify(matColors));}catch(e){}buildMatUI();render();}
+  function openMatColors(){const set=[];FAVS.forEach(m=>set.indexOf(m)<0&&set.push(m));items.forEach(it=>set.indexOf(it.mat)<0&&set.push(it.mat));const rows=set.map(m=>'<div class="mc-row"><input type="color" value="'+matColor(m)+'" onchange="setMatColor(\''+esc(m)+'\',this.value)"><span class="chip" style="background:'+matColor(m)+'22;color:'+matColor(m)+';border-color:'+matColor(m)+'55">'+esc(m)+'</span></div>').join('');openModal('Material colours','<div class="sub">Pick a clear background colour for each material. Used in the order list, the material tag and the nesting sheets. Saved on this computer.</div><div class="mc-list">'+rows+'</div>');}
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function num(){for(const v of arguments){if(v!==''&&v!=null&&!isNaN(+v))return +v;}return 0;}
   function parseMat(m){const x=String(m).match(/^(.*?)\s*(\d+\s*mm)$/i);return x?{name:x[1].trim(),th:x[2].replace(/\s+/,'')}:{name:String(m),th:'—'};}
@@ -569,29 +578,35 @@
     const SHEETGAP=250;let body='';const layers=new Set(['0','text']);let yOrigin=0,sheetNo=0;
     list.forEach(entry=>{
       const sh=entry.sh,mat=entry.mat,S=sh.S;sheetNo++;
+      const Wn=S.w,Hn=S.h,Wp=Hn,Hp=Wn,oy=yOrigin;       // export sheets VERTICAL/portrait (item 3): rotate 90deg
+      const rRectD=(x,y,w,h)=>({x:y,y:oy+(Wn-(x+w)),w:h,h:w});
+      const rPtD=(x,y)=>({x:y,y:oy+(Wn-x)});
       const sheetLayer=(sheetNo%2===0)?'BOARD':'SHEET';layers.add(sheetLayer);
-      body+=dxfRect(sheetLayer,0,yOrigin,S.w,S.h);
-      body+=dxfText('text',60,yOrigin+S.h-30,22,'SHEET '+sheetNo+' '+(parseMat(mat).name)+' '+th,false);
+      body+=dxfRect(sheetLayer,0,oy,Wp,Hp);
+      body+=dxfText('text',60,oy+Hp-30,22,'SHEET '+sheetNo+' '+(parseMat(mat).name)+' '+th,false);
       sh.parts.forEach(p=>{
-        const bx=p.x,by=yOrigin+(S.h-p.y-p.h);             // flip Y (DXF is bottom-up)
+        const bx=p.x,by=Hn-(p.y+p.h);                    // landscape-local, y-up
+        const f=p.frame||{t:0,r:0,b:0,l:0};
+        const framed=(p.type==='trad'||p.type==='flush'||p.type==='reeded')&&!p.isInsert;
         const round=(p.lines||[]).some(l=>l.rd);
         layers.add('OUT');
-        if(round)body+=dxfRoundRect('OUT',bx,by,p.w,p.h,2.5);else body+=dxfRect('OUT',bx,by,p.w,p.h);
-        const f=p.frame||{t:0,r:0,b:0,l:0};
+        var o=rRectD(bx,by,p.w,p.h);
+        if(round)body+=dxfRoundRect('OUT',o.x,o.y,o.w,o.h,2.5);else body+=dxfRect('OUT',o.x,o.y,o.w,o.h);
+        if(framed&&!(p.lines&&p.lines.length)){const iw=p.w-f.l-f.r,ih=p.h-f.t-f.b;if(iw>1&&ih>1){layers.add('OFFSET_A');var fr=rRectD(bx+f.l,by+f.b,iw,ih);body+=dxfRect('OFFSET_A',fr.x,fr.y,fr.w,fr.h);}}
         (p.lines||[]).forEach(l=>{
           const lyr='OFFSET_'+l.L;layers.add(lyr);
-          const ix=bx+f.l+l.mm,iy=by+f.b+l.mm,iw=p.w-f.l-f.r-2*l.mm,ih=p.h-f.t-f.b-2*l.mm;
-          if(iw>1&&ih>1){if(l.rd)body+=dxfRoundRect(lyr,ix,iy,iw,ih,2.5);else body+=dxfRect(lyr,ix,iy,iw,ih);}
+          const iw=p.w-f.l-f.r-2*l.mm,ih=p.h-f.t-f.b-2*l.mm;
+          if(iw>1&&ih>1){var rr=rRectD(bx+f.l+l.mm,by+f.b+l.mm,iw,ih);if(l.rd)body+=dxfRoundRect(lyr,rr.x,rr.y,rr.w,rr.h,2.5);else body+=dxfRect(lyr,rr.x,rr.y,rr.w,rr.h);}
         });
         if(p.isInsert){
           layers.add('IN');
-          [7,14].forEach(o=>{if(o<Math.min(p.w,p.h)/2-1)body+=dxfRect('IN',bx+o,by+o,p.w-2*o,p.h-2*o);});
-          if(p.kind==='reeded'){layers.add('REEDED');for(let yy=by+12.5;yy<by+p.h-6;yy+=12.5)body+=dxfLine('REEDED',bx+8,yy,bx+p.w-8,yy);}
+          [7,14].forEach(off=>{if(off<Math.min(p.w,p.h)/2-1){var ri=rRectD(bx+off,by+off,p.w-2*off,p.h-2*off);body+=dxfRect('IN',ri.x,ri.y,ri.w,ri.h);}});
+          if(p.kind==='reeded'){layers.add('REEDED');for(let yy=12.5;yy<p.h-6;yy+=12.5){var aa=rPtD(bx+8,by+yy),bb=rPtD(bx+p.w-8,by+yy);body+=dxfLine('REEDED',aa.x,aa.y,bb.x,bb.y);}}
         }
-        if(p.hinge&&p.hinge.on){layers.add('hinges');hingeCenters(p,bx,by).forEach(c=>{body+=dxfCircle('hinges',c.x,c.y,17.5);});}
-        if(p.text)body+=dxfText('text',bx+p.w/2,by+p.h/2,18,p.text,true);
+        if(p.hinge&&p.hinge.on){layers.add('hinges');hingeCenters(p,bx,by).forEach(c=>{var pc=rPtD(c.x,c.y);body+=dxfCircle('hinges',pc.x,pc.y,17.5);});}
+        if(p.text){var tc=rPtD(bx+p.w/2,by+p.h/2);body+=dxfText('text',tc.x,tc.y,18,p.text,true);}
       });
-      yOrigin+=S.h+SHEETGAP;
+      yOrigin+=Hp+SHEETGAP;
     });
     const layerArr=Array.from(layers);
     let s='0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n';
@@ -620,7 +635,7 @@
   function priceForSheet(combined,size){const ov=(typeof priceOverrides!=='undefined')?priceOverrides['mat:'+combined]:null;let base;if(ov!=null)base=ov;else{const m=parseMat(combined);base=(PRICES[m.name]&&PRICES[m.name][m.th])||55;}const S=SHEETS[size]||SHEETS['8x4'],B=SHEETS['8x4'];const ratio=(size==='8x4')?1:(S.w*S.h)/(B.w*B.h);return Math.round(base*ratio);}
   function cncForThickness(combined){const ov=(typeof priceOverrides!=='undefined')?priceOverrides['cnc:'+combined]:null;if(ov!=null)return ov;const th=parseMat(combined).th;if(th==='18mm'||th==='22mm')return 85;const n=parseInt(th)||18;if(n<=12)return 65;if(n<=15)return 95;return 120;}
   function matOptionsHtml(sel){const all=[];Object.keys(PRICES).forEach(n=>Object.keys(PRICES[n]).forEach(t=>all.push(n+' '+t)));if(sel&&all.indexOf(sel)<0)all.unshift(sel);return all.map(c=>`<option ${c===sel?'selected':''}>${esc(c)}</option>`).join('');}
-  function buildMatUI(){const qm=document.getElementById('qaMat');if(qm)qm.innerHTML=matOptionsHtml(orderMaterial);const fc=document.getElementById('favChips');if(fc)fc.innerHTML=FAVS.map(f=>`<span class="pchip" onclick="setQaMat('${f}')">${f}</span>`).join('');const dl=document.getElementById('matList');if(dl){const all=[];Object.keys(PRICES).forEach(n=>Object.keys(PRICES[n]).forEach(t=>all.push(n+' '+t)));dl.innerHTML=all.map(c=>`<option value="${esc(c)}">`).join('');}}
+  function buildMatUI(){const qm=document.getElementById('qaMat');if(qm)qm.innerHTML=matOptionsHtml(orderMaterial);const fc=document.getElementById('favChips');if(fc)fc.innerHTML=FAVS.map(f=>`<span class="pchip" onclick="setQaMat('${f}')" style="background:${matColor(f)}22;border-color:${matColor(f)}66;color:${matColor(f)};font-weight:800">${f}</span>`).join('');const dl=document.getElementById('matList');if(dl){const all=[];Object.keys(PRICES).forEach(n=>Object.keys(PRICES[n]).forEach(t=>all.push(n+' '+t)));dl.innerHTML=all.map(c=>`<option value="${esc(c)}">`).join('');}}
   function setQaMat(v){const q=document.getElementById('qaMat');if(q){if(q.querySelector(`option[value="${v}"]`)===null)q.innerHTML=matOptionsHtml(v);q.value=v;}orderMaterial=v;updateMatPricing();}
   function updateMatPricing(){const mm=document.getElementById('mpMat');if(mm)mm.textContent=orderMaterial;const ms=document.getElementById('mpSheet');if(ms)ms.textContent=money(priceForSheet(orderMaterial,nestSize));const mc=document.getElementById('mpCnc');if(mc)mc.textContent=money(cncForThickness(orderMaterial));}
 
@@ -681,7 +696,7 @@
     items.forEach((it,i)=>{
       const d=TYPES[it.type],c=d.color;
       const el=document.createElement('div');el.className='item'+(i===selItem?' sel':'');
-      el.style.borderLeft='5px solid '+blockColor(it.mat,it.size);el.style.background=blockColor(it.mat,it.size)+'0c';
+      el.style.borderLeft='5px solid '+matColor(it.mat);el.style.background=matColor(it.mat)+'0c';
       const offc=offsetChip(it),hc=hingeChip(it);
       el.innerHTML=`
         <div class="item-row" onclick="sel(${i})">
@@ -695,7 +710,7 @@
               ${it.grain?'<span class="chip">↔ rigid</span>':''}
               ${it.spray?'<span class="chip">spray</span>':''}
               ${it.text?'<span class="chip">“'+esc(it.text)+'”</span>':''}
-              <span class="chip alt">⬩ ${esc(it.mat)}</span>
+              <span class="chip" style="background:${matColor(it.mat)}22;color:${matColor(it.mat)};border-color:${matColor(it.mat)}66;font-weight:800">${esc(it.mat)}</span>
             </div>
           </div>
           <div class="qtycell" onclick="event.stopPropagation()">
@@ -889,29 +904,42 @@
     return groups;
   }
   function clampPos(m,p){const S=m.S,g=m.g;return {x:Math.max(g,Math.min(p.x,S.w-g-p.w)),y:Math.max(g,Math.min(p.y,(S.uh||S.h)-g-p.h))};}
+  // framed doors (Traditional/Flushback/Reeded) have an open centre — small parts can nest inside it
+  function isHost(p){return (p.type==='trad'||p.type==='flush'||p.type==='reeded')&&!p.isInsert&&!p.isBack;}
+  function cavPlace(cav,pw,ph){const g=cav.g;if(cav.cx+pw<=cav.w&&cav.cy+ph<=cav.h){const r={x:cav.x0+cav.cx,y:cav.y0+cav.cy};cav.cx+=pw+g;cav.rowH=Math.max(cav.rowH,ph);return r;}const ny=cav.cy+cav.rowH+g;if(pw<=cav.w&&ny+ph<=cav.h){cav.cx=pw+g;cav.cy=ny;cav.rowH=ph;return {x:cav.x0,y:cav.y0+ny};}return null;}
+  function regCavity(cavities,sheetIdx,p,px,py,pw,ph,g){const f=p.frame||{t:0,r:0,b:0,l:0};let il=f.l,ir=f.r,it2=f.t,ib=f.b;if(pw!==p.w){il=f.t;ir=f.b;it2=f.l;ib=f.r;}const cw=pw-il-ir-2*g,ch=ph-it2-ib-2*g;if(cw>=120&&ch>=120)cavities.push({sheet:sheetIdx,x0:px+il+g,y0:py+it2+g,w:cw,h:ch,cx:0,cy:0,rowH:0,g:g});}
+  function fillCavity(cavities,push,p){for(const cav of cavities){let pw=p.w,ph=p.h;if(p.grain&&ph>pw){const t=pw;pw=ph;ph=t;}let pos=cavPlace(cav,pw,ph);if(!pos&&!p.grain){const r2=cavPlace(cav,ph,pw);if(r2){const t=pw;pw=ph;ph=t;pos=r2;}}if(pos){push(cav.sheet,Object.assign({},p,{x:pos.x,y:pos.y,w:pw,h:ph,rot:(pw!==p.w)?90:0,inCav:true}));return true;}}return false;}
   function autoPack(mat,parts){
     parts=parts.slice().sort((a,b)=>b.h-a.h);
-    const sheets=[];let idx=-1,cur=null;
-    const start=()=>{idx++;const m=sheetMeta(mat,idx);cur={sz:m.sz,S:m.S,g:m.g,uW:m.S.w-2*m.g,uH:(m.S.uh||m.S.h)-2*m.g,x:m.g,y:m.g,rowH:0,parts:[]};sheets.push(cur);};
+    const sheets=[];let idx=-1,cur=null;const cavities=[];
+    const start=()=>{idx++;const m=sheetMeta(mat,idx);cur={sz:m.sz,S:m.S,g:m.g,uW:m.S.w-2*m.g,uH:(m.S.uh||m.S.h)-2*m.g,x:m.g,y:m.g,rowH:0,parts:[],idx:idx};sheets.push(cur);};
     start();
+    const pushTo=(si,part)=>sheets[si].parts.push(part);
     parts.forEach(p=>{
+      if(!isHost(p)&&!p.isInsert&&fillCavity(cavities,pushTo,p))return;
       let o=rigidOrient(p),pw=o.w,ph=o.h;
       if(!p.grain&&pw>cur.uW&&ph<=cur.uW){const t=pw;pw=ph;ph=t;}
       if(cur.x+pw>cur.g+cur.uW){cur.x=cur.g;cur.y+=cur.rowH+cur.g;cur.rowH=0;}
       if(cur.y+ph>cur.g+cur.uH){start();o=rigidOrient(p);pw=o.w;ph=o.h;if(!p.grain&&pw>cur.uW&&ph<=cur.uW){const t=pw;pw=ph;ph=t;}}
-      cur.parts.push(Object.assign({},p,{x:cur.x,y:cur.y,w:pw,h:ph,rot:(pw!==p.w)?90:0}));
+      const px=cur.x,py=cur.y;
+      cur.parts.push(Object.assign({},p,{x:px,y:py,w:pw,h:ph,rot:(pw!==p.w)?90:0}));
       cur.x+=pw+cur.g;cur.rowH=Math.max(cur.rowH,ph);
+      if(isHost(p))regCavity(cavities,cur.idx,p,px,py,pw,ph,cur.g);
     });
     return sheets;
   }
   function packInto(m,parts){
-    const S=m.S,g=m.g,uW=S.w-2*g;let x=g,y=g,rowH=0;const out=[];
+    const S=m.S,g=m.g,uW=S.w-2*g;let x=g,y=g,rowH=0;const out=[];const cavities=[];
+    const pushTo=(si,part)=>out.push(part);
     parts.slice().sort((a,b)=>b.h-a.h).forEach(p=>{
+      if(!isHost(p)&&!p.isInsert&&fillCavity(cavities,pushTo,p))return;
       let o=rigidOrient(p),pw=o.w,ph=o.h;
       if(!p.grain&&pw>uW&&ph<=uW){const t=pw;pw=ph;ph=t;}
       if(x+pw>g+uW){x=g;y+=rowH+g;rowH=0;}
-      out.push(Object.assign({},p,{x,y,w:pw,h:ph,rot:(pw!==p.w)?90:0}));
+      const px=x,py=y;
+      out.push(Object.assign({},p,{x:px,y:py,w:pw,h:ph,rot:(pw!==p.w)?90:0}));
       x+=pw+g;rowH=Math.max(rowH,ph);
+      if(isHost(p))regCavity(cavities,0,p,px,py,pw,ph,g);
     });
     return out;
   }
@@ -960,7 +988,7 @@
     groups.forEach((sheets,mat)=>{
       const matInp=`<input list="matList" value="${esc(mat)}" onchange="setGroupMat('${esc(mat)}',this.value)" ${editMode?'disabled':''} style="font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 6px;width:175px">`;
       sheets.forEach((sh,idx)=>{
-        const S=sh.S,vbW=Math.round(S.w/10),vbH=Math.round(S.h/10);const bcolSheet=blockColor(mat,sh.sz);
+        const S=sh.S,vbW=Math.round(S.w/10),vbH=Math.round(S.h/10);const bcolSheet=matColor(mat);
         const used=sh.parts.reduce((s,p)=>s+p.w*p.h,0)/(S.w*S.h)*100;
         nSheets++;nMat+=priceForSheet(mat,sh.sz);nCnc+=cncForThickness(mat);
         const sizeSel=`<select onchange="setSheetSize('${esc(mat)}',${idx},this.value)" ${editMode?'disabled':''} style="font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 4px">`+['8x4','10x4','10x5','jumbo'].map(k=>`<option value="${k}" ${k===sh.sz?'selected':''}>${SHEETS[k].label}</option>`).join('')+`</select>`;
@@ -1029,6 +1057,9 @@
       s+='</g>';return s;
     }
     const f=p.frame||{t:0,r:0,b:0,l:0};
+    const framed=(p.type==='trad'||p.type==='flush'||p.type==='reeded');
+    // framed door types always show the frame outline in the nest, even with no offset lines (item 2)
+    if(framed&&!(p.lines&&p.lines.length)){const lx=X+f.l/10,ty=Y+f.t/10,rw=W-(f.l+f.r)/10,rh=H-(f.t+f.b)/10;if(rw>0.6&&rh>0.6)s+=`<rect x="${lx.toFixed(1)}" y="${ty.toFixed(1)}" width="${rw.toFixed(1)}" height="${rh.toFixed(1)}" fill="none" stroke="${OFFCOL.A}" stroke-width="0.4"/>`;}
     (p.lines||[]).forEach(l=>{
       const lx=X+(f.l+l.mm)/10, ty=Y+(f.t+l.mm)/10, rw=W-(f.l+f.r+2*l.mm)/10, rh=H-(f.t+f.b+2*l.mm)/10;
       if(rw>0.6&&rh>0.6)s+=`<rect x="${lx.toFixed(1)}" y="${ty.toFixed(1)}" width="${rw.toFixed(1)}" height="${rh.toFixed(1)}" rx="${l.rd?0.25:0}" fill="none" stroke="${OFFCOL[l.L]}" stroke-width="0.3"/>`;
@@ -1040,9 +1071,13 @@
       if(side==='left'||side==='right'){const ex=side==='left'?X+ins2:X+W-ins2;const y1=Y+eo,y2=Y+H-eo;for(let k=0;k<h.count;k++){const dy=h.count===1?(y1+y2)/2:y1+(y2-y1)*k/(h.count-1);if(dy>Y+0.8&&dy<Y+H-0.8)s+=dot(ex,dy);}}
       else{const ey=side==='top'?Y+ins2:Y+H-ins2;const x1=X+eo,x2=X+W-eo;for(let k=0;k<h.count;k++){const dx=h.count===1?(x1+x2)/2:x1+(x2-x1)*k/(h.count-1);if(dx>X+0.8&&dx<X+W-0.8)s+=dot(dx,ey);}}
     }
+    // grain runs along the longest side — centred double-arrow, clearly visible (item 5)
+    if(p.grain&&Math.min(W,H)>=5){const horiz=(p.w>=p.h),cx=X+W/2,cy=Y+H/2,L=(horiz?W:H)*0.55,a=Math.max(1.4,Math.min(3.2,L*0.16)),col='#16a34a',sw=Math.max(0.5,Math.min(1.1,Math.min(W,H)/22));
+      if(horiz){const x1=cx-L/2,x2=cx+L/2;s+=`<line x1="${x1.toFixed(1)}" y1="${cy.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${cy.toFixed(1)}" stroke="${col}" stroke-width="${sw.toFixed(2)}"/><path d="M${(x1+a).toFixed(1)} ${(cy-a).toFixed(1)} L${x1.toFixed(1)} ${cy.toFixed(1)} L${(x1+a).toFixed(1)} ${(cy+a).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw.toFixed(2)}"/><path d="M${(x2-a).toFixed(1)} ${(cy-a).toFixed(1)} L${x2.toFixed(1)} ${cy.toFixed(1)} L${(x2-a).toFixed(1)} ${(cy+a).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw.toFixed(2)}"/>`;}
+      else{const y1=cy-L/2,y2=cy+L/2;s+=`<line x1="${cx.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="${sw.toFixed(2)}"/><path d="M${(cx-a).toFixed(1)} ${(y1+a).toFixed(1)} L${cx.toFixed(1)} ${y1.toFixed(1)} L${(cx+a).toFixed(1)} ${(y1+a).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw.toFixed(2)}"/><path d="M${(cx-a).toFixed(1)} ${(y2-a).toFixed(1)} L${cx.toFixed(1)} ${y2.toFixed(1)} L${(cx+a).toFixed(1)} ${(y2-a).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw.toFixed(2)}"/>`;}
+    }
     if(W>=11&&H>=8)s+=`<text x="${(X+1.8).toFixed(1)}" y="${(Y+4.2).toFixed(1)}" font-size="3" font-family="Arial" font-weight="700" fill="${DXFC.OUT}">${p.w}×${p.h}</text>`;
     if(p.text&&W>=14&&H>=10)s+=`<text x="${(X+W/2).toFixed(1)}" y="${(Y+H/2+1.4).toFixed(1)}" font-size="3.6" font-family="Arial" text-anchor="middle" fill="${p.isBack?'#dc2626':'#0f172a'}">${esc(p.text)}</text>`;
-    if(p.grain&&W>=8&&H>=8)s+=`<text x="${(X+W-1.4).toFixed(1)}" y="${(Y+4).toFixed(1)}" font-size="3.6" font-family="Arial" text-anchor="end" fill="#16a34a">↔</text>`;
     s+='</g>';return s;
   }
 
