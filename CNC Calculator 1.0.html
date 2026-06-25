@@ -16195,6 +16195,8 @@
         const width = formatMm(p.origW || p.w || 0);
         const height = formatMm(p.origH || p.h || 0);
         const quote = document.getElementById('quoteNumber').textContent || buildQuoteNumber();
+        const quoteDateMatch = String(quote || '').match(/(\d{6})$/);
+        const dateCode = quoteDateMatch ? quoteDateMatch[1] : formatQuoteDatePart();
         const role = String(p.assemblyRole || (p.insertKind ? p.insertKind : (p.shaker ? 'frame' : 'part')));
         const uid = shortHash([quote, item.block.id, p.sourceBlockId || '', p.sourcePartIndex ?? '', p.sourceInstanceIndex ?? '', sheetIndex, role, width, height, Math.round(Number(p.x || 0)), Math.round(Number(p.y || 0))].join('|'));
         const label = {
@@ -16212,6 +16214,7 @@
           sheetTotal:globalSheetTotal,
           door:String(p.shakerType || item.block.globalShakerType || 'flat').replace('no','Flat'),
           quote,
+          dateCode,
           role,
           group:String(p.assemblyGroup || ''),
           matchKey:shortHash([role, width, height, source.material || item.block.material, source.thickness || item.block.thickness, p.shakerType || item.block.globalShakerType || '', p.assemblyPanelIndex || '', p.assemblyPanelCount || ''].join('|')),
@@ -16774,14 +16777,15 @@
         const lineHeight = font * 1.06;
         const sizeH = sizeText ? sizeFont * 1.05 : 0;
         const metaH = metaText ? metaFont * 1.18 : 0;
-        const totalH = sizeH + (sizeText && codeLines.length ? 8 : 0) + codeLines.length * lineHeight + (metaText ? 7 + metaH : 0);
+        const sizeGap = sizeText && codeLines.length ? Math.max(30, Math.min(42, Math.max(sizeFont * 0.92, font * 1.05))) : 0;
+        const totalH = sizeH + sizeGap + codeLines.length * lineHeight + (metaText ? 7 + metaH : 0);
         const widestCode = codeLines.reduce((max, line)=>Math.max(max, line.length * font * 0.53), 0);
         const widest = Math.max(sizeText.length * sizeFont * 0.55, widestCode, metaText.length * metaFont * 0.52);
-        const fit = {font, sizeFont, metaFont, lineHeight, sizeText, codeLines, metaText, totalH};
+        const fit = {font, sizeFont, metaFont, lineHeight, sizeText, codeLines, metaText, sizeGap, totalH};
         fallback = fit;
         if(totalH <= boxH && widest <= boxW) return {...fit, ok:true};
       }
-      return {...(fallback || {font:12, sizeFont:18, metaFont:10, lineHeight:13, sizeText, codeLines:cncLabelWrapText(codeText, 18), metaText, totalH:0}), ok:false};
+      return {...(fallback || {font:12, sizeFont:18, metaFont:10, lineHeight:13, sizeText, codeLines:cncLabelWrapText(codeText, 18), metaText, sizeGap:30, totalH:0}), ok:false};
     }
     function cncLabelTextSvg(fit, x, y, boxW, boxH){
       const safe = value=>escapeHtml(String(value ?? ''));
@@ -16790,7 +16794,7 @@
       let svg = '';
       if(fit.sizeText){
         svg += `<text x="${x + boxW / 2}" y="${cursor}" class="cnc-dim" text-anchor="middle" font-size="${fit.sizeFont.toFixed(1)}">${safe(fit.sizeText)}</text>`;
-        cursor += fit.codeLines.length ? fit.sizeFont * 0.28 + 8 : 0;
+        cursor += fit.codeLines.length ? (fit.sizeGap || 30) : 0;
       }
       if(fit.codeLines.length){
         svg += `<text x="${x + boxW / 2}" y="${cursor}" class="cnc-code" text-anchor="middle" font-size="${fit.font.toFixed(1)}">`;
@@ -16805,26 +16809,48 @@
       }
       return svg;
     }
+    function cncLabelSingleLineFont(text, maxW, startFont=18, minFont=10){
+      const clean = String(text || '').trim();
+      for(let font = startFont; font >= minFont; font -= 0.5){
+        if(clean.length * font * 0.58 <= maxW) return font;
+      }
+      return minFont;
+    }
+    function cncLabelHeaderText(label){
+      const rawClient = String(label.client || '').replace(/\s+/g, ' ').trim();
+      const quote = String(label.quote || '').replace(/\s+/g, ' ').trim();
+      const dateCode = String(label.dateCode || (quote.match(/(\d{6})$/) || [,''])[1] || '').trim();
+      const client = rawClient && !/^client name\/job$/i.test(rawClient) ? rawClient : '';
+      if(client && dateCode) return client + ' ' + dateCode;
+      if(client) return client;
+      if(quote) return quote;
+      return 'FAST CNC';
+    }
     function cncLabelSvg(label){
       const safe = value=>escapeHtml(String(value ?? ''));
       const sheetNo = String(label.sheetNo || String(label.sheetShort || '').split('/')[0] || '').trim();
       const sheetText = sheetNo ? 'SHEET ' + sheetNo : String(label.sheet || '');
       const fscText = String(label.fsc || '').trim();
+      const headerText = cncLabelHeaderText(label);
+      const headerFont = cncLabelSingleLineFont(headerText, 248, 18, 10);
       const fullBox = {x:24, y:70, w:352, h:166};
       const qrBox = {x:24, y:70, w:238, h:166, qrX:280, qrY:86, qrSize:82};
       const fitWithQr = cncLabelFitContent(label, qrBox.w, qrBox.h);
       const useQr = !!(fitWithQr.ok && fitWithQr.font >= 22 && fitWithQr.sizeFont >= 26 && fitWithQr.codeLines.length <= 4);
       const textBox = useQr ? qrBox : fullBox;
       const fit = useQr ? fitWithQr : cncLabelFitContent(label, fullBox.w, fullBox.h);
+      const websiteX = fscText ? 248 : 200;
+      const websiteFit = fscText ? ' textLength="230" lengthAdjust="spacingAndGlyphs"' : '';
       let svg = `<svg class="label-svg cnc-label" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FAST CNC CNC label">
         <rect x="5" y="5" width="390" height="290" fill="#fff" stroke="#000" stroke-width="3"/>
         <line x1="5" y1="52" x2="395" y2="52" stroke="#000" stroke-width="3"/>
         <line x1="5" y1="246" x2="395" y2="246" stroke="#000" stroke-width="3"/>
-        ${fscText ? `<text x="22" y="34" class="cnc-top" font-size="19" text-anchor="start">${safe(fscText)}</text>` : `<text x="22" y="34" class="cnc-top muted" font-size="16" text-anchor="start">FAST CNC</text>`}
+        <text x="22" y="34" class="cnc-top" font-size="${headerFont.toFixed(1)}" text-anchor="start">${safe(headerText)}</text>
         <text x="378" y="34" class="cnc-sheet" font-size="20" text-anchor="end">${safe(sheetText)}</text>`;
       svg += cncLabelTextSvg(fit, textBox.x, textBox.y, textBox.w, textBox.h);
       if(useQr) svg += qrSvgFragment(label.qrPayload || compactQrPayload(label), qrBox.qrX, qrBox.qrY, qrBox.qrSize);
-      svg += `<text x="200" y="280" class="website" text-anchor="middle">www.fastcnc.co.uk</text></svg>`;
+      if(fscText) svg += `<text x="22" y="278" class="cnc-fsc" font-size="15" text-anchor="start">${safe(fscText)}</text>`;
+      svg += `<text x="${websiteX}" y="280" class="website" text-anchor="middle"${websiteFit}>www.fastcnc.co.uk</text></svg>`;
       return svg;
     }
     function labelSvg(label, type='cnc'){
@@ -16880,6 +16906,7 @@
         .cnc-top,.cnc-sheet,.cnc-dim,.cnc-code,.cnc-meta{font-weight:900}
         .cnc-dim,.cnc-code{font-weight:950}
         .cnc-top.muted{letter-spacing:.06em}
+        .cnc-fsc{font-weight:900}
         .website{font-size:29px;font-weight:400}
         @media screen{body{background:#e5e7eb}.label{margin:8px;background:white;border:1px solid #ddd}}
         @media print{.print-toolbar{display:none!important}body{background:#fff}.label{margin:0;border:0}}
@@ -17128,7 +17155,7 @@
     }
     async function labelTestPrintHtml(type='cnc'){
       const size = labelSizeConfig();
-      const testLabel = {partNo:34,total:40,code:'SA-4 SIDES- 2S/2L',client:'Client name/job',size:'2305x710',sheet:'Sheet 25',sheetShort:'25/40',sheetNo:25,sheetTotal:40,material:'FSC MDF TEST',fsc:'FSC',door:'Test',quote:'TEST070526',role:'part',group:'TEST-GROUP',copyText:'1 of 2',spraySides:['top','left','bottom']};
+      const testLabel = {partNo:34,total:40,code:'SA-4 SIDES- 2S/2L',client:'Pistachio',size:'2305x710',sheet:'Sheet 25',sheetShort:'25/40',sheetNo:25,sheetTotal:40,material:'FSC MDF TEST',fsc:'FSC',door:'Test',quote:'PISTACHIO250626',dateCode:'250626',role:'part',group:'TEST-GROUP',copyText:'1 of 2',spraySides:['top','left','bottom']};
       testLabel.qrPayload = compactQrPayload(testLabel);
       return labelPrintHtml([testLabel], type);
     }
