@@ -11360,9 +11360,13 @@
       const preferredIndex = Math.max(0, SHEET_ORDER.indexOf(preferredSize));
       for(let i=preferredIndex;i<SHEET_ORDER.length;i++){
         const key = SHEET_ORDER[i];
-        if(partFitsSheet(part,key, source)) return key;
+        const fitSource = key === preferredSize ? source : null;
+        if(partFitsSheet(part,key, fitSource)) return key;
       }
-      for(const key of SHEET_ORDER) if(partFitsSheet(part,key, source)) return key;
+      for(const key of SHEET_ORDER){
+        const fitSource = key === preferredSize ? source : null;
+        if(partFitsSheet(part,key, fitSource)) return key;
+      }
       return null;
     }
     function partXSizeKey(part){
