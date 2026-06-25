@@ -4251,7 +4251,7 @@
     function parseAtQuantityTakeoffLine(line){
       const raw = takeoffCellText(String(line || '').replace(/\t/g, ' '));
       if(!raw || !raw.includes('@')) return null;
-      const match = raw.match(/^\s*(\d{1,3})\s*@\s*(\d+(?:[.,]\d+)?)\s*(?:mm)?\s*x\s*(\d+(?:[.,]\d+)?)(?:\s*mm)?\s+(.+?)\s*$/i);
+      const match = raw.match(/^\s*(\d{1,3})\s*@\s*(\d+(?:[.,]\d+)?)\s*(?:mm)?\s*(?:x|×)\s*(\d+(?:[.,]\d+)?)(?:\s*mm)?\s*(.*?)\s*$/i);
       if(!match) return null;
       const qty = Math.min(999, Math.max(1, Math.round(Number(match[1]))));
       const width = Number(String(match[2]).replace(',', '.'));
@@ -4295,6 +4295,22 @@
     }
     function takeoffItemsPieceCount(items){
       return (items || []).reduce((sum, item)=>sum + Math.max(1, Math.round(Number(item?.quantity || 1))), 0);
+    }
+    function takeoffAtQuantityDiagnostics(text, items){
+      const lines = String(text || '').replace(/\r/g, '\n').split(/\n+/).map(line=>line.trim()).filter(Boolean);
+      const atLines = lines.filter(line=>/^\s*\d{1,3}\s*@/.test(takeoffCellText(line.replace(/\t/g, ' '))));
+      const expectedPieces = atLines.reduce((sum, line)=>{
+        const match = takeoffCellText(line.replace(/\t/g, ' ')).match(/^\s*(\d{1,3})\s*@/);
+        return sum + (match ? Math.min(999, Math.max(1, Math.round(Number(match[1])))) : 0);
+      }, 0);
+      const failedLines = atLines.filter(line=>!parseAtQuantityTakeoffLine(line));
+      return {
+        atRows:atLines.length,
+        expectedPieces,
+        parsedRows:(items || []).length,
+        parsedPieces:takeoffItemsPieceCount(items),
+        failedLines
+      };
     }
     function parseTakeoffText(text){
       const normalized = String(text || '').replace(/\r/g, '\n');
@@ -9609,6 +9625,12 @@
       const addParsedText = ()=>{
         const items = parseTakeoffText(textArea.value);
         const pieceCount = takeoffItemsPieceCount(items);
+        const diagnostics = takeoffAtQuantityDiagnostics(textArea.value, items);
+        if(diagnostics.atRows && (diagnostics.failedLines.length || diagnostics.expectedPieces !== pieceCount)){
+          const missed = diagnostics.failedLines.length ? ' Failed line: ' + diagnostics.failedLines[0].slice(0, 120) : '';
+          setStatus('Takeoff quantity mismatch: @ quantities add up to ' + diagnostics.expectedPieces + ' pieces, but the app read ' + pieceCount + '.' + missed, 'error');
+          return;
+        }
         const count = addTakeoffPartsToBlock(block, items);
         if(!count){
           setStatus('No dimensions found. Paste Excel rows or try: D 2x 700 x 730 / 700 x 730 x2.', 'error');
