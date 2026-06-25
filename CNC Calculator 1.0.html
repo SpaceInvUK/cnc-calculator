@@ -841,6 +841,7 @@
                   <button type="button" data-command-click="printBtn">Print / Save PDF</button>
                   <button type="button" id="printPanelsBtn">Print Panels Only</button>
                   <button type="button" data-command-click="printLabelsBtn">Print CNC Labels</button>
+                  <button type="button" data-command-click="printLabelMapBtn">Print Labels Map</button>
                   <button type="button" data-command-click="printSprayLabelsBtn">Print Spray Labels</button>
                   <button type="button" data-command-click="printLabelTestBtn">Print Label Test</button>
                 </div>
@@ -1101,6 +1102,7 @@
               <div class="field"><label for="labelRotate">Rotation</label><select id="labelRotate"><option value="0">Normal</option><option value="90">Rotate 90</option><option value="180">Rotate 180</option></select></div>
               <div class="field"><label for="labelScale">Scale</label><select id="labelScale"><option value="0.92">92% safe</option><option value="1">100%</option><option value="0.85">85%</option></select></div>
               <div class="field"><label>&nbsp;</label><button class="btn-secondary" id="printLabelsBtn" type="button">Labels CNC</button></div>
+              <div class="field"><label>&nbsp;</label><button class="btn-secondary" id="printLabelMapBtn" type="button">Labels Map</button></div>
               <div class="field"><label>&nbsp;</label><button class="btn-secondary" id="printSprayLabelsBtn" type="button">Labels Spray Finish</button></div>
               <div class="field"><label>&nbsp;</label><button class="btn-outline" id="printLabelTestBtn" type="button">Print Test</button></div>
             </div>
@@ -16027,6 +16029,52 @@
       });
       return labels;
     }
+    function labelMapPieceKey(entry){
+      const p = entry?.p || {};
+      const label = entry?.label || {};
+      return [
+        p.sourceBlockId || '',
+        p.sourcePartIndex ?? '',
+        label.role || '',
+        label.code || '',
+        label.size || '',
+        p.assemblyGroup || ''
+      ].join('|');
+    }
+    function collectLabelMapPages(){
+      if(!lastCalculation) return [];
+      const labels = collectPartLabels('cnc');
+      const entries = [];
+      const pages = [];
+      let labelIndex = 0;
+      lastCalculation.forEach((item, itemIndex)=>{
+        (item.nest.sheets || []).forEach((sheet, sheetIndex)=>{
+          const page = {item, itemIndex, sheet, sheetIndex, entries:[]};
+          (sheet.placements || []).forEach(p=>{
+            const label = labels[labelIndex++] || null;
+            if(!label) return;
+            const entry = {item, itemIndex, sheet, sheetIndex, p, label};
+            entries.push(entry);
+            page.entries.push(entry);
+          });
+          if(page.entries.length) pages.push(page);
+        });
+      });
+      const totals = new Map();
+      entries.forEach(entry=>{
+        const key = labelMapPieceKey(entry);
+        totals.set(key, (totals.get(key) || 0) + 1);
+      });
+      const seen = new Map();
+      entries.forEach(entry=>{
+        const key = labelMapPieceKey(entry);
+        const total = totals.get(key) || 1;
+        const index = (seen.get(key) || 0) + 1;
+        seen.set(key, index);
+        entry.copyText = total > 1 ? index + ' of ' + total : '';
+      });
+      return pages;
+    }
     function buildChecklistJobPayload(){
       const cncLabels = collectPartLabels('cnc');
       const sprayLabels = collectPartLabels('spray');
@@ -16543,6 +16591,143 @@
         @media print{.print-toolbar{display:none!important}body{background:#fff}.label{margin:0;border:0}}
       </style></head><body><div class="print-toolbar"><button onclick="window.print()">Print</button><button class="secondary" onclick="window.close()">Close</button></div>${body}</body></html>`;
     }
+    function labelMapWrapText(text, maxChars){
+      const clean = String(text || '').replace(/\s+/g, ' ').trim();
+      if(!clean) return [];
+      const limit = Math.max(4, Math.floor(Number(maxChars || 10)));
+      const lines = [];
+      clean.split(' ').forEach(word=>{
+        let chunk = word;
+        while(chunk.length > limit){
+          const piece = chunk.slice(0, limit);
+          if(lines.length && lines[lines.length - 1].length + 1 + piece.length <= limit){
+            lines[lines.length - 1] += ' ' + piece;
+          } else {
+            lines.push(piece);
+          }
+          chunk = chunk.slice(limit);
+        }
+        if(!chunk) return;
+        if(lines.length && lines[lines.length - 1].length + 1 + chunk.length <= limit){
+          lines[lines.length - 1] += ' ' + chunk;
+        } else {
+          lines.push(chunk);
+        }
+      });
+      return lines;
+    }
+    function labelMapFitLines(label, copyText, boxW, boxH){
+      const sizeText = String(label.size || '').trim();
+      const codeText = String(label.code || '').trim();
+      const sheetText = String(label.sheet || '').trim();
+      const metaText = [copyText, sheetText].filter(Boolean).join(' - ');
+      const minFont = Math.max(7, Math.min(14, boxH / 13));
+      const startFont = Math.max(minFont, Math.min(82, boxH / 3.1, boxW / 4.8));
+      let fallback = null;
+      for(let font = startFont; font >= minFont; font -= 1){
+        const maxChars = Math.max(5, Math.floor(boxW / Math.max(1, font * 0.54)));
+        const lines = [sizeText].concat(labelMapWrapText(codeText, maxChars)).concat(metaText ? [metaText] : []).filter(Boolean);
+        const lineHeight = font * 1.16;
+        const totalH = lines.length * lineHeight;
+        const widest = lines.reduce((max, line)=>Math.max(max, line.length * font * 0.54), 0);
+        fallback = {font, lineHeight, lines};
+        if(totalH <= boxH && widest <= boxW) return fallback;
+      }
+      return fallback || {font:minFont, lineHeight:minFont * 1.16, lines:[sizeText, codeText, metaText].filter(Boolean)};
+    }
+    function labelMapTextSvg(lines, x, y, font, lineHeight, anchor='middle'){
+      if(!lines.length) return '';
+      let out = '<text class="piece-label-text" x="'+x+'" y="'+y+'" text-anchor="'+anchor+'" font-size="'+font+'">';
+      lines.forEach((line, index)=>{
+        out += '<tspan x="'+x+'" dy="'+(index ? lineHeight : 0)+'">'+escapeHtml(line)+'</tspan>';
+      });
+      out += '</text>';
+      return out;
+    }
+    function labelMapPlacementSvg(entry, index){
+      const p = entry.p;
+      const label = entry.label;
+      const x = Number(p.x || 0), y = Number(p.y || 0), w = Math.max(1, Number(p.w || p.width || 0)), h = Math.max(1, Number(p.h || p.height || 0));
+      const pad = Math.max(8, Math.min(34, Math.min(w, h) * 0.07));
+      const fill = index % 2 ? '#f8fafc' : '#eef2f7';
+      const path = placementOutlineSvgPath(p, 1);
+      let svg = '<path class="map-piece" d="'+path+'" fill="'+fill+'" stroke="#111" stroke-width="4"/>';
+      const labelX = x + pad;
+      const labelY = y + pad;
+      const labelW = Math.max(1, w - pad * 2);
+      const labelH = Math.max(1, h - pad * 2);
+      svg += '<rect class="map-piece-label-bg" x="'+labelX+'" y="'+labelY+'" width="'+labelW+'" height="'+labelH+'" rx="'+Math.min(18, pad * 0.8)+'" ry="'+Math.min(18, pad * 0.8)+'"/>';
+      const qrPossible = w > 45 && h > 45;
+      let textX = labelX;
+      let textY = labelY;
+      let textW = labelW;
+      let textH = labelH;
+      if(qrPossible){
+        const qrSize = Math.max(24, Math.min(w * 0.18, h * 0.48, Math.min(w, h) * 0.62, 135));
+        let qrX = labelX;
+        let qrY = labelY;
+        if(w > h * 1.55 && w > 220){
+          qrY = y + h / 2 - qrSize / 2;
+          textX = labelX + qrSize + pad;
+          textW = Math.max(1, w - qrSize - pad * 4);
+        } else if(h > w * 1.35){
+          qrX = x + w / 2 - qrSize / 2;
+          textY = labelY + qrSize + pad * 0.7;
+          textH = Math.max(1, h - qrSize - pad * 3);
+        } else {
+          qrX = x + w - pad - qrSize;
+          qrY = y + h / 2 - qrSize / 2;
+          textW = Math.max(1, w - qrSize - pad * 4);
+        }
+        svg += qrSvgFragment(label.qrPayload || compactQrPayload(label), qrX, qrY, qrSize);
+      }
+      const fitted = labelMapFitLines(label, entry.copyText || '', textW, textH);
+      const totalTextH = fitted.lines.length * fitted.lineHeight;
+      const firstY = textY + Math.max(fitted.font, (textH - totalTextH) / 2 + fitted.font);
+      svg += labelMapTextSvg(fitted.lines, textX + textW / 2, firstY, fitted.font, fitted.lineHeight);
+      return svg;
+    }
+    function labelMapSheetSvg(page){
+      const sheet = page.sheet;
+      const sizeKey = sheet.sizeKey || page.item.nest.sizeKey || page.item.block.size || '8x4';
+      const size = SHEET_SIZES[sizeKey] || SHEET_SIZES['8x4'];
+      const sheetNo = page.sheetIndex + 1;
+      const sheetTotal = (page.item.nest.sheets || []).length || 1;
+      const title = 'Sheet ' + sheetNo + '/' + sheetTotal + ' - ' + (size.watermark || size.label || sizeKey);
+      let svg = '<svg class="label-map-sheet" viewBox="0 0 '+size.width+' '+size.height+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+escapeHtml(title)+'">';
+      svg += '<rect x="4" y="4" width="'+(size.width - 8)+'" height="'+(size.height - 8)+'" fill="#fff" stroke="#111" stroke-width="8"/>';
+      svg += '<text class="label-map-title" x="24" y="58">'+escapeHtml(title)+'</text>';
+      if(size.usableHeight && size.usableHeight < size.height){
+        svg += '<rect x="4" y="'+size.usableHeight+'" width="'+(size.width - 8)+'" height="'+Math.max(0, size.height - size.usableHeight - 4)+'" fill="rgba(220,38,38,.09)" stroke="none"/>';
+        svg += '<line x1="4" y1="'+size.usableHeight+'" x2="'+(size.width - 4)+'" y2="'+size.usableHeight+'" stroke="#dc2626" stroke-width="7" stroke-dasharray="28 18"/>';
+      }
+      page.entries.forEach((entry, index)=>{ svg += labelMapPlacementSvg(entry, index); });
+      svg += '</svg>';
+      return svg;
+    }
+    function labelMapPrintHtml(pages){
+      const body = pages.map(page=>'<section class="label-map-page">'+labelMapSheetSvg(page)+'</section>').join('');
+      return `<!doctype html>
+      <html><head><meta charset="utf-8"><title>FAST CNC Labels Map</title>
+      <style>
+        @page{size:A4 landscape;margin:5mm}
+        *{box-sizing:border-box}
+        html,body{margin:0;padding:0;background:#fff;color:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:Arial,Helvetica,sans-serif}
+        .print-toolbar{position:sticky;top:0;z-index:5;margin:0;padding:7px;background:#fff;border-bottom:1px solid #ddd;display:flex;gap:7px}
+        .print-toolbar button{font:900 12px Arial,Helvetica,sans-serif;padding:8px 11px;border:1px solid #111;border-radius:6px;background:#111;color:#fff;cursor:pointer}
+        .print-toolbar button.secondary{background:#fff;color:#111}
+        .label-map-page{width:287mm;height:200mm;margin:0 auto;page-break-after:always;break-after:page;page-break-inside:avoid;break-inside:avoid;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+        .label-map-page:last-child{page-break-after:auto;break-after:auto}
+        .label-map-sheet{width:100%;height:100%;display:block}
+        .label-map-sheet text{font-family:Arial,Helvetica,sans-serif;fill:#000}
+        .label-map-title{font-size:44px;font-weight:900}
+        .map-piece-label-bg{fill:#fff;fill-opacity:.9;stroke:#111;stroke-width:2}
+        .piece-label-text{font-weight:900;dominant-baseline:auto}
+        .qr-code rect{shape-rendering:crispEdges}
+        @media screen{body{background:#e5e7eb}.label-map-page{margin:10px auto;border:1px solid #cbd5e1;box-shadow:0 8px 24px rgba(15,23,42,.13)}}
+        @media print{.print-toolbar{display:none!important}body{background:#fff}.label-map-page{margin:0;border:0;box-shadow:none}}
+      </style></head><body><div class="print-toolbar"><button onclick="window.print()">Print</button><button class="secondary" onclick="window.close()">Close</button></div>${body}</body></html>`;
+    }
     async function labelTestPrintHtml(type='cnc'){
       const size = labelSizeConfig();
       const testLabel = {partNo:34,total:40,code:'FAST CNC TEST',client:'Client name/job',size:'500x600',sheet:'Sheet 2/2',sheetShort:'2/2',material:'BLACK PRINT TEST',door:'Test',quote:'TEST070526',role:'part',group:'TEST-GROUP',spraySides:['top','left','bottom']};
@@ -16558,6 +16743,33 @@
       win.focus();
       setTimeout(()=>win.print(), 300);
       showMessage('Label test ready. If this prints blank, change Rotation/Scale or check the printer driver/page size.', 'success');
+    }
+    async function printLabelMap(){
+      if(await calculateAll({skipManualConfirm:true}) === false) return;
+      const pages = collectLabelMapPages();
+      if(!pages.length){
+        showMessage('Add part dimensions before printing the labels map.','error');
+        return;
+      }
+      const html = labelMapPrintHtml(pages);
+      const blobUrl = URL.createObjectURL(new Blob([html], {type:'text/html;charset=utf-8'}));
+      const win = window.open(blobUrl, '_blank', 'width=1120,height=820');
+      if(!win){
+        URL.revokeObjectURL(blobUrl);
+        showMessage('Allow pop-ups to print the labels map.','error');
+        return;
+      }
+      const waitForPrintAssets = async ()=>{
+        try{
+          if(win.document.fonts?.ready) await win.document.fonts.ready;
+        }catch(err){}
+        setTimeout(()=>{
+          try{ win.focus(); win.print(); }catch(err){}
+          setTimeout(()=>URL.revokeObjectURL(blobUrl), 60000);
+        }, 700);
+      };
+      waitForPrintAssets();
+      showMessage('Labels map ready for printing: '+pages.length+' sheet page'+(pages.length===1?'':'s')+'.','success');
     }
     async function printLabels(type='cnc'){
       if(await calculateAll({skipManualConfirm:true}) === false) return;
@@ -16778,6 +16990,7 @@
     document.getElementById('printPanelsBtn')?.addEventListener('click', ()=>{ printPanelsOnly(); closeCommandMenus(); });
     document.getElementById('labelsToggleBtn').addEventListener('click', ()=>{ setLabelsEnabled(!labelsEnabled); });
     document.getElementById('printLabelsBtn').addEventListener('click', ()=>{ printLabels(); });
+    document.getElementById('printLabelMapBtn').addEventListener('click', ()=>{ printLabelMap(); });
     document.getElementById('printSprayLabelsBtn').addEventListener('click', ()=>{ printLabels('spray'); });
     document.getElementById('saveChecklistJobBtn').addEventListener('click', ()=>{ saveChecklistJobFile(); });
     document.getElementById('createChecklistTxtBtn').addEventListener('click', ()=>{ saveChecklistTxtFile(); });
