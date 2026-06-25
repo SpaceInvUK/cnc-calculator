@@ -16149,6 +16149,22 @@
         .replace(/\s+/g, ' ')
         .trim() || 'Material';
     }
+    function labelFscText(source, block){
+      const candidates = [
+        source?.fsc,
+        source?.fscInfo,
+        source?.certification,
+        source?.material,
+        block?.fsc,
+        block?.fscInfo,
+        block?.certification,
+        block?.material
+      ].map(value=>String(value || '').replace(/\s+/g, ' ').trim()).filter(Boolean);
+      const found = candidates.find(value=>/\bFSC\b/i.test(value));
+      if(!found) return '';
+      const match = found.match(/FSC(?:\s*[A-Z0-9+/-]+)?/i);
+      return (match ? match[0] : 'FSC').toUpperCase().slice(0, 24);
+    }
     function labelSizeConfig(){
       const value = document.getElementById('labelSize')?.value || '40x30';
       const [w,h] = value.split('x').map(Number);
@@ -16163,15 +16179,18 @@
     function collectPartLabels(type='cnc'){
       if(!lastCalculation) return [];
       const allPlacements = [];
+      let globalSheetNo = 0;
       lastCalculation.forEach(item=>{
         item.nest.sheets.forEach((sheet, sheetIndex)=>{
-          sheet.placements.forEach(p=>allPlacements.push({item, sheet, sheetIndex, p}));
+          globalSheetNo++;
+          sheet.placements.forEach(p=>allPlacements.push({item, sheet, sheetIndex, globalSheetNo, p}));
         });
       });
+      const globalSheetTotal = globalSheetNo;
       const filtered = type === 'spray' ? allPlacements.filter(entry=>hasSprayFinish(entry.p)) : allPlacements;
       const total = filtered.length;
       const labels = [];
-      filtered.forEach(({item, sheetIndex, p})=>{
+      filtered.forEach(({item, sheetIndex, globalSheetNo, p})=>{
         const source = labelSourceBlock(item, p);
         const width = formatMm(p.origW || p.w || 0);
         const height = formatMm(p.origH || p.h || 0);
@@ -16189,6 +16208,8 @@
           material:labelMaterialShort(source.material || item.block.material),
           sheet:'Sheet ' + (sheetIndex + 1) + '/' + item.nest.sheets.length,
           sheetShort:(sheetIndex + 1) + '/' + item.nest.sheets.length,
+          sheetNo:globalSheetNo,
+          sheetTotal:globalSheetTotal,
           door:String(p.shakerType || item.block.globalShakerType || 'flat').replace('no','Flat'),
           quote,
           role,
@@ -16196,11 +16217,25 @@
           matchKey:shortHash([role, width, height, source.material || item.block.material, source.thickness || item.block.thickness, p.shakerType || item.block.globalShakerType || '', p.assemblyPanelIndex || '', p.assemblyPanelCount || ''].join('|')),
           panelIndex:String(p.assemblyPanelIndex || ''),
           panelCount:String(p.assemblyPanelCount || ''),
+          fsc:labelFscText(source, item.block),
           spraySides:normalizeSpraySides(p.spraySides),
           labelType:type
         };
         label.qrPayload = compactQrPayload(label);
         labels.push(label);
+      });
+      const copyTotals = new Map();
+      labels.forEach(label=>{
+        const key = [label.role, label.code, label.size, label.group, label.matchKey].join('|');
+        copyTotals.set(key, (copyTotals.get(key) || 0) + 1);
+      });
+      const copySeen = new Map();
+      labels.forEach(label=>{
+        const key = [label.role, label.code, label.size, label.group, label.matchKey].join('|');
+        const total = copyTotals.get(key) || 1;
+        const index = (copySeen.get(key) || 0) + 1;
+        copySeen.set(key, index);
+        label.copyText = total > 1 ? index + ' of ' + total : '';
       });
       return labels;
     }
@@ -16701,16 +16736,107 @@
       if(set.has('left')) arrow.push(`<path d="M ${x - 14} ${cy} L ${x + 10} ${cy - 16} L ${x + 10} ${cy + 16} Z"/>`);
       return `<g class="spray-diagram" fill="none" stroke="#000" stroke-width="2.4" stroke-linejoin="miter"><rect x="${x}" y="${y}" width="${w}" height="${h}"/>${arrow.join('')}</g>`;
     }
+    function cncLabelWrapText(text, maxChars){
+      const clean = String(text || '').replace(/\s+/g, ' ').trim();
+      if(!clean) return [];
+      const limit = Math.max(4, Math.floor(Number(maxChars || 12)));
+      const lines = [];
+      clean.split(' ').forEach(word=>{
+        let rest = word;
+        while(rest.length > limit){
+          const piece = rest.slice(0, limit);
+          if(lines.length && lines[lines.length - 1].length + 1 + piece.length <= limit){
+            lines[lines.length - 1] += ' ' + piece;
+          } else {
+            lines.push(piece);
+          }
+          rest = rest.slice(limit);
+        }
+        if(!rest) return;
+        if(lines.length && lines[lines.length - 1].length + 1 + rest.length <= limit){
+          lines[lines.length - 1] += ' ' + rest;
+        } else {
+          lines.push(rest);
+        }
+      });
+      return lines;
+    }
+    function cncLabelFitContent(label, boxW, boxH){
+      const sizeText = String(label.size || '').trim();
+      const codeText = String(label.code || '').trim();
+      const metaText = [label.copyText || '', label.partNo ? '#' + label.partNo : ''].filter(Boolean).join('  ');
+      let fallback = null;
+      for(let font = 30; font >= 12; font -= 0.5){
+        const sizeFont = Math.max(18, Math.min(42, font * 1.18));
+        const metaFont = Math.max(10, Math.min(17, font * 0.58));
+        const maxChars = Math.max(4, Math.floor(boxW / Math.max(1, font * 0.53)));
+        const codeLines = cncLabelWrapText(codeText, maxChars);
+        const lineHeight = font * 1.06;
+        const sizeH = sizeText ? sizeFont * 1.05 : 0;
+        const metaH = metaText ? metaFont * 1.18 : 0;
+        const totalH = sizeH + (sizeText && codeLines.length ? 8 : 0) + codeLines.length * lineHeight + (metaText ? 7 + metaH : 0);
+        const widestCode = codeLines.reduce((max, line)=>Math.max(max, line.length * font * 0.53), 0);
+        const widest = Math.max(sizeText.length * sizeFont * 0.55, widestCode, metaText.length * metaFont * 0.52);
+        const fit = {font, sizeFont, metaFont, lineHeight, sizeText, codeLines, metaText, totalH};
+        fallback = fit;
+        if(totalH <= boxH && widest <= boxW) return {...fit, ok:true};
+      }
+      return {...(fallback || {font:12, sizeFont:18, metaFont:10, lineHeight:13, sizeText, codeLines:cncLabelWrapText(codeText, 18), metaText, totalH:0}), ok:false};
+    }
+    function cncLabelTextSvg(fit, x, y, boxW, boxH){
+      const safe = value=>escapeHtml(String(value ?? ''));
+      const totalH = fit.totalH || (fit.sizeFont + fit.codeLines.length * fit.lineHeight + (fit.metaText ? fit.metaFont + 7 : 0));
+      let cursor = y + Math.max(fit.sizeFont, (boxH - totalH) / 2 + fit.sizeFont);
+      let svg = '';
+      if(fit.sizeText){
+        svg += `<text x="${x + boxW / 2}" y="${cursor}" class="cnc-dim" text-anchor="middle" font-size="${fit.sizeFont.toFixed(1)}">${safe(fit.sizeText)}</text>`;
+        cursor += fit.codeLines.length ? fit.sizeFont * 0.28 + 8 : 0;
+      }
+      if(fit.codeLines.length){
+        svg += `<text x="${x + boxW / 2}" y="${cursor}" class="cnc-code" text-anchor="middle" font-size="${fit.font.toFixed(1)}">`;
+        fit.codeLines.forEach((line, index)=>{
+          svg += `<tspan x="${x + boxW / 2}" dy="${index ? fit.lineHeight : 0}">${safe(line)}</tspan>`;
+        });
+        svg += '</text>';
+        cursor += fit.codeLines.length * fit.lineHeight;
+      }
+      if(fit.metaText){
+        svg += `<text x="${x + boxW / 2}" y="${cursor + fit.metaFont + 6}" class="cnc-meta" text-anchor="middle" font-size="${fit.metaFont.toFixed(1)}">${safe(fit.metaText)}</text>`;
+      }
+      return svg;
+    }
+    function cncLabelSvg(label){
+      const safe = value=>escapeHtml(String(value ?? ''));
+      const sheetNo = String(label.sheetNo || String(label.sheetShort || '').split('/')[0] || '').trim();
+      const sheetText = sheetNo ? 'SHEET ' + sheetNo : String(label.sheet || '');
+      const fscText = String(label.fsc || '').trim();
+      const fullBox = {x:24, y:70, w:352, h:166};
+      const qrBox = {x:24, y:70, w:238, h:166, qrX:280, qrY:86, qrSize:82};
+      const fitWithQr = cncLabelFitContent(label, qrBox.w, qrBox.h);
+      const useQr = !!(fitWithQr.ok && fitWithQr.font >= 22 && fitWithQr.sizeFont >= 26 && fitWithQr.codeLines.length <= 4);
+      const textBox = useQr ? qrBox : fullBox;
+      const fit = useQr ? fitWithQr : cncLabelFitContent(label, fullBox.w, fullBox.h);
+      let svg = `<svg class="label-svg cnc-label" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FAST CNC CNC label">
+        <rect x="5" y="5" width="390" height="290" fill="#fff" stroke="#000" stroke-width="3"/>
+        <line x1="5" y1="52" x2="395" y2="52" stroke="#000" stroke-width="3"/>
+        <line x1="5" y1="246" x2="395" y2="246" stroke="#000" stroke-width="3"/>
+        ${fscText ? `<text x="22" y="34" class="cnc-top" font-size="19" text-anchor="start">${safe(fscText)}</text>` : `<text x="22" y="34" class="cnc-top muted" font-size="16" text-anchor="start">FAST CNC</text>`}
+        <text x="378" y="34" class="cnc-sheet" font-size="20" text-anchor="end">${safe(sheetText)}</text>`;
+      svg += cncLabelTextSvg(fit, textBox.x, textBox.y, textBox.w, textBox.h);
+      if(useQr) svg += qrSvgFragment(label.qrPayload || compactQrPayload(label), qrBox.qrX, qrBox.qrY, qrBox.qrSize);
+      svg += `<text x="200" y="280" class="website" text-anchor="middle">www.fastcnc.co.uk</text></svg>`;
+      return svg;
+    }
     function labelSvg(label, type='cnc'){
       const safe = value=>escapeHtml(String(value ?? ''));
-      const qr = qrSvgFragment(label.qrPayload || compactQrPayload(label), type === 'spray' ? 274 : 204, type === 'spray' ? 72 : 66, type === 'spray' ? 112 : 178);
-      const headerRaw = String(label.quote || label.client || 'QUOTE NUMBER');
-      const header = safe(headerRaw);
-      const headerFit = headerRaw.length > 22 ? ' textLength="350" lengthAdjust="spacingAndGlyphs"' : '';
-      const size = safe(label.size || '');
-      const part = safe('PART  ' + String(label.partNo || ''));
-      const sheet = safe('Sheet ' + (label.sheetShort || '1/1'));
       if(type === 'spray'){
+        const qr = qrSvgFragment(label.qrPayload || compactQrPayload(label), 274, 72, 112);
+        const headerRaw = String(label.quote || label.client || 'QUOTE NUMBER');
+        const header = safe(headerRaw);
+        const headerFit = headerRaw.length > 22 ? ' textLength="350" lengthAdjust="spacingAndGlyphs"' : '';
+        const size = safe(label.size || '');
+        const part = safe('PART  ' + String(label.partNo || ''));
+        const sheet = safe('Sheet ' + (label.sheetShort || '1/1'));
         return `<svg class="label-svg spray-label" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FAST CNC spray finish label">
           <rect x="5" y="5" width="390" height="290" fill="#fff" stroke="#000" stroke-width="3"/>
           <line x1="5" y1="58" x2="395" y2="58" stroke="#000" stroke-width="3"/>
@@ -16722,17 +16848,7 @@
           ${sprayArrowsSvg(label.spraySides, 194, 90, 58, 156)}
         </svg>`;
       }
-      return `<svg class="label-svg cnc-label" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FAST CNC CNC label">
-        <rect x="5" y="5" width="390" height="290" fill="#fff" stroke="#000" stroke-width="3"/>
-        <line x1="5" y1="58" x2="395" y2="58" stroke="#000" stroke-width="3"/>
-        <line x1="5" y1="246" x2="395" y2="246" stroke="#000" stroke-width="3"/>
-        <text x="200" y="40" class="job" text-anchor="middle"${headerFit}>${header}</text>
-        <text x="22" y="120" class="size">${size}</text>
-        <text x="40" y="172" class="part">${part}</text>
-        <text x="52" y="220" class="sheet">${sheet}</text>
-        ${qr}
-        <text x="200" y="282" class="website" text-anchor="middle">www.fastcnc.co.uk</text>
-      </svg>`;
+      return cncLabelSvg(label);
     }
     async function labelPrintHtml(labels, type='cnc'){
       const size = labelSizeConfig();
@@ -16761,6 +16877,9 @@
         .size{font-size:38px;font-weight:400}
         .part{font-size:33px;font-weight:400}
         .sheet{font-size:23px;font-weight:400}
+        .cnc-top,.cnc-sheet,.cnc-dim,.cnc-code,.cnc-meta{font-weight:900}
+        .cnc-dim,.cnc-code{font-weight:950}
+        .cnc-top.muted{letter-spacing:.06em}
         .website{font-size:29px;font-weight:400}
         @media screen{body{background:#e5e7eb}.label{margin:8px;background:white;border:1px solid #ddd}}
         @media print{.print-toolbar{display:none!important}body{background:#fff}.label{margin:0;border:0}}
@@ -17009,7 +17128,7 @@
     }
     async function labelTestPrintHtml(type='cnc'){
       const size = labelSizeConfig();
-      const testLabel = {partNo:34,total:40,code:'FAST CNC TEST',client:'Client name/job',size:'500x600',sheet:'Sheet 2/2',sheetShort:'2/2',material:'BLACK PRINT TEST',door:'Test',quote:'TEST070526',role:'part',group:'TEST-GROUP',spraySides:['top','left','bottom']};
+      const testLabel = {partNo:34,total:40,code:'SA-4 SIDES- 2S/2L',client:'Client name/job',size:'2305x710',sheet:'Sheet 25',sheetShort:'25/40',sheetNo:25,sheetTotal:40,material:'FSC MDF TEST',fsc:'FSC',door:'Test',quote:'TEST070526',role:'part',group:'TEST-GROUP',copyText:'1 of 2',spraySides:['top','left','bottom']};
       testLabel.qrPayload = compactQrPayload(testLabel);
       return labelPrintHtml([testLabel], type);
     }
