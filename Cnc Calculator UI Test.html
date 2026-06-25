@@ -12377,6 +12377,40 @@
 
       return betterPlan(buildPlan('fill-open-sheet'), buildPlan('reserve-smaller'));
     }
+    function nestingPartAuditKey(part, widthField='width', heightField='height'){
+      const width = Math.round(Number(part?.[widthField] || part?.width || part?.origW || 0) * 100) / 100;
+      const height = Math.round(Number(part?.[heightField] || part?.height || part?.origH || 0) * 100) / 100;
+      const text = String(part?.text || '').replace(/\s+/g, ' ').trim();
+      return [width, height, text].join('|');
+    }
+    function nestingPartAudit(block, nest){
+      const expected = expandBlockParts(block).filter(part=>Number(part.width || 0) > 0 && Number(part.height || 0) > 0);
+      const placed = (nest?.sheets || []).flatMap(sheet=>sheet.placements || []);
+      const expectedMap = new Map();
+      expected.forEach(part=>{
+        const key = nestingPartAuditKey(part);
+        if(!expectedMap.has(key)) expectedMap.set(key, {part, expected:0, placed:0});
+        expectedMap.get(key).expected++;
+      });
+      placed.forEach(part=>{
+        const key = nestingPartAuditKey(part, 'origW', 'origH');
+        if(!expectedMap.has(key)) expectedMap.set(key, {part:{width:part.origW || part.w, height:part.origH || part.h, text:part.text || ''}, expected:0, placed:0});
+        expectedMap.get(key).placed++;
+      });
+      const missing = Array.from(expectedMap.values())
+        .filter(item=>item.expected > item.placed)
+        .map(item=>({part:item.part, missing:item.expected - item.placed, expected:item.expected, placed:item.placed}));
+      return {expected:expected.length, placed:placed.length, missing};
+    }
+    function nestingPartAuditWarning(audit){
+      if(!audit || audit.expected === audit.placed) return '';
+      const lines = (audit.missing || []).map(item=>{
+        const p = item.part || {};
+        const text = String(p.text || '').replace(/\s+/g, ' ').trim();
+        return item.missing + ' x ' + formatMm(p.width || p.origW || 0) + ' x ' + formatMm(p.height || p.origH || 0) + (text ? ' ' + escapeHtml(text) : '');
+      });
+      return '<div class="warning-box">Nesting quantity mismatch: expected '+audit.expected+' pieces, but drew '+audit.placed+'. Missing:<br>'+lines.join('<br>')+'</div>';
+    }
 
     function autoPartSnapshot(parts){
       return (parts || []).map(p=>({
@@ -14833,6 +14867,7 @@
           return 'Part '+p.id+' ('+p.width+' x '+p.height+' mm) does not fit any available sheet.'+s;
         }).join('<br>')+'</div>';
       }
+      html += nestingPartAuditWarning(nestingPartAudit(previewBlock, res));
       if(res.sheets.length){
         const sheetSummary = Object.entries(res.sheetCounts || {}).map(([key,count])=>count+' x '+SHEET_SIZES[key].label).join(', ');
         const groupedNote = preview.grouped ? ' Combined with '+preview.count+' matching material blocks.' : '';
@@ -16124,6 +16159,7 @@
             return 'Part '+p.id+' ('+p.width+' x '+p.height+' mm) does not fit any available sheet.'+s;
           }).join('<br>')+'</div>';
         }
+        html += nestingPartAuditWarning(nestingPartAudit(block, nest));
         card.innerHTML = html;
         mb.appendChild(card);
 
