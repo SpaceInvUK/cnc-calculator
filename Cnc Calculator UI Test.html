@@ -4071,10 +4071,34 @@
     function normalizeTakeoffLabel(value){
       return takeoffCellText(value).replace(/\s*\/\s*/g, '/').toUpperCase();
     }
+    function normalizeTakeoffEdgeLabel(value){
+      let edge = normalizeTakeoffLabel(value).replace(/[.]+$/g, '').trim();
+      if(!edge) return '';
+      if(/^NONE$/i.test(edge)) return 'None';
+      edge = edge.replace(/[|]/g, '1').replace(/[Il]/g, '1').replace(/O/g, '0');
+      const match = edge.match(/^([012])([S58]?)\/([012])([L1]?)$/);
+      if(match) return match[1] + 'S/' + match[3] + 'L';
+      return edge;
+    }
+    function normalizeTakeoffPartText(value){
+      let text = normalizeTakeoffLabel(value)
+        .replace(/^\$A(?=-)/, 'SA')
+        .replace(/^5A(?=-)/, 'SA')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if(!text) return '';
+      const lastDash = text.lastIndexOf('-');
+      if(lastDash >= 0){
+        const prefix = text.slice(0, lastDash).trim().replace(/\s*-\s*/g, '-');
+        const edge = normalizeTakeoffEdgeLabel(text.slice(lastDash + 1));
+        if(edge) return prefix + '- ' + edge;
+      }
+      return text.replace(/[.]+$/g, '');
+    }
     function buildExcelTakeoffText(subAssembly, description, edging){
       const sa = normalizeTakeoffLabel(subAssembly);
       const desc = normalizeTakeoffLabel(description);
-      const edge = normalizeTakeoffLabel(edging);
+      const edge = normalizeTakeoffEdgeLabel(edging);
       const base = [sa ? 'SA-' + sa : '', desc].filter(Boolean).join(' ');
       if(edge) return (base || 'SA') + '- ' + edge;
       return base;
@@ -4099,6 +4123,31 @@
       };
       if(map.description >= 0 && map.length >= 0 && map.width >= 0) return map;
       return null;
+    }
+    function simpleTakeoffHeaderMap(cells){
+      const keys = cells.map(takeoffHeaderKey);
+      const map = {
+        part:takeoffHeaderIndex(keys, ['part', 'partno', 'partnumber', 'index', 'no']),
+        width:takeoffHeaderIndex(keys, ['width', 'w']),
+        height:takeoffHeaderIndex(keys, ['height', 'h']),
+        text:takeoffHeaderIndex(keys, ['text', 'label', 'name', 'description', 'desc']),
+        quantity:takeoffHeaderIndex(keys, ['qty', 'quantity', 'copies', 'copy'])
+      };
+      if(map.width >= 0 && map.height >= 0 && map.text >= 0) return map;
+      return null;
+    }
+    function parseSimpleTakeoffRow(cells, header){
+      const valueAt = index=>Number.isInteger(index) && index >= 0 ? cells[index] : '';
+      const width = takeoffPositiveNumber(valueAt(header.width));
+      const height = takeoffPositiveNumber(valueAt(header.height));
+      if(!(width > 0 && height > 0)) return null;
+      const text = normalizeTakeoffPartText(valueAt(header.text));
+      return {
+        quantity:header.quantity >= 0 ? takeoffQuantityFromCells(cells, header.quantity) : 1,
+        width:roundPanelMm(width),
+        height:roundPanelMm(height),
+        text:text || ('Part ' + takeoffCellText(valueAt(header.part))),
+      };
     }
     function inferExcelTakeoffRow(cells){
       const clean = cells.map(takeoffCellText);
@@ -4207,7 +4256,7 @@
       const qty = Math.min(999, Math.max(1, Math.round(Number(match[1]))));
       const width = Number(String(match[2]).replace(',', '.'));
       const height = Number(String(match[3]).replace(',', '.'));
-      const text = normalizeTakeoffLabel(match[4]);
+      const text = normalizeTakeoffPartText(match[4]);
       if(!(width > 0 && height > 0)) return null;
       return {
         quantity:qty,
@@ -4223,12 +4272,17 @@
       lines.forEach(line=>{
         const cells = splitExcelTakeoffLine(line);
         if(cells.length < 4) return;
-        const maybeHeader = excelTakeoffHeaderMap(cells);
-        if(maybeHeader){
-          header = maybeHeader;
+        const simpleHeader = simpleTakeoffHeaderMap(cells);
+        if(simpleHeader){
+          header = {type:'simple', ...simpleHeader};
           return;
         }
-        const item = parseExcelTakeoffRow(cells, header);
+        const maybeHeader = excelTakeoffHeaderMap(cells);
+        if(maybeHeader){
+          header = {type:'excel', ...maybeHeader};
+          return;
+        }
+        const item = header?.type === 'simple' ? parseSimpleTakeoffRow(cells, header) : parseExcelTakeoffRow(cells, header);
         if(item && item.width > 0 && item.height > 0) parsed.push(item);
       });
       return parsed;
