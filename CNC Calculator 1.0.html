@@ -16743,8 +16743,8 @@
       const gridW = pageW;
       const gridH = pageH - headerH;
       let best = null;
-      for(let cols=1; cols<=total; cols++){
-        const rows = Math.ceil(total / cols);
+      for(let cols=2; cols<=Math.max(2, total); cols++){
+        const rows = Math.max(2, Math.ceil(total / cols));
         const cellW = (gridW - gap * (cols - 1)) / cols;
         const cellH = (gridH - gap * (rows - 1)) / rows;
         if(cellW <= 0 || cellH <= 0) continue;
@@ -16753,7 +16753,7 @@
         const score = Math.min(cellW, cellH) * 9 + Math.sqrt(cellW * cellH) * 3 + ratioScore * 12 - empty * 0.8;
         if(!best || score > best.score) best = {cols, rows, cellW, cellH, gap, headerH, score};
       }
-      return best || {cols:total, rows:1, cellW:20, cellH:20, gap, headerH, score:0};
+      return best || {cols:2, rows:2, cellW:(gridW - gap) / 2, cellH:(gridH - gap) / 2, gap, headerH, score:0};
     }
     function a4LabelWrapText(text, maxChars){
       const clean = String(text || '').replace(/\s+/g, ' ').trim();
