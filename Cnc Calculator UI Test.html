@@ -16659,6 +16659,9 @@
       const labelW = Math.max(1, w - pad * 2);
       const labelH = Math.max(1, h - pad * 2);
       svg += '<rect class="map-piece-label-bg" x="'+labelX+'" y="'+labelY+'" width="'+labelW+'" height="'+labelH+'" rx="'+Math.min(18, pad * 0.8)+'" ry="'+Math.min(18, pad * 0.8)+'"/>';
+      const mapIndex = String(label.partNo || (index + 1));
+      const mapIndexSize = Math.max(12, Math.min(42, Math.min(w, h) * 0.17));
+      svg += '<text class="map-piece-index" x="'+(labelX + Math.max(6, pad * 0.55))+'" y="'+(labelY + mapIndexSize + Math.max(2, pad * 0.18))+'" font-size="'+mapIndexSize+'">'+escapeHtml(mapIndex)+'</text>';
       const qrPossible = w > 45 && h > 45;
       let textX = labelX;
       let textY = labelY;
@@ -16724,14 +16727,12 @@
         .label-map-sheet text{font-family:Arial,Helvetica,sans-serif;fill:#000}
         .label-map-title{font-size:44px;font-weight:900}
         .map-piece-label-bg{fill:#fff;fill-opacity:.9;stroke:#111;stroke-width:2}
+        .map-piece-index{font-weight:900;fill:#555}
         .piece-label-text{font-weight:900;dominant-baseline:auto}
         .qr-code rect{shape-rendering:crispEdges}
         @media screen{body{background:#e5e7eb}.label-map-page{margin:10px auto;border:1px solid #cbd5e1;box-shadow:0 8px 24px rgba(15,23,42,.13)}}
         @media print{.print-toolbar{display:none!important}body{background:#fff}.label-map-page{margin:0;border:0;box-shadow:none}}
       </style></head><body><div class="print-toolbar"><button onclick="window.print()">Print</button><button class="secondary" onclick="window.close()">Close</button></div>${body}</body></html>`;
-    }
-    function firstA4LabelPage(){
-      return collectLabelMapPages()[0] || null;
     }
     function a4LabelGrid(count){
       const total = Math.max(1, Number(count || 1));
@@ -16794,18 +16795,21 @@
       const dimFont = Math.min(5.4, fittedFont * 1.12);
       const metaFont = Math.max(2.05, fittedFont * 0.74);
       return '<article class="a4-label-cell" style="--f:'+fittedFont.toFixed(2)+'mm;--dim:'+dimFont.toFixed(2)+'mm;--meta:'+metaFont.toFixed(2)+'mm">'+
-        '<div class="a4-label-index">'+(index + 1)+'</div>'+
+        '<div class="a4-label-index">'+escapeHtml(String(label.partNo || (index + 1)))+'</div>'+
         '<div class="a4-label-dim">'+escapeHtml(label.size || '')+'</div>'+
         '<div class="a4-label-code">'+codeLines.map(line=>'<span>'+escapeHtml(line)+'</span>').join('')+'</div>'+
         (metaText ? '<div class="a4-label-meta">'+escapeHtml(metaText)+'</div>' : '')+
       '</article>';
     }
-    function a4LabelsPrintHtml(page){
-      const entries = page.entries || [];
-      const grid = a4LabelGrid(entries.length);
-      const sheetText = a4LabelSheetText(page);
-      const title = sheetText + ' - A4 labels';
-      const cells = entries.map((entry, index)=>a4LabelCellHtml(entry, grid, index)).join('');
+    function a4LabelsPrintHtml(pages){
+      const pageSections = (pages || []).map(page=>{
+        const entries = page.entries || [];
+        const grid = a4LabelGrid(entries.length);
+        const sheetText = a4LabelSheetText(page);
+        const title = sheetText + ' - A4 labels';
+        const cells = entries.map((entry, index)=>a4LabelCellHtml(entry, grid, index)).join('');
+        return '<section class="a4-label-page"><header class="a4-label-head"><span>'+escapeHtml(title)+'</span><small>'+entries.length+' label'+(entries.length===1?'':'s')+'</small></header><div class="a4-label-grid" style="--cols:'+grid.cols+';--rows:'+grid.rows+';--gap:'+grid.gap+'mm">'+cells+'</div></section>';
+      }).join('');
       return `<!doctype html>
       <html><head><meta charset="utf-8"><title>FAST CNC A4 Labels</title>
       <style>
@@ -16815,10 +16819,11 @@
         .print-toolbar{position:sticky;top:0;z-index:5;margin:0;padding:7px;background:#fff;border-bottom:1px solid #ddd;display:flex;gap:7px}
         .print-toolbar button{font:900 12px Arial,Helvetica,sans-serif;padding:8px 11px;border:1px solid #111;border-radius:6px;background:#111;color:#fff;cursor:pointer}
         .print-toolbar button.secondary{background:#fff;color:#111}
-        .a4-label-page{width:287mm;height:200mm;margin:0 auto;background:#fff;display:flex;flex-direction:column;gap:1.5mm;overflow:hidden}
-        .a4-label-head{height:${grid.headerH}mm;display:flex;align-items:center;justify-content:space-between;border-bottom:.35mm solid #111;font:900 2.8mm Arial,Helvetica,sans-serif;letter-spacing:.02em}
+        .a4-label-page{width:287mm;height:200mm;margin:0 auto;background:#fff;display:flex;flex-direction:column;gap:1.5mm;overflow:hidden;page-break-after:always;break-after:page;page-break-inside:avoid;break-inside:avoid}
+        .a4-label-page:last-child{page-break-after:auto;break-after:auto}
+        .a4-label-head{height:8mm;display:flex;align-items:center;justify-content:space-between;border-bottom:.35mm solid #111;font:900 2.8mm Arial,Helvetica,sans-serif;letter-spacing:.02em}
         .a4-label-head small{font-size:2.15mm;font-weight:800;color:#111}
-        .a4-label-grid{flex:1;display:grid;grid-template-columns:repeat(${grid.cols},1fr);grid-template-rows:repeat(${grid.rows},1fr);gap:${grid.gap}mm}
+        .a4-label-grid{flex:1;display:grid;grid-template-columns:repeat(var(--cols),1fr);grid-template-rows:repeat(var(--rows),1fr);gap:var(--gap)}
         .a4-label-cell{position:relative;min-width:0;min-height:0;border:.35mm solid #111;border-radius:1.6mm;padding:2.1mm 1.8mm 1.7mm;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden}
         .a4-label-index{position:absolute;top:1mm;left:1.1mm;font:900 2mm Arial,Helvetica,sans-serif;color:#555}
         .a4-label-dim{font-size:var(--dim);font-weight:950;line-height:1.05;margin-bottom:.8mm;white-space:nowrap}
@@ -16827,7 +16832,7 @@
         .a4-label-meta{font-size:var(--meta);font-weight:900;line-height:1.05;margin-top:.9mm;color:#111;white-space:nowrap}
         @media screen{body{background:#e5e7eb}.a4-label-page{margin:10px auto;border:1px solid #cbd5e1;box-shadow:0 8px 24px rgba(15,23,42,.13);padding:0}}
         @media print{.print-toolbar{display:none!important}body{background:#fff}.a4-label-page{margin:0;border:0;box-shadow:none}}
-      </style></head><body><div class="print-toolbar"><button onclick="window.print()">Print</button><button class="secondary" onclick="window.close()">Close</button></div><section class="a4-label-page"><header class="a4-label-head"><span>${escapeHtml(title)}</span><small>${entries.length} labels - first sheet only</small></header><div class="a4-label-grid">${cells}</div></section></body></html>`;
+      </style></head><body><div class="print-toolbar"><button onclick="window.print()">Print</button><button class="secondary" onclick="window.close()">Close</button></div>${pageSections}</body></html>`;
     }
     async function labelTestPrintHtml(type='cnc'){
       const size = labelSizeConfig();
@@ -16874,12 +16879,12 @@
     }
     async function printA4Labels(){
       if(await calculateAll({skipManualConfirm:true}) === false) return;
-      const page = firstA4LabelPage();
-      if(!page || !page.entries.length){
+      const pages = collectLabelMapPages();
+      if(!pages.length){
         showMessage('Add part dimensions before printing A4 labels.','error');
         return;
       }
-      const html = a4LabelsPrintHtml(page);
+      const html = a4LabelsPrintHtml(pages);
       const blobUrl = URL.createObjectURL(new Blob([html], {type:'text/html;charset=utf-8'}));
       const win = window.open(blobUrl, '_blank', 'width=1120,height=820');
       if(!win){
@@ -16897,7 +16902,8 @@
         }, 700);
       };
       waitForPrintAssets();
-      showMessage('A4 labels ready for first sheet: '+page.entries.length+' label'+(page.entries.length===1?'':'s')+'.','success');
+      const totalLabels = pages.reduce((sum, page)=>sum + ((page.entries || []).length), 0);
+      showMessage('A4 labels ready: '+pages.length+' sheet page'+(pages.length===1?'':'s')+', '+totalLabels+' label'+(totalLabels===1?'':'s')+'.','success');
     }
     async function printLabels(type='cnc'){
       if(await calculateAll({skipManualConfirm:true}) === false) return;
