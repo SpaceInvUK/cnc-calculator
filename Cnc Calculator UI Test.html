@@ -4293,6 +4293,9 @@
       const rounded = Math.round(n * 100) / 100;
       return (Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/0+$/, '').replace(/\.$/, '')) + 'mm';
     }
+    function takeoffItemsPieceCount(items){
+      return (items || []).reduce((sum, item)=>sum + Math.max(1, Math.round(Number(item?.quantity || 1))), 0);
+    }
     function parseTakeoffText(text){
       const normalized = String(text || '').replace(/\r/g, '\n');
       const atLines = normalized.split(/\n+/).map(line=>parseAtQuantityTakeoffLine(line)).filter(item=>item && item.width > 0 && item.height > 0);
@@ -9605,12 +9608,13 @@
       };
       const addParsedText = ()=>{
         const items = parseTakeoffText(textArea.value);
+        const pieceCount = takeoffItemsPieceCount(items);
         const count = addTakeoffPartsToBlock(block, items);
         if(!count){
           setStatus('No dimensions found. Paste Excel rows or try: D 2x 700 x 730 / 700 x 730 x2.', 'error');
           return;
         }
-        setStatus('Added ' + count + ' part line' + (count === 1 ? '' : 's') + ' from the takeoff.', 'success');
+        setStatus('Added ' + pieceCount + ' piece' + (pieceCount === 1 ? '' : 's') + ' from ' + count + ' takeoff line' + (count === 1 ? '' : 's') + '.', 'success');
         textArea.value = '';
         requestRender();
       };
@@ -9620,19 +9624,21 @@
           const isDxf = /\.dxf$/i.test(file.name || '') || /dxf/i.test(file.type || '');
           if(isDxf){
             const result = extractDxfTakeoffItems(await file.text(), block);
+            const pieceCount = takeoffItemsPieceCount(result.items);
             const count = addTakeoffPartsToBlock(block, result.items);
             if(!count){
               setStatus('DXF loaded, but no closed rectangular part outlines were found.', 'error');
               return;
             }
             const frameText = result.frames ? ' Detected ' + result.frames + ' frame' + (result.frames === 1 ? '' : 's') + '.' : '';
-            setStatus('DXF added ' + count + ' part line' + (count === 1 ? '' : 's') + ' from closed rectangles.' + frameText, 'success');
+            setStatus('DXF added ' + pieceCount + ' piece' + (pieceCount === 1 ? '' : 's') + ' from ' + count + ' closed rectangle line' + (count === 1 ? '' : 's') + '.' + frameText, 'success');
             requestRender();
           } else if(file.type && file.type.startsWith('image/')){
             const text = await ocrImageFile(file, status);
             textArea.value = [textArea.value.trim(), text.trim()].filter(Boolean).join('\n');
-            const found = parseTakeoffText(text).length;
-            setStatus(found ? 'OCR found ' + found + ' possible part line' + (found === 1 ? '' : 's') + '. Click Add Parts to confirm.' : 'OCR finished, but no clear dimensions were found.', found ? 'success' : 'error');
+            const foundItems = parseTakeoffText(text);
+            const found = takeoffItemsPieceCount(foundItems);
+            setStatus(found ? 'OCR found ' + found + ' possible piece' + (found === 1 ? '' : 's') + ' from ' + foundItems.length + ' line' + (foundItems.length === 1 ? '' : 's') + '. Click Add Parts to confirm.' : 'OCR finished, but no clear dimensions were found.', found ? 'success' : 'error');
           } else {
             const text = await file.text();
             textArea.value = [textArea.value.trim(), text.trim()].filter(Boolean).join('\n');
