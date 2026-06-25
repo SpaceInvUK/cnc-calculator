@@ -3931,8 +3931,199 @@
       }
       return null;
     }
+    function takeoffCellText(value){
+      return String(value ?? '').replace(/\u00a0/g, ' ').replace(/^"+|"+$/g, '').replace(/\s+/g, ' ').trim();
+    }
+    function takeoffHeaderKey(value){
+      return takeoffCellText(value).toLowerCase().replace(/[^a-z0-9]+/g, '');
+    }
+    function takeoffHeaderIndex(keys, aliases){
+      return keys.findIndex(key=>aliases.includes(key));
+    }
+    function takeoffNumber(value){
+      const match = takeoffCellText(value).replace(',', '.').match(/-?\d+(?:\.\d+)?/);
+      if(!match) return null;
+      const n = Number(match[0]);
+      return Number.isFinite(n) ? n : null;
+    }
+    function takeoffPositiveNumber(value){
+      const n = takeoffNumber(value);
+      return n != null && n > 0 ? n : null;
+    }
+    function takeoffQuantityFromCells(cells, index){
+      const source = [];
+      if(Number.isInteger(index) && index >= 0){
+        source.push(cells[index], cells[index + 1]);
+      } else {
+        source.push(...cells);
+      }
+      for(const cell of source){
+        const match = takeoffCellText(cell).match(/\d+/);
+        if(match){
+          const qty = Number(match[0]);
+          if(Number.isFinite(qty) && qty > 0) return Math.min(999, Math.round(qty));
+        }
+      }
+      return 1;
+    }
+    function normalizeTakeoffLabel(value){
+      return takeoffCellText(value).replace(/\s*\/\s*/g, '/').toUpperCase();
+    }
+    function buildExcelTakeoffText(subAssembly, description, edging){
+      const sa = normalizeTakeoffLabel(subAssembly);
+      const desc = normalizeTakeoffLabel(description);
+      const edge = normalizeTakeoffLabel(edging);
+      const base = [sa ? 'SA-' + sa : '', desc].filter(Boolean).join(' ');
+      if(edge) return (base || 'SA') + '- ' + edge;
+      return base;
+    }
+    function splitExcelTakeoffLine(line){
+      const raw = String(line || '').trim();
+      if(!raw) return [];
+      if(raw.includes('\t')) return raw.split('\t').map(takeoffCellText);
+      if(raw.includes('|')) return raw.split('|').map(takeoffCellText);
+      return [];
+    }
+    function excelTakeoffHeaderMap(cells){
+      const keys = cells.map(takeoffHeaderKey);
+      const map = {
+        subAssembly:takeoffHeaderIndex(keys, ['subassembly', 'subassemblies', 'sa']),
+        description:takeoffHeaderIndex(keys, ['description', 'desc', 'item']),
+        thick:takeoffHeaderIndex(keys, ['thick', 'thickness']),
+        copies:takeoffHeaderIndex(keys, ['copies', 'copy', 'qty', 'quantity']),
+        length:takeoffHeaderIndex(keys, ['length', 'len', 'long']),
+        width:takeoffHeaderIndex(keys, ['width', 'wid', 'wide']),
+        edging:takeoffHeaderIndex(keys, ['edging', 'edge', 'edges'])
+      };
+      if(map.description >= 0 && map.length >= 0 && map.width >= 0) return map;
+      return null;
+    }
+    function inferExcelTakeoffRow(cells){
+      const clean = cells.map(takeoffCellText);
+      if(clean.length < 4) return null;
+      let lengthIndex = -1;
+      let widthIndex = -1;
+      const xIndex = clean.findIndex(cell=>/^x$/i.test(cell));
+      if(xIndex >= 0){
+        for(let i = xIndex - 1; i >= 0; i--){
+          const n = takeoffPositiveNumber(clean[i]);
+          if(n != null && n > 50){
+            lengthIndex = i;
+            break;
+          }
+        }
+        for(let i = xIndex + 1; i < clean.length; i++){
+          const n = takeoffPositiveNumber(clean[i]);
+          if(n != null && n > 50){
+            widthIndex = i;
+            break;
+          }
+        }
+      }
+      if(lengthIndex < 0 || widthIndex < 0){
+        const dimensionCells = clean
+          .map((cell, index)=>({index, value:takeoffPositiveNumber(cell)}))
+          .filter(item=>item.value != null && item.value > 50);
+        if(dimensionCells.length >= 2){
+          lengthIndex = dimensionCells[dimensionCells.length - 2].index;
+          widthIndex = dimensionCells[dimensionCells.length - 1].index;
+        }
+      }
+      const length = lengthIndex >= 0 ? takeoffPositiveNumber(clean[lengthIndex]) : null;
+      const width = widthIndex >= 0 ? takeoffPositiveNumber(clean[widthIndex]) : null;
+      if(!(length > 0 && width > 0)) return null;
+      const thickIndex = clean.findIndex((cell, index)=>{
+        if(index === lengthIndex || index === widthIndex) return false;
+        const n = takeoffPositiveNumber(cell);
+        return /mm/i.test(cell) && n != null && n > 0 && n <= 60;
+      });
+      let qty = 1;
+      const qtyStart = thickIndex >= 0 ? thickIndex + 1 : Math.min(2, clean.length - 1);
+      const qtyEnd = lengthIndex >= 0 ? lengthIndex : clean.length;
+      for(let i = qtyStart; i < qtyEnd; i++){
+        const match = clean[i].match(/\d+/);
+        if(match){
+          qty = Math.min(999, Math.max(1, Math.round(Number(match[0]))));
+          break;
+        }
+      }
+      let edging = '';
+      for(let i = widthIndex + 1; i < clean.length; i++){
+        if(clean[i] && !/^x$|^@$/i.test(clean[i])){
+          edging = clean[i];
+          break;
+        }
+      }
+      return {
+        subAssembly:clean[0] || '',
+        description:clean[1] || '',
+        thickness:thickIndex >= 0 ? takeoffPositiveNumber(clean[thickIndex]) : null,
+        quantity:qty,
+        length,
+        width,
+        edging
+      };
+    }
+    function parseExcelTakeoffRow(cells, header){
+      const inferred = inferExcelTakeoffRow(cells);
+      const valueAt = index=>Number.isInteger(index) && index >= 0 ? cells[index] : '';
+      const row = {
+        subAssembly:header ? valueAt(header.subAssembly) : inferred?.subAssembly,
+        description:header ? valueAt(header.description) : inferred?.description,
+        thickness:header ? takeoffPositiveNumber(valueAt(header.thick)) : inferred?.thickness,
+        quantity:header ? takeoffQuantityFromCells(cells, header.copies) : inferred?.quantity,
+        length:header ? takeoffPositiveNumber(valueAt(header.length)) : inferred?.length,
+        width:header ? takeoffPositiveNumber(valueAt(header.width)) : inferred?.width,
+        edging:header ? valueAt(header.edging) : inferred?.edging
+      };
+      if((!(row.length > 0) || !(row.width > 0)) && inferred){
+        row.length = inferred.length;
+        row.width = inferred.width;
+      }
+      if(inferred){
+        if(!takeoffCellText(row.subAssembly)) row.subAssembly = inferred.subAssembly;
+        if(!takeoffCellText(row.description)) row.description = inferred.description;
+        if(!(row.thickness > 0)) row.thickness = inferred.thickness;
+        if(!row.quantity) row.quantity = inferred.quantity;
+        if(!takeoffCellText(row.edging)) row.edging = inferred.edging;
+      }
+      if(!(row.length > 0 && row.width > 0)) return null;
+      const text = buildExcelTakeoffText(row.subAssembly, row.description, row.edging);
+      return {
+        quantity:Math.min(999, Math.max(1, Math.round(Number(row.quantity || 1)))),
+        width:roundPanelMm(row.length),
+        height:roundPanelMm(row.width),
+        text,
+        thickness:row.thickness > 0 ? row.thickness : undefined
+      };
+    }
+    function parseExcelTakeoffText(text){
+      const lines = String(text || '').replace(/\r/g, '\n').split(/\n+/).map(line=>line.trim()).filter(Boolean);
+      let header = null;
+      const parsed = [];
+      lines.forEach(line=>{
+        const cells = splitExcelTakeoffLine(line);
+        if(cells.length < 4) return;
+        const maybeHeader = excelTakeoffHeaderMap(cells);
+        if(maybeHeader){
+          header = maybeHeader;
+          return;
+        }
+        const item = parseExcelTakeoffRow(cells, header);
+        if(item && item.width > 0 && item.height > 0) parsed.push(item);
+      });
+      return parsed;
+    }
+    function formatTakeoffThickness(value){
+      const n = Number(value);
+      if(!(n > 0)) return '';
+      const rounded = Math.round(n * 100) / 100;
+      return (Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/0+$/, '').replace(/\.$/, '')) + 'mm';
+    }
     function parseTakeoffText(text){
       const normalized = String(text || '').replace(/\r/g, '\n');
+      const excelParsed = parseExcelTakeoffText(normalized);
+      if(excelParsed.length) return excelParsed;
       const lines = normalized.split(/\n+/).map(line=>line.trim()).filter(Boolean);
       const parsed = [];
       lines.forEach(line=>{
@@ -4208,6 +4399,11 @@
       recordHistory('added smart takeoff parts');
       const firstIsBlank = block.parts.length === 1 && !Number(block.parts[0].width || 0) && !Number(block.parts[0].height || 0) && !String(block.parts[0].text || '').trim();
       if(firstIsBlank) block.parts = [];
+      const parsedThicknesses = [...new Set(clean.map(item=>Number(item.thickness || 0)).filter(n=>n > 0).map(n=>Math.round(n * 100) / 100))];
+      if(parsedThicknesses.length === 1){
+        const thicknessLabel = formatTakeoffThickness(parsedThicknesses[0]);
+        if(thicknessLabel) block.thickness = thicknessLabel;
+      }
       clean.forEach(item=>{
         const doorType = normalizeDoorTypeValue(item.doorType || '', '');
         if(item.frame && Number(item.frame) > 0) block.frameSize = Math.max(1, Number(item.frame || block.frameSize || 50));
@@ -9235,7 +9431,7 @@
         const items = parseTakeoffText(textArea.value);
         const count = addTakeoffPartsToBlock(block, items);
         if(!count){
-          setStatus('No dimensions found. Try: D 2x 700 x 730 or 700 x 730 x2.', 'error');
+          setStatus('No dimensions found. Paste Excel rows or try: D 2x 700 x 730 / 700 x 730 x2.', 'error');
           return;
         }
         setStatus('Added ' + count + ' part line' + (count === 1 ? '' : 's') + ' from the takeoff.', 'success');
@@ -16636,4 +16832,3 @@
   </script>
 </body>
 </html>
-
