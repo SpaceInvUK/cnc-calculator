@@ -75,12 +75,12 @@
   .card h3{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
   .hint{color:var(--muted);font-size:12px;margin:2px 0 12px}
 
-  .matbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:12px}
+  .matbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:6px 10px;margin-bottom:10px;font-size:12px}
   .matbar select{padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;font-weight:700}
   .matbar .mode{margin-left:auto;display:flex;gap:4px;background:#e2e8f0;border-radius:999px;padding:3px}
   .matbar .mode button{border:0;background:transparent;padding:5px 12px;border-radius:999px;font-weight:700;font-size:12px;cursor:pointer;color:var(--muted)}
   .matbar .mode button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.1)}
-  .pchip{display:inline-block;font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;background:#fff;border:1px solid var(--line);color:#334155;cursor:pointer}
+  .pchip{display:inline-block;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:#fff;border:1px solid var(--line);color:#475569;cursor:pointer}
   .pchip:hover{background:#eff6ff;border-color:#bfdbfe}
 
   .quickadd{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:var(--blue-soft);border:1px dashed #bfdbfe;border-radius:10px;padding:10px}
@@ -93,12 +93,12 @@
   .btn.ghost{background:#f1f5f9;color:var(--ink)}
   .btn.tiny{padding:4px 9px;font-size:12px}
 
-  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:8px 0 2px}
-  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin:6px 0 2px;opacity:.85}
+  .legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
 
   .order-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
   .item{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
-  .item-row{display:grid;grid-template-columns:30px 150px 1fr 116px 96px;gap:10px;align-items:center;padding:10px 12px}
+  .item-row{display:grid;grid-template-columns:26px 118px 1fr 112px 92px;gap:9px;align-items:center;padding:7px 11px}
   .qtycell{display:flex;flex-direction:column;gap:4px;align-items:center}
   .qstep{display:inline-flex;align-items:center;gap:3px}
   .qinput{width:42px;text-align:center;padding:4px;border:1px solid var(--line);border-radius:7px;font-weight:800}
@@ -107,13 +107,13 @@
   .pricecell{text-align:right}
   .idx{color:var(--muted);font-weight:700;text-align:center}
   .typecell{display:flex;align-items:center;gap:8px}
-  .ticon{width:26px;height:26px;flex:none}
-  .badge{font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;color:#fff;white-space:nowrap}
+  .ticon{width:20px;height:20px;flex:none}
+  .badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;color:#fff;white-space:nowrap}
   .b-flat{background:var(--flat)} .b-trad{background:var(--trad)} .b-flush{background:var(--flush)} .b-reeded{background:var(--reeded)}
   .dim{font-weight:700}
   .sub{color:var(--muted);font-size:12px}
   .pills{display:flex;gap:5px;flex-wrap:wrap}
-  .chip{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:#f1f5f9;color:#334155;border:1px solid var(--line);white-space:nowrap}
+  .chip{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;background:#f1f5f9;color:#475569;border:1px solid var(--line);white-space:nowrap}
   .chip.off{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
   .chip.alt{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}
   .actions{display:flex;gap:4px;justify-content:flex-end;margin-top:4px}
@@ -169,9 +169,12 @@
   .zoombox{background:#fff;border-radius:12px;padding:12px;width:94vw;height:92vh;max-width:1100px;display:flex;flex-direction:column;gap:8px}
   .zoomhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .zoomscroll{flex:1;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
-  .main2col{display:grid;grid-template-columns:340px minmax(0,1fr);gap:14px;align-items:start}
-  @media(max-width:920px){.main2col{grid-template-columns:1fr}.inspector-card{order:0;position:static}}
-  .inspector-card{position:sticky;top:10px;padding:0;overflow:hidden;order:-1}
+  .applayout{display:grid;grid-template-columns:330px minmax(0,1fr);gap:14px;align-items:start}
+  .maincol{min-width:0;display:flex;flex-direction:column}
+  .nest-controls{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:6px 0 12px}
+  .nest-controls .grp-h{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  @media(max-width:780px){.applayout{grid-template-columns:1fr}.inspector-card{order:2;position:static;max-height:none}}
+  .inspector-card{position:sticky;top:10px;padding:0;overflow:hidden;order:-1;align-self:start;max-height:calc(100vh - 20px)}
   .item-row{cursor:pointer}
   .item.sel{outline:2px solid var(--blue);outline-offset:-1px}
   .item.sel .item-row{background:rgba(37,99,235,.05)}
@@ -205,6 +208,9 @@
         <div class="dd">
           <div class="dd-item" onclick="event.stopPropagation();undo();closeMenus()">Undo <span class="ksc">Ctrl+Z</span></div>
           <div class="dd-item" onclick="event.stopPropagation();redo();closeMenus()">Redo <span class="ksc">Ctrl+Y</span></div>
+          <div class="dd-item" onclick="event.stopPropagation();openQuickMats();closeMenus()">Quick materials…</div>
+          <div class="dd-item" onclick="event.stopPropagation();openPricing();closeMenus()">Pricing settings…</div>
+          <div class="dd-item" onclick="event.stopPropagation();openMatColors();closeMenus()">Material colours…</div>
         </div>
       </span>
       <span class="menu" onclick="toggleMenu(this,event)">View
@@ -277,7 +283,9 @@
   </div>
 
   <div class="wrap">
-    <div class="main2col">
+    <div class="applayout">
+      <aside class="card inspector-card"><div id="inspector"></div></aside>
+      <div class="maincol">
       <div class="card">
         <h2>New order — add the customer's items</h2>
         <div class="hint">One list. Each line is a door/part with its own type, size, finish and offset. Mix Flat / Traditional / Flushback / Reeded in the same list — no separate blocks.</div>
@@ -320,14 +328,14 @@
         <div id="orderWarn"></div>
         <div class="order-list" id="list"></div>
       </div>
-      <aside class="card inspector-card"><div id="inspector"></div></aside>
-    </div>
 
-      <div class="card" style="margin-top:16px">
+      <div class="card nesting-card" style="margin-top:16px">
         <h2>Nesting — sheet layout</h2>
         <div class="hint">How the parts pack onto sheets. Inserts go on their own thickness sheet; Front+Back parts add a back sheet — same as the production export.</div>
+        <div class="nest-controls">
+        <div class="grp-h">Sheet &amp; layout options</div>
         <div class="nest-rules">
-          <div class="qa-field"><label>Sheet size</label><select id="nestSizeSel" onchange="setNestSize(this.value)"><option value="8x4">8x4 — 2440×1220</option><option value="10x4">10x4 — 3050×1220</option><option value="10x5">10x5 — 3050×1525</option><option value="jumbo">Jumbo — 2800×2070</option></select></div>
+          <div class="qa-field"><label>Sheet size</label><span style="display:inline-flex;align-items:center"><select id="nestSizeSel" onchange="setNestSize(this.value)"><option value="8x4">8x4 — 2440×1220</option><option value="10x4">10x4 — 3050×1220</option><option value="10x5">10x5 — 3050×1525</option><option value="jumbo">Jumbo — 2800×2070</option><option value="custom">Custom…</option></select><span id="customSheetWrap" style="display:none;align-items:center;gap:4px;margin-left:6px"><input type="number" id="csW" value="2440" onchange="setCustomSheet('w',this.value)" style="width:72px" title="Custom width (mm)"><span class="sub">×</span><input type="number" id="csH" value="1220" onchange="setCustomSheet('h',this.value)" style="width:72px" title="Custom height (mm)"><span class="sub">mm</span></span></span></div>
           <div class="qa-field"><label>Outer margin (mm)</label><input type="number" value="7" style="width:70px"></div>
           <div class="qa-field"><label>Spacing (mm)</label><input type="number" value="7" style="width:70px"></div>
           <div class="qa-field"><label>Respect grain</label><select><option>On</option><option>Off</option></select></div>
@@ -336,10 +344,13 @@
         </div>
 
         <div class="hint" style="margin:0 0 10px"><b>Sheet rule:</b> a sheet only holds parts with the same <b>Material + Thickness + Sheet size</b>. Change <b>Material</b> and <b>Size</b> right on each sheet header below.</div>
-        <div id="nestTools" style="margin:0 0 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"></div>
+        <div id="nestTools" style="margin:8px 0 0;display:flex;gap:6px;align-items:center;flex-wrap:wrap"></div>
+        </div>
         <div id="nest"></div>
-        <div class="hint">Click a sheet to zoom. Colours match the DXF layers: outer = black, offset A–G = their own colour, hinges = red.</div>
+        <div class="hint"><b>Click a part to select &amp; edit it</b> (it opens in the side panel). <b>Shift+click</b> to zoom the sheet. Colours match the DXF layers: outer = black, offset A–G = their own colour, hinges = red.</div>
       </div>
+      </div>
+    </div>
   </div>
 
 <script>
@@ -367,7 +378,7 @@
   let matColors={};try{matColors=JSON.parse(localStorage.getItem('kab_matColors')||'{}');}catch(e){matColors={};}
   function matColor(mat){return matColors[mat]||blockColor(mat,'');}
   function setMatColor(mat,hex){matColors[mat]=hex;try{localStorage.setItem('kab_matColors',JSON.stringify(matColors));}catch(e){}buildMatUI();render();}
-  function openMatColors(){const set=[];FAVS.forEach(m=>set.indexOf(m)<0&&set.push(m));items.forEach(it=>set.indexOf(it.mat)<0&&set.push(it.mat));const rows=set.map(m=>'<div class="mc-row"><input type="color" value="'+matColor(m)+'" onchange="setMatColor(\''+esc(m)+'\',this.value)"><span class="chip" style="background:'+matColor(m)+'22;color:'+matColor(m)+';border-color:'+matColor(m)+'55">'+esc(m)+'</span></div>').join('');openModal('Material colours','<div class="sub">Pick a clear background colour for each material. Used in the order list, the material tag and the nesting sheets. Saved on this computer.</div><div class="mc-list">'+rows+'</div>');}
+  function openMatColors(){const set=[];favMats.forEach(m=>set.indexOf(m)<0&&set.push(m));items.forEach(it=>set.indexOf(it.mat)<0&&set.push(it.mat));const rows=set.map(m=>'<div class="mc-row"><input type="color" value="'+matColor(m)+'" onchange="setMatColor(\''+esc(m)+'\',this.value)"><span class="chip" style="background:'+matColor(m)+'22;color:'+matColor(m)+';border-color:'+matColor(m)+'55">'+esc(m)+'</span></div>').join('');openModal('Material colours','<div class="sub">Pick a clear background colour for each material. Used in the order list, the material tag and the nesting sheets. Saved on this computer.</div><div class="mc-list">'+rows+'</div>');}
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function num(){for(const v of arguments){if(v!==''&&v!=null&&!isNaN(+v))return +v;}return 0;}
   function parseMat(m){const x=String(m).match(/^(.*?)\s*(\d+\s*mm)$/i);return x?{name:x[1].trim(),th:x[2].replace(/\s+/,'')}:{name:String(m),th:'—'};}
@@ -649,12 +660,29 @@
 
   // ---- pricing tables (sample of the production book) ----
   const PRICES={'MDF':{'6mm':25,'9mm':35,'12mm':40,'15mm':45,'18mm':55,'22mm':65,'25mm':75},'MR MDF':{'6mm':35,'9mm':40,'12mm':50,'15mm':55,'18mm':65,'22mm':75,'25mm':85},'FR MDF':{'12mm':60,'18mm':80,'25mm':100},'Veneered MDF':{'18mm':85,'25mm':105},'Black MDF':{'18mm':90},'MDF Hidrofugo Plus':{'12mm':50,'18mm':65},'Birch Ply':{'12mm':75,'18mm':95,'24mm':120},'Marine Ply':{'12mm':120,'18mm':160},'MFC':{'18mm':55,'25mm':65},'Veneered Chipboard':{'18mm':80,'25mm':100},'Melamine board':{'18mm':55},'Laminated HPL':{'18mm':90}};
-  const FAVS=['MDF 18mm','MDF Hidrofugo Plus 18mm','MR MDF 18mm','Veneered Chipboard 18mm','MFC 18mm','Birch Ply 18mm'];
+  const FAVS_DEFAULT=['MDF 18mm','MDF Hidrofugo Plus 18mm','MR MDF 18mm','Veneered Chipboard 18mm','MFC 18mm'];
+  let favMats=(function(){try{const s=JSON.parse(localStorage.getItem('kab_favs'));if(Array.isArray(s)&&s.length)return s;}catch(e){}return FAVS_DEFAULT.slice();})();
+  function saveFavs(){try{localStorage.setItem('kab_favs',JSON.stringify(favMats));}catch(e){}}
   const SHEETS={'8x4':{w:2440,h:1220,label:'8x4'},'10x4':{w:3050,h:1220,label:'10x4'},'10x5':{w:3050,h:1525,label:'10x5'},'jumbo':{w:2800,h:2070,uh:2050,label:'Jumbo'}};
-  function priceForSheet(combined,size){const ov=(typeof priceOverrides!=='undefined')?priceOverrides['mat:'+combined]:null;let base;if(ov!=null)base=ov;else{const m=parseMat(combined);base=(PRICES[m.name]&&PRICES[m.name][m.th])||55;}const S=SHEETS[size]||SHEETS['8x4'],B=SHEETS['8x4'];const ratio=(size==='8x4')?1:(S.w*S.h)/(B.w*B.h);return Math.round(base*ratio);}
+  let customSheet={w:2440,h:1220};                         // user-typed custom sheet size
+  function sheetDef(sz){if(sz==='custom')return {w:customSheet.w,h:customSheet.h,label:'Custom '+customSheet.w+'×'+customSheet.h};return SHEETS[sz]||SHEETS['8x4'];}
+  const SHEET_ORDER=['8x4','10x4','10x5','jumbo','custom'];
+  function sheetSizeOptions(sel){return SHEET_ORDER.map(k=>`<option value="${k}" ${k===sel?'selected':''}>${k==='custom'?'Custom…':sheetDef(k).label}</option>`).join('');}
+  function priceForSheet(combined,size){const ov=(typeof priceOverrides!=='undefined')?priceOverrides['mat:'+combined]:null;let base;if(ov!=null)base=ov;else{const m=parseMat(combined);base=(PRICES[m.name]&&PRICES[m.name][m.th])||55;}const S=sheetDef(size),B=SHEETS['8x4'];const ratio=(size==='8x4')?1:(S.w*S.h)/(B.w*B.h);return Math.round(base*ratio);}
   function cncForThickness(combined){const ov=(typeof priceOverrides!=='undefined')?priceOverrides['cnc:'+combined]:null;if(ov!=null)return ov;const th=parseMat(combined).th;if(th==='18mm'||th==='22mm')return 85;const n=parseInt(th)||18;if(n<=12)return 65;if(n<=15)return 95;return 120;}
   function matOptionsHtml(sel){const all=[];Object.keys(PRICES).forEach(n=>Object.keys(PRICES[n]).forEach(t=>all.push(n+' '+t)));if(sel&&all.indexOf(sel)<0)all.unshift(sel);return all.map(c=>`<option ${c===sel?'selected':''}>${esc(c)}</option>`).join('');}
-  function buildMatUI(){const qm=document.getElementById('qaMat');if(qm)qm.innerHTML=matOptionsHtml(orderMaterial);const fc=document.getElementById('favChips');if(fc)fc.innerHTML=FAVS.map(f=>`<span class="pchip" onclick="setQaMat('${f}')" style="background:${matColor(f)}22;border-color:${matColor(f)}66;color:${matColor(f)};font-weight:800">${f}</span>`).join('');const dl=document.getElementById('matList');if(dl){const all=[];Object.keys(PRICES).forEach(n=>Object.keys(PRICES[n]).forEach(t=>all.push(n+' '+t)));dl.innerHTML=all.map(c=>`<option value="${esc(c)}">`).join('');}}
+  function buildMatUI(){const qm=document.getElementById('qaMat');if(qm)qm.innerHTML=matOptionsHtml(orderMaterial);const fc=document.getElementById('favChips');if(fc)fc.innerHTML=favMats.map(f=>`<span class="pchip" onclick="setQaMat('${esc(f)}')" title="${esc(f)}"><i style="display:inline-block;width:7px;height:7px;border-radius:2px;background:${matColor(f)};margin-right:5px;vertical-align:middle"></i>${esc(f)}</span>`).join('');const dl=document.getElementById('matList');if(dl){const all=[];Object.keys(PRICES).forEach(n=>Object.keys(PRICES[n]).forEach(t=>all.push(n+' '+t)));dl.innerHTML=all.map(c=>`<option value="${esc(c)}">`).join('');}}
+  function allMats(){const all=[];Object.keys(PRICES).forEach(n=>Object.keys(PRICES[n]).forEach(t=>all.push(n+' '+t)));return all;}
+  function toggleFav(m,on){if(on){if(favMats.indexOf(m)<0)favMats.push(m);}else{favMats=favMats.filter(x=>x!==m);}saveFavs();buildMatUI();openQuickMats();}
+  function resetFavs(){favMats=FAVS_DEFAULT.slice();saveFavs();buildMatUI();openQuickMats();}
+  function openQuickMats(){
+    const mats=allMats();
+    const rows=mats.map(m=>{const on=favMats.indexOf(m)>=0;return `<label class="mc-row" style="display:flex;align-items:center;gap:8px;padding:4px 2px;cursor:pointer"><input type="checkbox" ${on?'checked':''} onchange="toggleFav('${esc(m)}',this.checked)"><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${matColor(m)}"></i><span>${esc(m)}</span></label>`;}).join('');
+    openModal('Quick materials — choose the ones that show in the bar',
+      '<div class="sub" style="margin-bottom:8px">Tick the materials you use most ('+favMats.length+' selected). They appear as quick chips above the order. Keep it to ~5 for a clean bar.</div>'
+      +'<div style="max-height:54vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px;columns:2;column-gap:18px">'+rows+'</div>'
+      +'<div style="margin-top:10px;text-align:right"><button class="btn ghost" onclick="resetFavs()">Reset to default</button></div>');
+  }
   function setQaMat(v){const q=document.getElementById('qaMat');if(q){if(q.querySelector(`option[value="${v}"]`)===null)q.innerHTML=matOptionsHtml(v);q.value=v;}orderMaterial=v;updateMatPricing();}
   function updateMatPricing(){const mm=document.getElementById('mpMat');if(mm)mm.textContent=orderMaterial;const ms=document.getElementById('mpSheet');if(ms)ms.textContent=money(priceForSheet(orderMaterial,nestSize));const mc=document.getElementById('mpCnc');if(mc)mc.textContent=money(cncForThickness(orderMaterial));}
 
@@ -720,7 +748,7 @@
     items.forEach((it,i)=>{
       const d=TYPES[it.type],c=d.color;
       const el=document.createElement('div');el.className='item'+(i===selItem?' sel':'');
-      el.style.borderLeft='5px solid '+matColor(it.mat);el.style.background=matColor(it.mat)+'0c';
+      el.style.borderLeft='3px solid '+matColor(it.mat);el.style.background=matColor(it.mat)+'08';
       const offc=offsetChip(it),hc=hingeChip(it);
       el.innerHTML=`
         <div class="item-row" onclick="sel(${i})">
@@ -734,7 +762,7 @@
               ${it.grain?'<span class="chip">↔ rigid</span>':''}
               ${it.spray?'<span class="chip">spray</span>':''}
               ${it.text?'<span class="chip">“'+esc(it.text)+'”</span>':''}
-              <span class="chip" style="background:${matColor(it.mat)}22;color:${matColor(it.mat)};border-color:${matColor(it.mat)}66;font-weight:800">${esc(it.mat)}</span>
+              <span class="chip" style="background:${matColor(it.mat)}14;color:#475569;border-color:${matColor(it.mat)}44">${esc(it.mat)}</span>
             </div>
           </div>
           <div class="qtycell" onclick="event.stopPropagation()">
@@ -754,7 +782,7 @@
   // ---- right docked inspector (tabbed) ----
   function renderInspector(){
     const box=document.getElementById('inspector');if(!box)return;
-    if(selItem<0||selItem>=items.length){box.innerHTML='<div class="insp-empty">Select an item on the left to edit it here.</div>';return;}
+    if(selItem<0||selItem>=items.length){box.innerHTML='<div class="insp-empty">Click an item in the list — or a part in the nesting — to edit it here.</div>';return;}
     const i=selItem,it=items[i],d=TYPES[it.type];
     if(lastInspected!==selItem){groupSnap={mat:it.mat,size:it.size,type:it.type};lastInspected=selItem;}
     const tabs=[['part','Part'],['offset','Frame & offset'],['hinges','Hinges'],['spray','Spray']];
@@ -917,17 +945,26 @@
   let nestSize='8x4',sheetSizeOv={},nestSvgs=[];
   let nestMatCost=0,nestCncCost=0,nestSheets=0;
   let editMode=false, placements=null, selKey=null, dragState=null, lastSig='';
-  function setNestSize(v){nestSize=v;sheetSizeOv={};render();}
+  function setNestSize(v){nestSize=v;sheetSizeOv={};toggleCustomSheetUI();render();}
+  function toggleCustomSheetUI(){const w=document.getElementById('customSheetWrap');if(w)w.style.display=(nestSize==='custom')?'inline-flex':'none';}
+  function setCustomSheet(dim,val){let x=Math.round(+val||0);if(x<50)x=50;if(x>6000)x=6000;customSheet[dim]=x;render();}
   function setGroupMat(mat,v){items.forEach(it=>{if(it.mat===mat)it.mat=v;});render();}
   function setSheetSize(mat,si,v){sheetSizeOv[mat+'#'+si]=v;render();}
   function openZoom(i){const d=nestSvgs[i];if(!d)return;let ov=document.getElementById('zoomOverlay');if(!ov){ov=document.createElement('div');ov.id='zoomOverlay';ov.className='zoomov';ov.addEventListener('click',e=>{if(e.target===ov)closeZoom();});document.body.appendChild(ov);}ov.innerHTML=`<div class="zoombox"><div class="zoomhead"><b>${esc(d.label)}</b><span><label class="sub">zoom <input type="range" min="120" max="700" value="220" oninput="document.getElementById('zoomInner').style.width=this.value+'%'"></label> <button class="btn ghost tiny" onclick="closeZoom()">Close ✕</button></span></div><div class="zoomscroll"><div id="zoomInner" style="width:220%">${d.svg}</div></div></div>`;ov.classList.add('show');}
   function closeZoom(){const ov=document.getElementById('zoomOverlay');if(ov)ov.classList.remove('show');}
+  // Click a part in the nest = select it (syncs list + inspector). Shift+click = zoom the sheet.
+  function nestClick(ev,zi){
+    if(ev.shiftKey){openZoom(zi);return;}
+    const g=ev.target&&ev.target.closest?ev.target.closest('.npart'):null;
+    if(g&&g.getAttribute('data-key')!=null){const i=parseInt(g.getAttribute('data-key'),10);if(!isNaN(i)&&i>=0&&i<items.length){sel(i);renderNest();}}
+    // plain click on empty sheet area does nothing — zoom is Shift+click only
+  }
 
   // ---- parts + packing (shared by nesting view, DXF, manual editor) ----
   // Rigid (grain) = the LONGEST side runs along the sheet grain (sheet width / X). So a rigid part is
   // always oriented long-side-horizontal and is never rotated the other way by the auto-packer.
   function rigidOrient(p){if(p.grain&&p.h>p.w)return {w:p.h,h:p.w};return {w:p.w,h:p.h};}
-  function sheetMeta(mat,idx){const sz=sheetSizeOv[mat+'#'+idx]||nestSize;const S=SHEETS[sz]||SHEETS['8x4'];const g=(sz==='jumbo'?13:7);return {sz,S,g};}
+  function sheetMeta(mat,idx){const sz=sheetSizeOv[mat+'#'+idx]||nestSize;const S=sheetDef(sz);const g=(sz==='jumbo'?13:7);return {sz,S,g};}
   function genParts(){
     const groups=new Map();const add=(mat,p)=>{if(!groups.has(mat))groups.set(mat,[]);groups.get(mat).push(p);};
     items.forEach((it,i)=>{
@@ -1029,12 +1066,12 @@
         const S=sh.S,vbW=Math.round(S.w/10),vbH=Math.round(S.h/10);const bcolSheet=matColor(mat);
         const used=sh.parts.reduce((s,p)=>s+p.w*p.h,0)/(S.w*S.h)*100;
         nSheets++;nMat+=priceForSheet(mat,sh.sz);nCnc+=cncForThickness(mat);
-        const sizeSel=`<select onchange="setSheetSize('${esc(mat)}',${idx},this.value)" ${editMode?'disabled':''} style="font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 4px">`+['8x4','10x4','10x5','jumbo'].map(k=>`<option value="${k}" ${k===sh.sz?'selected':''}>${SHEETS[k].label}</option>`).join('')+`</select>`;
+        const sizeSel=`<select onchange="setSheetSize('${esc(mat)}',${idx},this.value)" ${editMode?'disabled':''} style="font-weight:700;border:1px solid var(--line);border-radius:6px;padding:2px 4px">`+sheetSizeOptions(sh.sz)+`</select>`;
         const zi=nestSvgs.length;
-        const clickAttr=editMode?'':`onclick="openZoom(${zi})" style="cursor:zoom-in"`;
+        const clickAttr=editMode?'':`onclick="nestClick(event,${zi})" style="cursor:pointer"`;
         let svg=`<svg class="sheet-svg${editMode?' editing':''}" data-group="${esc(mat)}" data-sheet="${idx}" data-size="${sh.sz}" ${clickAttr} viewBox="0 0 ${vbW} ${vbH}"><rect x="0.25" y="0.25" width="${(vbW-0.5).toFixed(1)}" height="${(vbH-0.5).toFixed(1)}" fill="#fff" stroke="#cbd5e1" stroke-width="0.4"/>`;
         if(S.uh&&S.uh<S.h)svg+=`<rect x="0.25" y="${(S.uh/10).toFixed(1)}" width="${(vbW-0.5).toFixed(1)}" height="${((S.h-S.uh)/10).toFixed(1)}" fill="#fee2e2"/>`;
-        sh.parts.forEach(p=>{svg+=drawPart(p,p.key===selKey);});
+        sh.parts.forEach(p=>{svg+=drawPart(p,p.key===selKey||parseInt(p.key,10)===selItem);});
         svg+='</svg>';
         nestSvgs.push({label:parseMat(mat).name+' · '+parseMat(mat).th+' · '+S.label+' · gap '+sh.g+'mm',svg});
         html+=`<div class="sheet-card" style="border-left:5px solid ${bcolSheet}"><div class="sheet-head"><span>${matInp} ${sizeSel} <span style="color:#94a3b8">· ${sh.parts.length} part${sh.parts.length===1?'':'s'} · gap ${sh.g}mm</span></span><span>${used.toFixed(0)}% used</span></div>${svg}</div>`;
