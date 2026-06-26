@@ -14884,6 +14884,8 @@
           const nestingNoteConfig = blockNestingConfig(previewBlock);
           html += '<div class="sheet-help-note">Nesting sheet: '+escapeHtml(nestingNoteConfig.label)+' '+formatMm(nestingNoteConfig.width)+' x '+formatMm(nestingNoteConfig.height)+'mm. Spacing/border: '+formatMm(nestingNoteConfig.spacing)+'mm. Select a sheet piece, then use 9 / 0 to rotate 90 degrees.</div>';
           html += '<div class="room-nesting-sheets">';
+          const previewPartNumberItem = {block:previewBlock, nest:res};
+          const previewPartNumberMap = buildGlobalPartNumberMap([previewPartNumberItem], 'cnc');
           res.sheets.forEach((sheet, i)=>{
             sheet.sheetNumber = i+1;
             const sheetSizeKey = sheet.sizeKey || res.sizeKey || block.size;
@@ -14893,6 +14895,10 @@
               editable:true,
               faceLabel:showBackFace ? 'Front' : '',
               roomName,
+              item:previewPartNumberItem,
+              sheetIndex:i,
+              sourceSheetIndex:i,
+              partNumberMap:previewPartNumberMap,
               woodgrain:grainDirectionBlockValue(previewBlock) === 'Yes',
               offcutTemplateId:Array.isArray(block.offcutTemplateOverrides) ? (block.offcutTemplateOverrides[i] || '') : '',
               offcutPlacements:Array.isArray(block.offcutPlacements) ? block.offcutPlacements.filter(item=>Number(item.sheetIndex || 0) === i) : []
@@ -14902,7 +14908,11 @@
                 editable:false,
                 faceLabel:'Back side offset',
                 roomName,
-                variant:'back'
+                variant:'back',
+                item:previewPartNumberItem,
+                sheetIndex:i,
+                sourceSheetIndex:i,
+                partNumberMap:previewPartNumberMap
               });
             }
           });
@@ -15005,6 +15015,69 @@
       const activeOffcutTemplate = !isBackVariant && options.editable && !!options.offcutTemplateId;
       const woodId = 'woodgrain_'+String(sheetIndex).replace(/[^A-Za-z0-9_-]/g,'')+'_'+String(sizeKey).replace(/[^A-Za-z0-9_-]/g,'');
       const woodLineId = woodId + '_lines';
+      const partNoForPlacement = (p, fallback)=>placementPartNumberFromMap(
+        options.partNumberMap,
+        options.item,
+        options.sourceSheetIndex ?? options.sheetIndex ?? sheetIndex,
+        p,
+        fallback
+      );
+      const splitLongWord = (word, maxChars)=>{
+        const text = String(word || '');
+        const chunks = [];
+        for(let i=0;i<text.length;i+=maxChars) chunks.push(text.slice(i, i + maxChars));
+        return chunks.length ? chunks : [''];
+      };
+      const wrapPieceText = (text, maxChars)=>{
+        const safeMax = Math.max(3, Math.floor(maxChars || 10));
+        const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+        const lines = [];
+        let current = '';
+        words.forEach(word=>{
+          const parts = word.length > safeMax ? splitLongWord(word, safeMax) : [word];
+          parts.forEach(part=>{
+            const next = current ? current + ' ' + part : part;
+            if(next.length <= safeMax){
+              current = next;
+            } else {
+              if(current) lines.push(current);
+              current = part;
+            }
+          });
+        });
+        if(current) lines.push(current);
+        return lines;
+      };
+      const fitPieceLabel = (labels, boxW, boxH)=>{
+        const maxCustomSize = Math.min(8.6, Math.max(3.2, boxH * 0.3));
+        const customChars = Math.max(4, Math.floor(boxW / (maxCustomSize * 0.52)));
+        const lines = [];
+        labels.forEach(label=>{
+          const text = String(label.text || '').trim();
+          if(!text) return;
+          if(label.wrap){
+            wrapPieceText(text, customChars).forEach(line=>lines.push({text:line, size:maxCustomSize, weight:'700'}));
+          } else {
+            lines.push({text, size:label.size, weight:label.weight || '700'});
+          }
+        });
+        if(!lines.length) return null;
+        let gap = Math.max(0.75, Math.min(3, boxH * 0.055));
+        const widthAt = line=>String(line.text).length * line.size * 0.56;
+        const totalHeightAt = items=>items.reduce((sum, line)=>sum + line.size, 0) + gap * (items.length - 1);
+        const maxWidth = Math.max(...lines.map(widthAt), 1);
+        const totalHeight = Math.max(totalHeightAt(lines), 1);
+        const scaleFit = Math.min(1, boxW / maxWidth, boxH / totalHeight);
+        const fitted = lines.map(line=>({...line, size:Math.max(1.8, line.size * scaleFit)}));
+        gap = Math.max(0.45, Math.min(2.4, Math.min(...fitted.map(line=>line.size)) * 0.28));
+        const finalHeight = totalHeightAt(fitted);
+        if(finalHeight > boxH){
+          const heightFit = Math.max(0.45, boxH / finalHeight);
+          fitted.forEach(line=>{ line.size = Math.max(1.4, line.size * heightFit); });
+          gap = Math.max(0.35, gap * heightFit);
+        }
+        return {lines:fitted, gap, totalHeight:totalHeightAt(fitted)};
+      };
       let svg = '<div class="sheet-visual'+(activeOffcutTemplate ? ' offcut-active' : '')+(woodgrainOn ? ' woodgrain' : '')+'" data-sheet-index="'+escapeHtml(sheetIndex)+'" data-sheet-size="'+escapeHtml(sizeKey)+'" data-sheet-width="'+escapeHtml(size.width)+'" data-sheet-height="'+escapeHtml(size.height)+'" data-sheet-spacing="'+escapeHtml(size.spacing)+'" style="--sheet-visual-width:'+visualWidth+'px"><svg viewBox="0 0 '+dw+' '+dh+'" xmlns="http://www.w3.org/2000/svg">';
       if(woodgrainOn){
         svg += '<defs><linearGradient id="'+woodId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d8b07a"/><stop offset="18%" stop-color="#efcf9f"/><stop offset="35%" stop-color="#c39860"/><stop offset="52%" stop-color="#f1d4a4"/><stop offset="70%" stop-color="#bf8d55"/><stop offset="100%" stop-color="#e1b77c"/></linearGradient><pattern id="'+woodLineId+'" patternUnits="userSpaceOnUse" width="'+dw+'" height="14"><rect width="'+dw+'" height="2" fill="#4a2f1a" opacity=".18"/></pattern></defs>';
@@ -15041,25 +15114,42 @@
         };
         const drawCenteredLabel = (showFrame=false)=>{
           const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
-          const safeDimensionLabel = escapeHtml(dimensionLabel);
           const customLabel = placementLabel(p);
-          const safeCustomLabel = escapeHtml(customLabel);
-          const fs1 = fitText(w, Math.max(8,h*0.22), dimensionLabel, 11);
-          const fs2 = showFrame ? fitText(w, Math.max(7,h*0.22), 'frame '+renderFrame, 9) : 0;
-          const fs3 = customLabel ? fitText(w, Math.max(7,h*0.18), customLabel, 9) : 0;
-          const lineGap = Math.max(2, Math.min(5, h * 0.04));
-          const lineHeights = [fs1].concat(showFrame ? [fs2] : []).concat(customLabel ? [fs3] : []);
-          const totalTextHeight = lineHeights.reduce((sum,v)=>sum+v,0) + lineGap * (lineHeights.length - 1);
-          let textY = Math.max(y + fs1 + 1, Math.min(y + h - 1, y + h/2 - totalTextHeight/2 + fs1));
-          svg += '<text x="'+(x+w/2)+'" y="'+textY+'" text-anchor="middle" font-size="'+fs1+'" font-family="Arial" font-weight="700" fill="#111">'+safeDimensionLabel+'</text>';
-          if(showFrame){
-            textY = Math.max(y + fs2 + 1, Math.min(y + h - 1, textY + fs2 + lineGap));
-            svg += '<text x="'+(x+w/2)+'" y="'+textY+'" text-anchor="middle" font-size="'+fs2+'" font-family="Arial" font-weight="700" fill="#111">frame '+renderFrame+'</text>';
-          }
-          if(customLabel){
-            textY = Math.max(y + fs3 + 1, Math.min(y + h - 1, textY + fs3 + lineGap));
-            svg += '<text x="'+(x+w/2)+'" y="'+textY+'" text-anchor="middle" font-size="'+fs3+'" font-family="Arial" font-weight="700" fill="#111">'+safeCustomLabel+'</text>';
-          }
+          const vertical = h > w * 1.12;
+          const labelW = Math.max(3, (vertical ? h : w) - 4);
+          const labelH = Math.max(3, (vertical ? w : h) - 4);
+          const labels = [
+            {text:dimensionLabel, size:Math.min(11, Math.max(3.5, labelH * 0.34)), weight:'800'},
+            showFrame ? {text:'frame '+renderFrame, size:Math.min(8.8, Math.max(3, labelH * 0.24)), weight:'700'} : null,
+            customLabel ? {text:customLabel, wrap:true} : null
+          ].filter(Boolean);
+          const fit = fitPieceLabel(labels, labelW, labelH);
+          if(!fit) return;
+          const rotate = vertical ? -90 : 0;
+          let cursor = -fit.totalHeight / 2;
+          svg += '<g class="sheet-piece-label" transform="translate('+(x+w/2)+' '+(y+h/2)+') rotate('+rotate+')">';
+          fit.lines.forEach(line=>{
+            cursor += line.size;
+            svg += '<text x="0" y="'+cursor.toFixed(2)+'" text-anchor="middle" font-size="'+line.size.toFixed(2)+'" font-family="Arial" font-weight="'+line.weight+'" fill="#111">'+escapeHtml(line.text)+'</text>';
+            cursor += fit.gap;
+          });
+          svg += '</g>';
+        };
+        const drawPartNumber = ()=>{
+          const number = partNoForPlacement(p, idx + 1);
+          if(!number || !(w > 3 && h > 3)) return;
+          const numberText = String(number);
+          const font = Math.max(3.4, Math.min(7.2, Math.min(w, h) * 0.2, Math.max(w, h) * 0.075));
+          const padX = Math.max(1, font * 0.38);
+          const padY = Math.max(0.65, font * 0.25);
+          const badgeW = Math.min(Math.max(5, w - 1), numberText.length * font * 0.58 + padX * 2);
+          const badgeH = Math.min(Math.max(4, h - 1), font + padY * 2);
+          const bx = x + 1.2;
+          const by = y + 1.2;
+          svg += '<g class="sheet-part-number" opacity=".72">';
+          svg += '<rect x="'+bx.toFixed(2)+'" y="'+by.toFixed(2)+'" width="'+badgeW.toFixed(2)+'" height="'+badgeH.toFixed(2)+'" rx="1.2" ry="1.2" fill="#fff" stroke="#111" stroke-width="0.24"/>';
+          svg += '<text x="'+(bx + badgeW / 2).toFixed(2)+'" y="'+(by + badgeH / 2 + font * 0.36).toFixed(2)+'" text-anchor="middle" font-size="'+font.toFixed(2)+'" font-family="Arial" font-weight="900" fill="#111">'+escapeHtml(numberText)+'</text>';
+          svg += '</g>';
         };
         const drawGrainDirectionMark = ()=>{
           if(partGrainDirectionValue(p, null) !== 'Yes') return;
@@ -15123,25 +15213,7 @@
               drawPocketLineRectsSvg(c, p);
             }
           });
-          const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
-          const safeDimensionLabel = escapeHtml(dimensionLabel);
-          const customLabel = placementLabel(p);
-          const safeCustomLabel = escapeHtml(customLabel);
-          const fs1 = fitText(w, Math.max(8,h*0.22), dimensionLabel, 11);
-          const fs2 = fitText(w, Math.max(7,h*0.22), 'frame '+renderFrame, 9);
-          const fs3 = customLabel ? fitText(w, Math.max(7,h*0.18), customLabel, 9) : 0;
-          const lineGap = Math.max(2, Math.min(5, h * 0.04));
-          const lineHeights = customLabel ? [fs1, fs2, fs3] : [fs1, fs2];
-          const totalTextHeight = lineHeights.reduce((sum,v)=>sum+v,0) + lineGap * (lineHeights.length - 1);
-          const firstBaseline = y + h/2 - totalTextHeight/2 + fs1;
-          const textY1 = Math.max(y + fs1 + 1, Math.min(y + h - 1, firstBaseline));
-          const textY2 = Math.max(y + fs2 + 1, Math.min(y + h - 1, textY1 + fs2 + lineGap));
-          svg += '<text x="'+(x+w/2)+'" y="'+textY1+'" text-anchor="middle" font-size="'+fs1+'" font-family="Arial" font-weight="700" fill="#111">'+safeDimensionLabel+'</text>';
-          svg += '<text x="'+(x+w/2)+'" y="'+textY2+'" text-anchor="middle" font-size="'+fs2+'" font-family="Arial" font-weight="700" fill="#111">frame '+renderFrame+'</text>';
-          if(customLabel){
-            const textY3 = Math.max(y + fs3 + 1, Math.min(y + h - 1, textY2 + fs3 + lineGap));
-            svg += '<text x="'+(x+w/2)+'" y="'+textY3+'" text-anchor="middle" font-size="'+fs3+'" font-family="Arial" font-weight="700" fill="#111">'+safeCustomLabel+'</text>';
-          }
+          drawCenteredLabel(true);
         } else if(p.shaker && isCustomDoorType(p.shakerType)){
           svg += partShape();
           const template = findCustomDoorTemplate(p.shakerType);
@@ -15160,21 +15232,7 @@
           } else if(template){
             svg += renderCustomTemplateSvg(template, {x:p.x, y:p.y, w:p.w, h:p.h}, scale);
           }
-          const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
-          const safeDimensionLabel = escapeHtml(dimensionLabel);
-          const customLabel = placementLabel(p);
-          const safeCustomLabel = escapeHtml(customLabel);
-          const fs = fitText(w-2, Math.max(8,h*0.22), dimensionLabel, 10);
-          if(w > 7 && h > 7){
-            const fs2 = customLabel ? fitText(w-2, Math.max(7,h*0.18), customLabel, 8) : 0;
-            const lineGap = Math.max(2, Math.min(5, h * 0.04));
-            const totalTextHeight = customLabel ? fs + fs2 + lineGap : fs;
-            const ty = y + h/2 - totalTextHeight/2 + fs;
-            svg += '<text x="'+(x+w/2)+'" y="'+ty+'" text-anchor="middle" font-size="'+fs+'" font-family="Arial" font-weight="700" fill="#111">'+safeDimensionLabel+'</text>';
-            if(customLabel){
-              svg += '<text x="'+(x+w/2)+'" y="'+(ty+fs2+lineGap)+'" text-anchor="middle" font-size="'+fs2+'" font-family="Arial" font-weight="700" fill="#111">'+safeCustomLabel+'</text>';
-            }
-          }
+          drawCenteredLabel(false);
         } else if(p.shaker){
           svg += partShape();
           const slopedInnerPath = slopedInnerFrameSvgPath(p, renderFrame, scale);
@@ -15231,31 +15289,9 @@
               if(!isBackVariant) drawPocketLineRectsSvg(c, p);
             });
           }
-          const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
-          const safeDimensionLabel = escapeHtml(dimensionLabel);
-          const customLabel = placementLabel(p);
-          const safeCustomLabel = escapeHtml(customLabel);
-          const fs1 = fitText(w, Math.max(8,h*0.22), dimensionLabel, 11);
-          const fs2 = fitText(w, Math.max(7,h*0.22), 'frame '+renderFrame, 9);
-          const fs3 = customLabel ? fitText(w, Math.max(7,h*0.18), customLabel, 9) : 0;
-          const lineGap = Math.max(2, Math.min(5, h * 0.04));
-          const lineHeights = customLabel ? [fs1, fs2, fs3] : [fs1, fs2];
-          const totalTextHeight = lineHeights.reduce((sum,v)=>sum+v,0) + lineGap * (lineHeights.length - 1);
-          const firstBaseline = y + h/2 - totalTextHeight/2 + fs1;
-          const textY1 = Math.max(y + fs1 + 1, Math.min(y + h - 1, firstBaseline));
-          const textY2 = Math.max(y + fs2 + 1, Math.min(y + h - 1, textY1 + fs2 + lineGap));
-          svg += '<text x="'+(x+w/2)+'" y="'+textY1+'" text-anchor="middle" font-size="'+fs1+'" font-family="Arial" font-weight="700" fill="#111">'+safeDimensionLabel+'</text>';
-          svg += '<text x="'+(x+w/2)+'" y="'+textY2+'" text-anchor="middle" font-size="'+fs2+'" font-family="Arial" font-weight="700" fill="#111">frame '+renderFrame+'</text>';
-          if(customLabel){
-            const textY3 = Math.max(y + fs3 + 1, Math.min(y + h - 1, textY2 + fs3 + lineGap));
-            svg += '<text x="'+(x+w/2)+'" y="'+textY3+'" text-anchor="middle" font-size="'+fs3+'" font-family="Arial" font-weight="700" fill="#111">'+safeCustomLabel+'</text>';
-          }
+          drawCenteredLabel(true);
         } else {
           svg += partShape();
-          const dimensionLabel = formatMm(p.origW)+'x'+formatMm(p.origH);
-          const safeDimensionLabel = escapeHtml(dimensionLabel);
-          const customLabel = placementLabel(p);
-          const safeCustomLabel = escapeHtml(customLabel);
           if(p.insertKind === 'flushback' || p.insertKind === 'reeded'){
             if(normalizePartShape(p.shapeType) === 'sloped'){
               const slopedInsertPath = (inset, stroke, sw)=>{
@@ -15294,21 +15330,12 @@
               }
             }
           }
-          const fs = fitText(w-2, h-2, dimensionLabel, 11);
-          if(w > 7 && h > 7){
-            const fs2 = customLabel ? fitText(w-2, Math.max(7,h*0.18), customLabel, 9) : 0;
-            const lineGap = Math.max(2, Math.min(5, h * 0.04));
-            const totalTextHeight = customLabel ? fs + fs2 + lineGap : fs;
-            const ty = y + h/2 - totalTextHeight/2 + fs;
-            svg += '<text x="'+(x+w/2)+'" y="'+ty+'" text-anchor="middle" font-size="'+fs+'" font-family="Arial" font-weight="700" fill="#111">'+safeDimensionLabel+'</text>';
-            if(customLabel){
-              svg += '<text x="'+(x+w/2)+'" y="'+(ty+fs2+lineGap)+'" text-anchor="middle" font-size="'+fs2+'" font-family="Arial" font-weight="700" fill="#111">'+safeCustomLabel+'</text>';
-            }
-          }
+          drawCenteredLabel(false);
         }
 
         drawGrainDirectionMark();
         drawFrameZoneHits();
+        drawPartNumber();
         if(hasSprayFinish(p)){
           const spraySides = normalizeSpraySides(p.spraySides);
           spraySideSegmentsForPlacement(p).forEach(seg=>{
@@ -15525,6 +15552,7 @@
         {name:'REEDED', color:132},
         {name:'hinges', color:7},
         {name:'text', color:7},
+        {name:'PART_NUMBER', color:7},
         {name:'BACK_TEXT', color:1},
         {name:'OFFCUT', color:6},
         {name:'SHEET', color:7}
@@ -15642,6 +15670,26 @@
         pair(40,fmt(hgt));
         if(activeTextRotation) pair(50,fmt(activeTextRotation));
         pair(1,String(text));
+      }
+      function dxfPartNumberForPlacement(p, options={}){
+        return placementPartNumberFromMap(
+          options.partNumberMap,
+          options.item,
+          options.sourceSheetIndex ?? options.sheetIndex ?? 0,
+          p,
+          ''
+        );
+      }
+      function drawPartNumberDxf(p, partNo){
+        if(!partNo) return;
+        const x = Number(p.x || 0);
+        const y = Number(p.y || 0);
+        const w = Math.max(1, Number(p.w || p.width || 0));
+        const h = Math.max(1, Number(p.h || p.height || 0));
+        const font = Math.max(8, Math.min(22, Math.min(w, h) * 0.22, Math.max(w, h) * 0.06));
+        const insetX = Math.max(8, Math.min(28, w * 0.04));
+        const insetY = Math.max(font + 4, Math.min(34, h * 0.08));
+        textEntity(x + insetX, y + insetY, font, String(partNo), 'PART_NUMBER', 'left');
       }
       function writeTables(target){
         const dxfLayers = [...usedDxfLayers.values()];
@@ -15913,12 +15961,15 @@
       function drawPlacementGeometry(p, options={}){
         const face = options.face === 'back' ? 'back' : 'front';
         const renderFrame = face === 'back' ? Number(p.backFrame || p.frame || 50) : Number(p.frame || 50);
+        const partNo = dxfPartNumberForPlacement(p, options);
         if(isPanelPlacement(p)){
           drawPanelPartDxf(p, 0, 0, face);
+          drawPartNumberDxf(p, partNo);
           return;
         }
         if(isBeadingPart(p)){
           drawBeadingPartDxf(p, 0, 0);
+          drawPartNumberDxf(p, partNo);
           return;
         }
         if(p.glassBeading && p.shaker){
@@ -15961,6 +16012,7 @@
         hingeCentersForPlacement(p).forEach(c=>circle(c.x, c.y, 17.5, 'hinges'));
         const label = placementLabel(p);
         textEntity(p.x + p.w/2, p.y + p.h/2, 18, label, 'text', 'center');
+        drawPartNumberDxf(p, partNo);
       }
       function drawSheetPlacements(sheet, placements, sizeKey, includeOffcuts, options={}){
         placements.forEach(p=>drawPlacementGeometry(p, options));
@@ -15993,10 +16045,11 @@
         const size = sheetRuntimeSize(sizeKey, sheet);
         withSheetTransform(size, baseX, baseY, ()=>{
           textEntity(130, 60, 22, 'SHEET ' + (options.sheetNo || '') + ' ' + String(options.face || 'front').toUpperCase() + ' ' + String(options.thickness || ''), 'text', 'center');
+          const placementOptions = {...options, item, sheetIndex:options.sourceSheetIndex ?? options.sheetIndex ?? 0};
           if(options.face === 'back'){
             rect('BACK_SHEET', 0, 0, size.width, size.height);
             textEntity(size.width - 60, 60, 28, 'BACK', 'BACK_TEXT', 'center');
-            drawSheetPlacements(sheet, sheet.placements, sizeKey, false, {face:'back'});
+            drawSheetPlacements(sheet, sheet.placements, sizeKey, false, {...placementOptions, face:'back'});
           } else {
             const sheetLayer = sheet.placements.some(p=>p.shakerType === 'reeded' || p.insertKind === 'reeded') ? 'BOARD' : 'SHEET';
             rect(sheetLayer, 0, 0, size.width, size.height);
@@ -16005,7 +16058,7 @@
             const offcutTemplateId = Array.isArray(block.offcutTemplateOverrides) ? (block.offcutTemplateOverrides[sheetIndex] || '') : '';
             const rawOffcutPlacements = Array.isArray(block.offcutPlacements) ? block.offcutPlacements.filter(item=>Number(item.sheetIndex || 0) === sheetIndex) : [];
             const offcutPlacements = validOffcutPlacementsForSheet(sheet, sizeKey, rawOffcutPlacements);
-            drawSheetPlacements(sheet, sheet.placements, sizeKey, true, {face:'front', offcutTemplateId, offcutPlacements});
+            drawSheetPlacements(sheet, sheet.placements, sizeKey, true, {...placementOptions, face:'front', offcutTemplateId, offcutPlacements});
           }
         });
       }
@@ -16034,14 +16087,15 @@
         }
         return cleanFileSlug(thickness || 'unknown');
       }
+      const dxfPartNumberMap = buildGlobalPartNumberMap(lastCalculation, 'cnc');
       const dxfJobs = [];
       lastCalculation.forEach((item)=>{
         item.nest.sheets.forEach((sheet, sidx)=>{
           const sizeKey = sheet.sizeKey || item.nest.sizeKey || item.block.size;
           const backPlacements = sheet.placements.filter(p=>placementNeedsBackFaceSheet(p, sourceBlockForPlacement(item, p)));
-          dxfJobs.push({item, sheet, face:'front', thickness:sheetThicknessLabel(item, sheet), sizeKey, hasBack:backPlacements.length > 0, sourceSheetIndex:sidx});
+          dxfJobs.push({item, sheet, face:'front', thickness:sheetThicknessLabel(item, sheet), sizeKey, hasBack:backPlacements.length > 0, sourceSheetIndex:sidx, partNumberMap:dxfPartNumberMap});
           if(backPlacements.length){
-            dxfJobs.push({item, sheet:{...sheet, placements:packBackPlacementsTouching(backPlacements, sizeKey, sheet)}, face:'back', thickness:sheetThicknessLabel(item, sheet), sizeKey, hasBack:false, sourceSheetIndex:sidx});
+            dxfJobs.push({item, sheet:{...sheet, placements:packBackPlacementsTouching(backPlacements, sizeKey, sheet)}, face:'back', thickness:sheetThicknessLabel(item, sheet), sizeKey, hasBack:false, sourceSheetIndex:sidx, partNumberMap:dxfPartNumberMap});
           }
         });
       });
@@ -16080,6 +16134,7 @@
         return {block,nest,price};
       });
       lastCalculation = results;
+      const partNumberMap = buildGlobalPartNumberMap(results, 'cnc');
 
       const materialsTotal = results.reduce((s,r)=>s+r.price.totalOrderPrice,0);
       const design = Math.max(0, Number(document.getElementById('designHours').value||0))*35;
@@ -16173,9 +16228,9 @@
             const sizeKey = sheet.sizeKey || nest.sizeKey || block.size;
             const backSheet = backSheetForDisplay(block, sheet, sizeKey);
             const showBackFace = showBackSidePocketingMode && backSheet.placements.length > 0;
-            dh += renderSheet(sheet, sizeKey, {faceLabel:showBackFace ? 'Front' : ''});
+            dh += renderSheet(sheet, sizeKey, {faceLabel:showBackFace ? 'Front' : '', item:{block,nest,price}, sheetIndex:i, sourceSheetIndex:i, partNumberMap});
             if(showBackFace){
-              dh += renderSheet(backSheet, sizeKey, {variant:'back', faceLabel:'Back side offset'});
+              dh += renderSheet(backSheet, sizeKey, {variant:'back', faceLabel:'Back side offset', item:{block,nest,price}, sheetIndex:i, sourceSheetIndex:i, partNumberMap});
             }
           });
         } else {
@@ -16298,8 +16353,45 @@
         scale:Math.min(1, Math.max(0.75, Number(document.getElementById('labelScale')?.value || 0.92)))
       };
     }
+    function placementPartNumberKey(item, sheetIndex, p){
+      const role = String(p?.assemblyRole || (p?.insertKind ? p.insertKind : (p?.shaker ? 'frame' : 'part')));
+      return [
+        item?.block?.id ?? '',
+        p?.sourceBlockId ?? '',
+        p?.sourcePartIndex ?? p?.id ?? '',
+        p?.sourceInstanceIndex ?? '',
+        role,
+        p?.assemblyGroup || '',
+        p?.assemblyPanelIndex ?? '',
+        formatMm(p?.origW || p?.w || 0),
+        formatMm(p?.origH || p?.h || 0),
+        Number.isFinite(Number(sheetIndex)) ? Number(sheetIndex) : ''
+      ].join('|');
+    }
+    function buildGlobalPartNumberMap(calculation=lastCalculation, type='cnc'){
+      const map = new Map();
+      if(!Array.isArray(calculation)) return map;
+      let number = 1;
+      calculation.forEach(item=>{
+        (item?.nest?.sheets || []).forEach((sheet, sheetIndex)=>{
+          (sheet.placements || []).forEach(p=>{
+            if(type === 'spray' && !hasSprayFinish(p)) return;
+            map.set(placementPartNumberKey(item, sheetIndex, p), number++);
+          });
+        });
+      });
+      return map;
+    }
+    function placementPartNumberFromMap(partNumberMap, item, sheetIndex, p, fallback=''){
+      if(partNumberMap && item){
+        const found = partNumberMap.get(placementPartNumberKey(item, sheetIndex, p));
+        if(found) return found;
+      }
+      return p?.partNo || fallback;
+    }
     function collectPartLabels(type='cnc'){
       if(!lastCalculation) return [];
+      const partNumberMap = buildGlobalPartNumberMap(lastCalculation, type);
       const allPlacements = [];
       let globalSheetNo = 0;
       lastCalculation.forEach(item=>{
@@ -16323,7 +16415,7 @@
         const uid = shortHash([quote, item.block.id, p.sourceBlockId || '', p.sourcePartIndex ?? '', p.sourceInstanceIndex ?? '', sheetIndex, role, width, height, Math.round(Number(p.x || 0)), Math.round(Number(p.y || 0))].join('|'));
         const label = {
           uid,
-          partNo:labels.length + 1,
+          partNo:placementPartNumberFromMap(partNumberMap, item, sheetIndex, p, labels.length + 1),
           total,
           code:String(p.text || '').trim() || ('Part ' + (p.id || labels.length + 1)),
           client:document.getElementById('clientName').value.trim() || 'Client name/job',
