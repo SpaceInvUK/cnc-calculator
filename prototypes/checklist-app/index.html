@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FastCNC Checklist Preview</title>
+  <style>
+    :root{
+      --bg:#f3f4f6;
+      --surface:#ffffff;
+      --ink:#101010;
+      --muted:#6b7280;
+      --line:#d1d5db;
+      --line-strong:#111111;
+      --green:#22c55e;
+      --green-soft:#dcfce7;
+      --green-ink:#064e3b;
+      --red:#dc2626;
+      --red-soft:#fee2e2;
+      --amber:#f59e0b;
+      --amber-soft:#fef3c7;
+      --shadow:0 18px 45px rgba(15,23,42,.12);
+      --radius:8px;
+      font-family:Arial,Helvetica,sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink)}
+    body{font-size:14px;line-height:1.35}
+    button,input{font:inherit}
+    button{border:1px solid var(--line-strong);border-radius:7px;background:#111;color:#fff;font-weight:900;letter-spacing:.01em;min-height:38px;padding:0 12px;cursor:pointer}
+    button.secondary{background:#fff;color:#111;border-color:var(--line)}
+    button.ghost{background:transparent;color:#111;border-color:transparent}
+    button.success{background:var(--green);border-color:#15803d;color:#052e16}
+    button.danger{background:#fff;color:var(--red);border-color:#fecaca}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    input[type="text"],input[type="search"]{width:100%;min-height:40px;border:1px solid var(--line);border-radius:7px;background:#fff;color:#111;padding:0 11px;font-weight:800}
+    input[type="file"]{width:100%;font-weight:800;color:#374151}
+    .app-shell{min-height:100vh;display:grid;grid-template-rows:auto 1fr}
+    .topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 8px 24px rgba(15,23,42,.08)}
+    .topbar-inner{max-width:1180px;margin:0 auto;padding:10px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+    .brand{display:flex;gap:10px;align-items:center;min-width:0}
+    .brand-mark{width:38px;height:38px;border:2px solid #111;border-radius:8px;display:grid;place-items:center;font-weight:950;font-size:13px;background:#fff}
+    .brand-copy{min-width:0}
+    .brand-copy h1{margin:0;font-size:17px;line-height:1.05;font-weight:950;letter-spacing:0}
+    .brand-copy p{margin:3px 0 0;color:var(--muted);font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .toolbar-actions{display:flex;gap:8px;align-items:center}
+    .main{max-width:1180px;width:100%;margin:0 auto;padding:14px 12px 24px;display:grid;grid-template-columns:320px minmax(0,1fr);gap:14px}
+    .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .panel-head{padding:12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .panel-title{margin:0;font-size:13px;font-weight:950;text-transform:uppercase;letter-spacing:.08em}
+    .panel-body{padding:12px}
+    .stack{display:grid;gap:10px}
+    .scan-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+    .field-label{display:block;margin:0 0 5px;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.08em;color:#374151}
+    .file-box{border:1px dashed #cbd5e1;border-radius:8px;background:#f8fafc;padding:10px;display:grid;gap:7px}
+    .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .metric{border:1px solid var(--line);border-radius:8px;background:#fff;padding:9px;min-width:0}
+    .metric b{display:block;font-size:21px;line-height:1;font-weight:950}
+    .metric span{display:block;margin-top:4px;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.07em}
+    .progress-track{height:10px;border-radius:999px;background:#e5e7eb;overflow:hidden}
+    .progress-fill{height:100%;width:0;background:var(--green);transition:width .2s ease}
+    .status{border-radius:8px;border:1px solid var(--line);background:#f8fafc;padding:9px;font-weight:900;color:#374151}
+    .status.ok{background:var(--green-soft);border-color:#86efac;color:var(--green-ink)}
+    .status.warn{background:var(--amber-soft);border-color:#fcd34d;color:#78350f}
+    .status.err{background:var(--red-soft);border-color:#fecaca;color:#7f1d1d}
+    .camera-box{display:none;border:1px solid #111;border-radius:8px;overflow:hidden;background:#111}
+    .camera-box.active{display:block}
+    .camera-box video{display:block;width:100%;max-height:260px;object-fit:cover}
+    .sheet-shell{min-width:0;display:grid;gap:12px}
+    .job-strip{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px}
+    .job-title{min-width:0}
+    .job-title h2{margin:0;font-size:21px;line-height:1.1;font-weight:950;letter-spacing:0}
+    .job-title p{margin:4px 0 0;color:var(--muted);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .completion{display:flex;gap:8px;align-items:center;font-size:22px;font-weight:950}
+    .completion span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+    .sheet-tabs{display:flex;gap:7px;overflow:auto;padding:0 1px 2px}
+    .sheet-tab{flex:0 0 auto;border-color:var(--line);background:#fff;color:#111;display:flex;gap:6px;align-items:center}
+    .sheet-tab.active{background:#111;color:#fff;border-color:#111}
+    .sheet-tab.done{border-color:#16a34a}
+    .tab-count{font-size:11px;font-weight:950;color:inherit;opacity:.78}
+    .map-panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .map-head{padding:10px 12px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+    .map-head h3{margin:0;font-size:14px;font-weight:950}
+    .map-head p{margin:2px 0 0;color:var(--muted);font-size:12px;font-weight:800}
+    .map-tools{display:flex;gap:7px;align-items:center}
+    .sheet-stage{background:#e5e7eb;padding:10px;overflow:auto}
+    .sheet-svg-wrap{min-width:760px;background:#fff;border:1px solid #111}
+    .sheet-svg{display:block;width:100%;height:auto}
+    .sheet-svg text{font-family:Arial,Helvetica,sans-serif}
+    .part-rect{stroke:#111;stroke-width:4;transition:fill .16s ease,stroke .16s ease}
+    .part-rect.pending{fill:#fff}
+    .part-rect.scanned{fill:var(--green)}
+    .part-hit{cursor:pointer;user-select:none;-webkit-user-select:none}
+    .part-hit:focus .part-rect,.part-hit:hover .part-rect{stroke:#0f766e;stroke-width:7}
+    .part-hit.hold-arming .part-rect.pending{stroke:var(--amber);stroke-width:9;fill:var(--amber-soft)}
+    .part-index{font-weight:950;fill:#111}
+    .part-dim{font-weight:950;fill:#111}
+    .part-code{font-weight:900;fill:#111}
+    .part-meta{font-weight:900;fill:#374151}
+    .scan-flash{animation:scanFlash .38s ease}
+    @keyframes scanFlash{0%{filter:drop-shadow(0 0 0 rgba(34,197,94,0))}45%{filter:drop-shadow(0 0 18px rgba(34,197,94,.8))}100%{filter:drop-shadow(0 0 0 rgba(34,197,94,0))}}
+    .list-panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .list-controls{padding:10px 12px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+    .piece-list{max-height:460px;overflow:auto}
+    .piece-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:9px;align-items:center;padding:10px 12px;border-bottom:1px solid #e5e7eb;cursor:pointer;background:#fff}
+    .piece-row:last-child{border-bottom:0}
+    .piece-row.scanned{background:var(--green-soft)}
+    .piece-row:hover{background:#f8fafc}
+    .piece-row.scanned:hover{background:#bbf7d0}
+    .piece-no{width:34px;height:34px;border:1px solid #111;border-radius:7px;display:grid;place-items:center;font-weight:950;background:#fff}
+    .piece-row.scanned .piece-no{background:var(--green);color:#052e16}
+    .piece-main{min-width:0}
+    .piece-main b{display:block;font-size:13px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .piece-main span{display:block;margin-top:2px;color:#4b5563;font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .piece-size{font-weight:950;white-space:nowrap}
+    .recent-list{display:grid;gap:7px;max-height:180px;overflow:auto}
+    .recent-item{border:1px solid var(--line);border-radius:7px;padding:8px;background:#fff;font-weight:900}
+    .recent-item small{display:block;margin-top:2px;color:var(--muted);font-weight:800}
+    .empty{border:1px dashed #cbd5e1;border-radius:8px;padding:12px;background:#f8fafc;color:var(--muted);font-weight:850}
+    .hidden{display:none!important}
+    @media (max-width:900px){
+      .main{grid-template-columns:1fr}
+      .side{order:2}
+      .sheet-shell{order:1}
+      .sheet-svg-wrap{min-width:680px}
+    }
+    @media (max-width:620px){
+      .topbar-inner{grid-template-columns:1fr}
+      .toolbar-actions{justify-content:stretch}
+      .toolbar-actions button{flex:1}
+      .job-strip{grid-template-columns:1fr}
+      .completion{justify-content:space-between}
+      .map-head{grid-template-columns:1fr}
+      .map-tools{justify-content:stretch}
+      .map-tools button{flex:1}
+      .sheet-stage{padding:7px}
+      .sheet-svg-wrap{min-width:620px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark">FC</div>
+          <div class="brand-copy">
+            <h1>FastCNC Checklist</h1>
+            <p id="topSubtitle">Load a checklist job to start scanning.</p>
+          </div>
+        </div>
+        <div class="toolbar-actions">
+          <button class="secondary" id="loadSampleBtn" type="button">Sample Job</button>
+          <button class="danger" id="resetBtn" type="button">Reset</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <aside class="side panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Scanner</h2>
+          <button class="ghost" id="cameraBtn" type="button">Camera</button>
+        </div>
+        <div class="panel-body stack">
+          <div class="scan-row">
+            <div>
+              <label class="field-label" for="scanInput">QR / Part</label>
+              <input id="scanInput" type="text" autocomplete="off" placeholder="Scan or type part no">
+            </div>
+            <button id="scanBtn" type="button">Scan</button>
+          </div>
+          <div class="camera-box" id="cameraBox">
+            <video id="cameraVideo" playsinline muted></video>
+          </div>
+          <div class="status" id="statusBox">Waiting for checklist data.</div>
+
+          <div class="file-box">
+            <label class="field-label" for="fileInput">Checklist file</label>
+            <input id="fileInput" type="file" accept=".json,.fastcnc-checklist">
+          </div>
+
+          <div class="meta-grid">
+            <div class="metric">
+              <b id="doneMetric">0</b>
+              <span>Scanned</span>
+            </div>
+            <div class="metric">
+              <b id="leftMetric">0</b>
+              <span>Remaining</span>
+            </div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+          <button class="success" id="demoScanBtn" type="button">Demo Scan Next</button>
+
+          <section>
+            <div class="panel-head" style="padding:0 0 8px;border:0">
+              <h2 class="panel-title">Recent</h2>
+            </div>
+            <div class="recent-list" id="recentList">
+              <div class="empty">No scans yet.</div>
+            </div>
+          </section>
+        </div>
+      </aside>
+
+      <section class="sheet-shell">
+        <div class="job-strip">
+          <div class="job-title">
+            <h2 id="jobName">No job loaded</h2>
+            <p id="jobMeta">Use Sample Job or import a checklist JSON.</p>
+          </div>
+          <div class="completion">
+            <strong id="completionText">0 / 0</strong>
+            <span>Complete</span>
+          </div>
+        </div>
+
+        <nav class="sheet-tabs" id="sheetTabs" aria-label="Sheets"></nav>
+
+        <section class="map-panel">
+          <div class="map-head">
+            <div>
+              <h3 id="sheetTitle">Sheet Map</h3>
+              <p id="sheetNote">Pieces are white until scanned, then turn green.</p>
+            </div>
+            <div class="map-tools">
+              <button class="secondary" id="toggleAllBtn" type="button">Toggle Sheet</button>
+              <button class="secondary" id="clearSheetBtn" type="button">Clear Sheet</button>
+            </div>
+          </div>
+          <div class="sheet-stage">
+            <div class="sheet-svg-wrap" id="sheetSvgWrap"></div>
+          </div>
+        </section>
+
+        <section class="list-panel">
+          <div class="list-controls">
+            <input id="pieceSearch" type="search" placeholder="Search part, size, code, UID">
+            <button class="secondary" id="showMissingBtn" type="button">Missing</button>
+          </div>
+          <div class="piece-list" id="pieceList"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const SAMPLE_JOB_URL = '../../Various/PISTACHIO250626.fastcnc-checklist.json';
+    const HOLD_TO_MARK_MS = 560;
+    const FALLBACK_SHEET = {width:1220, height:720, margin:22, gap:10};
+    const BUILT_IN_SAMPLE_JOB = {
+      type:'fastcnc-checklist',
+      version:1,
+      quote:'DEMO260626',
+      client:'Demo Checklist',
+      contact:'',
+      createdAt:'2026-06-26T00:00:00.000Z',
+      pieces:[
+        ['DEMO001',1,'2305x710','SIDE PANEL - LEFT','1/3'],
+        ['DEMO002',2,'2305x710','SIDE PANEL - RIGHT','1/3'],
+        ['DEMO003',3,'860x300','ADJUSTABLE SHELF','1/3'],
+        ['DEMO004',4,'114x560','TOP RAIL','1/3'],
+        ['DEMO005',5,'114x560','BOTTOM RAIL','1/3'],
+        ['DEMO006',6,'2113x67','FRONT POST','1/3'],
+        ['DEMO007',7,'464x80','BIN RAIL','1/3'],
+        ['DEMO008',8,'2113x67','BACK POST','1/3'],
+        ['DEMO009',9,'684x67','CENTRE POST','1/3'],
+        ['DEMO010',10,'684x67','CENTRE POST','1/3'],
+        ['DEMO011',11,'684x67','CENTRE POST','2/3'],
+        ['DEMO012',12,'964x80','RAIL','2/3'],
+        ['DEMO013',13,'864x80','RAIL','2/3'],
+        ['DEMO014',14,'684x80','SINK POST','2/3'],
+        ['DEMO015',15,'764x80','RAIL','2/3'],
+        ['DEMO016',16,'539x80','RAIL','2/3'],
+        ['DEMO017',17,'683x114','BACK NONE','3/3'],
+        ['DEMO018',18,'2150x610','LARGE PANEL','3/3'],
+        ['DEMO019',19,'900x330','FILLER PANEL','3/3'],
+        ['DEMO020',20,'564x100','FILLER RAIL','3/3'],
+        ['DEMO021',21,'720x610','END PANEL','3/3']
+      ].map(([uid,partNo,size,code,sheetShort])=>({
+        uid,
+        partNo,
+        total:21,
+        code,
+        client:'Demo Checklist',
+        size,
+        sizeFull:size.replace('x',' x ') + ' x 18mm',
+        material:'MFC',
+        sheet:'Sheet ' + sheetShort,
+        sheetShort,
+        door:'Flat',
+        role:'part',
+        group:'DEMO-' + partNo,
+        matchKey:'DEMO',
+        panelIndex:'',
+        panelCount:'',
+        spraySides:[],
+        qrPayload:'FC|DEMO260626|U' + uid + '|P' + partNo + '|T21|S' + size + '|SH' + sheetShort + '|RPART',
+        sprayQrPayload:''
+      }))
+    };
+
+    const state = {
+      job:null,
+      scanned:new Set(),
+      activeSheet:'',
+      recent:[],
+      showMissingOnly:false,
+      cameraStream:null,
+      cameraTimer:null,
+      detector:null,
+      hold:null
+    };
+
+    const els = {
+      topSubtitle:document.getElementById('topSubtitle'),
+      loadSampleBtn:document.getElementById('loadSampleBtn'),
+      resetBtn:document.getElementById('resetBtn'),
+      cameraBtn:document.getElementById('cameraBtn'),
+      cameraBox:document.getElementById('cameraBox'),
+      cameraVideo:document.getElementById('cameraVideo'),
+      scanInput:document.getElementById('scanInput'),
+      scanBtn:document.getElementById('scanBtn'),
+      statusBox:document.getElementById('statusBox'),
+      fileInput:document.getElementById('fileInput'),
+      doneMetric:document.getElementById('doneMetric'),
+      leftMetric:document.getElementById('leftMetric'),
+      progressFill:document.getElementById('progressFill'),
+      demoScanBtn:document.getElementById('demoScanBtn'),
+      recentList:document.getElementById('recentList'),
+      jobName:document.getElementById('jobName'),
+      jobMeta:document.getElementById('jobMeta'),
+      completionText:document.getElementById('completionText'),
+      sheetTabs:document.getElementById('sheetTabs'),
+      sheetTitle:document.getElementById('sheetTitle'),
+      sheetNote:document.getElementById('sheetNote'),
+      sheetSvgWrap:document.getElementById('sheetSvgWrap'),
+      toggleAllBtn:document.getElementById('toggleAllBtn'),
+      clearSheetBtn:document.getElementById('clearSheetBtn'),
+      pieceSearch:document.getElementById('pieceSearch'),
+      showMissingBtn:document.getElementById('showMissingBtn'),
+      pieceList:document.getElementById('pieceList')
+    };
+
+    function escapeHtml(value){
+      return String(value ?? '').replace(/[&<>"']/g, char=>({
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;',
+        '"':'&quot;',
+        "'":'&#39;'
+      }[char]));
+    }
+
+    function parseSize(size){
+      const match = String(size || '').match(/(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)/i);
+      if(!match) return {w:200,h:120};
+      return {w:Math.max(1, Number(match[1])), h:Math.max(1, Number(match[2]))};
+    }
+
+    function sheetKey(piece){
+      return String(piece.sheetShort || piece.sheet || 'Sheet 1').trim() || 'Sheet 1';
+    }
+
+    function sheetLabel(key){
+      if(/^\d+\s*\/\s*\d+$/.test(key)) return 'Sheet ' + key;
+      if(/^sheet/i.test(key)) return key;
+      return 'Sheet ' + key;
+    }
+
+    function uidOf(piece){
+      return String(piece.uid || piece.qrPayload || piece.partNo || '').trim();
+    }
+
+    function storageKey(job){
+      return 'fastcnc-checklist-preview:' + String(job?.quote || job?.createdAt || 'job');
+    }
+
+    function setStatus(text, mode=''){
+      els.statusBox.className = 'status' + (mode ? ' ' + mode : '');
+      els.statusBox.textContent = text;
+    }
+
+    function normalizeJob(raw){
+      const pieces = Array.isArray(raw?.pieces) ? raw.pieces : [];
+      const job = {
+        ...raw,
+        pieces:pieces.map((piece, index)=>({
+          ...piece,
+          uid:uidOf(piece) || String(index + 1),
+          partNo:Number(piece.partNo || index + 1),
+          total:Number(piece.total || pieces.length || 0),
+          code:String(piece.code || 'Part ' + (index + 1)),
+          size:String(piece.size || ''),
+          sheetShort:String(piece.sheetShort || piece.sheet || '1/1').replace(/^Sheet\s+/i, ''),
+          sheet:String(piece.sheet || ('Sheet ' + (piece.sheetShort || '1/1')))
+        }))
+      };
+      return job;
+    }
+
+    function loadScanned(job){
+      state.scanned = new Set();
+      try{
+        const saved = JSON.parse(localStorage.getItem(storageKey(job)) || '[]');
+        const valid = new Set(job.pieces.map(piece=>piece.uid));
+        saved.forEach(uid=>{ if(valid.has(uid)) state.scanned.add(uid); });
+      }catch(err){}
+    }
+
+    function saveScanned(){
+      if(!state.job) return;
+      localStorage.setItem(storageKey(state.job), JSON.stringify(Array.from(state.scanned)));
+    }
+
+    function groupSheets(job){
+      const map = new Map();
+      (job?.pieces || []).forEach(piece=>{
+        const key = sheetKey(piece);
+        if(!map.has(key)) map.set(key, []);
+        map.get(key).push(piece);
+      });
+      return Array.from(map.entries()).map(([key,pieces])=>({key,pieces}));
+    }
+
+    function naturalSheetOrder(a, b){
+      const na = Number(String(a.key).split('/')[0]);
+      const nb = Number(String(b.key).split('/')[0]);
+      if(Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+      return String(a.key).localeCompare(String(b.key), undefined, {numeric:true});
+    }
+
+    function findSheet(key){
+      return groupSheets(state.job).find(sheet=>sheet.key === key) || groupSheets(state.job)[0] || null;
+    }
+
+    function applyJob(job){
+      state.job = normalizeJob(job);
+      state.recent = [];
+      loadScanned(state.job);
+      const sheets = groupSheets(state.job).sort(naturalSheetOrder);
+      state.activeSheet = sheets[0]?.key || '';
+      stopCamera();
+      setStatus('Checklist loaded: ' + state.job.pieces.length + ' parts.', 'ok');
+      render();
+    }
+
+    async function loadSampleJob(){
+      try{
+        const response = await fetch(SAMPLE_JOB_URL, {cache:'no-store'});
+        if(!response.ok) throw new Error('HTTP ' + response.status);
+        applyJob(await response.json());
+      }catch(error){
+        applyJob(BUILT_IN_SAMPLE_JOB);
+        setStatus('Built-in demo loaded. Import a checklist JSON for a real job.', 'warn');
+      }
+    }
+
+    function readFile(file){
+      return new Promise((resolve, reject)=>{
+        const reader = new FileReader();
+        reader.onload = ()=>resolve(reader.result);
+        reader.onerror = ()=>reject(reader.error);
+        reader.readAsText(file);
+      });
+    }
+
+    async function importFile(file){
+      if(!file) return;
+      try{
+        applyJob(JSON.parse(await readFile(file)));
+      }catch(error){
+        setStatus('Could not read this checklist file.', 'err');
+      }
+    }
+
+    function scanCandidates(raw){
+      const value = String(raw || '').trim();
+      const upper = value.toUpperCase();
+      const candidates = new Set([upper]);
+      const uidMatch = upper.match(/\|U([A-Z0-9]+)/);
+      if(uidMatch) candidates.add(uidMatch[1]);
+      const partMatch = upper.match(/(?:^|\|)P(\d+)(?:\||$)/);
+      if(partMatch) candidates.add('PART:' + Number(partMatch[1]));
+      if(/^\d+$/.test(upper)) candidates.add('PART:' + Number(upper));
+      if(/^U[A-Z0-9]+$/.test(upper)) candidates.add(upper.slice(1));
+      return candidates;
+    }
+
+    function findPieceByScan(raw){
+      if(!state.job) return null;
+      const value = String(raw || '').trim();
+      const upper = value.toUpperCase();
+      const candidates = scanCandidates(value);
+      return state.job.pieces.find(piece=>{
+        const uid = String(piece.uid || '').toUpperCase();
+        const part = 'PART:' + Number(piece.partNo || 0);
+        const qr = String(piece.qrPayload || '').toUpperCase();
+        const spray = String(piece.sprayQrPayload || '').toUpperCase();
+        return candidates.has(uid) ||
+          candidates.has('U' + uid) ||
+          candidates.has(part) ||
+          upper === qr ||
+          upper === spray ||
+          (!!uid && upper.includes('|U' + uid)) ||
+          (!!piece.partNo && upper.includes('|P' + piece.partNo + '|'));
+      }) || null;
+    }
+
+    function addRecent(piece, mode){
+      state.recent.unshift({
+        uid:piece.uid,
+        partNo:piece.partNo,
+        size:piece.size,
+        code:piece.code,
+        sheet:sheetKey(piece),
+        mode
+      });
+      state.recent = state.recent.slice(0, 10);
+    }
+
+    function beep(mode){
+      try{
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if(!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = mode === 'err' ? 160 : mode === 'warn' ? 360 : 720;
+        gain.gain.value = .035;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        setTimeout(()=>{ osc.stop(); ctx.close(); }, mode === 'ok' ? 90 : 160);
+      }catch(err){}
+    }
+
+    function markPiece(piece, force, source='scanned'){
+      if(!piece) return;
+      const uid = piece.uid;
+      const already = state.scanned.has(uid);
+      const shouldScan = typeof force === 'boolean' ? force : !already;
+      if(shouldScan) state.scanned.add(uid);
+      else state.scanned.delete(uid);
+      saveScanned();
+      addRecent(piece, shouldScan ? source : 'cleared');
+      state.activeSheet = sheetKey(piece);
+      const verb = shouldScan ? (source === 'found' ? 'Found ' : 'Scanned ') : 'Cleared ';
+      setStatus(verb + 'Part ' + piece.partNo + ' - ' + piece.size + '.', shouldScan ? 'ok' : 'warn');
+      beep(shouldScan ? 'ok' : 'warn');
+      render();
+      flashPiece(piece.uid);
+    }
+
+    function handleScan(raw){
+      if(!state.job){
+        setStatus('Load a checklist first.', 'warn');
+        return;
+      }
+      const piece = findPieceByScan(raw);
+      if(!piece){
+        setStatus('Not found in this job: ' + String(raw || '').slice(0, 42), 'err');
+        beep('err');
+        return;
+      }
+      if(state.scanned.has(piece.uid)){
+        setStatus('Already scanned: Part ' + piece.partNo + ' - ' + piece.size + '.', 'warn');
+        addRecent(piece, 'duplicate');
+        beep('warn');
+        render();
+        flashPiece(piece.uid);
+        return;
+      }
+      markPiece(piece, true);
+    }
+
+    function flashPiece(uid){
+      requestAnimationFrame(()=>{
+        const node = document.querySelector('[data-piece-uid="' + CSS.escape(String(uid)) + '"]');
+        if(!node) return;
+        node.classList.remove('scan-flash');
+        void node.getBoundingClientRect();
+        node.classList.add('scan-flash');
+        node.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'});
+      });
+    }
+
+    function demoScanNext(){
+      if(!state.job) return;
+      const sheet = findSheet(state.activeSheet);
+      const missing = (sheet?.pieces || state.job.pieces).find(piece=>!state.scanned.has(piece.uid));
+      const fallback = state.job.pieces.find(piece=>!state.scanned.has(piece.uid));
+      if(missing || fallback) markPiece(missing || fallback, true);
+      else setStatus('All parts are scanned.', 'ok');
+    }
+
+    function pieceByUid(uid){
+      return state.job?.pieces.find(item=>item.uid === uid) || null;
+    }
+
+    function clearHoldTarget(){
+      if(state.hold?.timer) clearTimeout(state.hold.timer);
+      state.hold?.target?.classList.remove('hold-arming');
+      state.hold = null;
+    }
+
+    function startHoldMark(event){
+      const target = event.target.closest('[data-click-piece]');
+      if(!target || !state.job) return;
+      const piece = pieceByUid(target.dataset.clickPiece);
+      if(!piece) return;
+      clearHoldTarget();
+      state.hold = {
+        target,
+        piece,
+        pointerId:event.pointerId,
+        startX:event.clientX,
+        startY:event.clientY,
+        fired:false,
+        timer:null
+      };
+      target.classList.add('hold-arming');
+      state.hold.timer = setTimeout(()=>{
+        if(!state.hold || state.hold.target !== target) return;
+        state.hold.fired = true;
+        target.classList.remove('hold-arming');
+        if(state.scanned.has(piece.uid)){
+          setStatus('Already found: Part ' + piece.partNo + ' - ' + piece.size + '.', 'warn');
+          addRecent(piece, 'duplicate');
+          beep('warn');
+          render();
+          flashPiece(piece.uid);
+          state.hold = null;
+          return;
+        }
+        state.hold = null;
+        markPiece(piece, true, 'found');
+      }, HOLD_TO_MARK_MS);
+    }
+
+    function moveHoldMark(event){
+      if(!state.hold || state.hold.pointerId !== event.pointerId) return;
+      const moved = Math.hypot(event.clientX - state.hold.startX, event.clientY - state.hold.startY);
+      if(moved > 14) clearHoldTarget();
+    }
+
+    function cancelHoldMark(event){
+      if(!state.hold) return;
+      if(event.pointerId !== undefined && state.hold.pointerId !== event.pointerId) return;
+      clearHoldTarget();
+    }
+
+    function resetJob(){
+      if(!state.job) return;
+      state.scanned.clear();
+      state.recent = [];
+      saveScanned();
+      setStatus('Checklist reset.', 'warn');
+      render();
+    }
+
+    function toggleActiveSheet(){
+      const sheet = findSheet(state.activeSheet);
+      if(!sheet) return;
+      const allDone = sheet.pieces.every(piece=>state.scanned.has(piece.uid));
+      sheet.pieces.forEach(piece=>{
+        if(allDone) state.scanned.delete(piece.uid);
+        else state.scanned.add(piece.uid);
+      });
+      saveScanned();
+      setStatus((allDone ? 'Cleared ' : 'Scanned ') + sheetLabel(sheet.key) + '.', allDone ? 'warn' : 'ok');
+      render();
+    }
+
+    function clearActiveSheet(){
+      const sheet = findSheet(state.activeSheet);
+      if(!sheet) return;
+      sheet.pieces.forEach(piece=>state.scanned.delete(piece.uid));
+      saveScanned();
+      setStatus('Cleared ' + sheetLabel(sheet.key) + '.', 'warn');
+      render();
+    }
+
+    function layoutFallbackPieces(pieces){
+      const cfg = FALLBACK_SHEET;
+      const usableW = cfg.width - cfg.margin * 2;
+      const usableH = cfg.height - cfg.margin * 2;
+      let x = cfg.margin;
+      let y = cfg.margin;
+      let rowH = 0;
+      let maxY = cfg.margin;
+      const placed = pieces.map(piece=>{
+        const parsed = parseSize(piece.size);
+        const ratio = Math.min(4.3, Math.max(0.32, parsed.w / Math.max(1, parsed.h)));
+        const physicalArea = Math.sqrt(parsed.w * parsed.h);
+        const displayArea = Math.max(11000, Math.min(56000, physicalArea * 22));
+        let w = Math.sqrt(displayArea * ratio);
+        let h = w / ratio;
+        w = Math.min(390, Math.max(112, w));
+        h = Math.min(185, Math.max(72, h));
+        if(ratio > 2.8) h = Math.max(h, 86);
+        if(ratio < 0.55) w = Math.max(w, 96);
+        w = Math.min(w, usableW);
+        h = Math.min(h, usableH);
+        if(x + w > cfg.width - cfg.margin && x > cfg.margin){
+          x = cfg.margin;
+          y += rowH + cfg.gap;
+          rowH = 0;
+        }
+        const entry = {piece, x, y, w, h};
+        x += w + cfg.gap;
+        rowH = Math.max(rowH, h);
+        maxY = Math.max(maxY, y + h);
+        return entry;
+      });
+      const neededH = Math.max(1, maxY + cfg.margin - cfg.margin);
+      const scale = neededH > usableH ? usableH / neededH : 1;
+      return placed.map(entry=>({
+        ...entry,
+        x:cfg.margin + (entry.x - cfg.margin) * scale,
+        y:cfg.margin + (entry.y - cfg.margin) * scale,
+        w:entry.w * scale,
+        h:entry.h * scale
+      }));
+    }
+
+    function textLinesForPiece(piece, w, h){
+      const maxChars = Math.max(6, Math.floor(w / Math.max(8, Math.min(28, h * .18)) * 1.8));
+      const code = String(piece.code || '').replace(/\s+/g, ' ').trim();
+      const words = code.split(' ');
+      const lines = [];
+      words.forEach(word=>{
+        if(!word) return;
+        const last = lines[lines.length - 1] || '';
+        if(last && (last + ' ' + word).length <= maxChars) lines[lines.length - 1] = last + ' ' + word;
+        else lines.push(word.slice(0, maxChars));
+      });
+      return lines.slice(0, h < 86 ? 1 : 2);
+    }
+
+    function pieceSvg(entry){
+      const {piece,x,y,w,h} = entry;
+      const scanned = state.scanned.has(piece.uid);
+      const rx = Math.min(14, Math.max(0, Math.min(w,h) * .05));
+      const indexSize = Math.max(13, Math.min(40, Math.min(w,h) * .18));
+      const dimSize = Math.max(11, Math.min(36, Math.min(h * .24, w * .115)));
+      const codeSize = Math.max(8, Math.min(24, Math.min(h * .15, w * .06)));
+      const metaSize = Math.max(8, Math.min(18, Math.min(h * .12, w * .045)));
+      const pad = Math.max(7, Math.min(24, Math.min(w,h) * .08));
+      const codeLines = textLinesForPiece(piece, w - pad * 2, h);
+      const codeY = y + h / 2 + (codeLines.length > 1 ? -codeSize * .3 : codeSize * .35);
+      let out = '<g class="part-hit" tabindex="0" role="button" aria-label="Hold to mark Part '+escapeHtml(piece.partNo)+' found" data-piece-uid="'+escapeHtml(piece.uid)+'" data-click-piece="'+escapeHtml(piece.uid)+'">';
+      out += '<rect class="part-rect '+(scanned ? 'scanned' : 'pending')+'" x="'+x.toFixed(2)+'" y="'+y.toFixed(2)+'" width="'+w.toFixed(2)+'" height="'+h.toFixed(2)+'" rx="'+rx.toFixed(2)+'"/>';
+      out += '<text class="part-index" x="'+(x + pad).toFixed(2)+'" y="'+(y + pad + indexSize).toFixed(2)+'" font-size="'+indexSize.toFixed(2)+'">'+escapeHtml(piece.partNo)+'</text>';
+      out += '<text class="part-dim" x="'+(x + w / 2).toFixed(2)+'" y="'+(y + Math.max(dimSize + pad, h * .32)).toFixed(2)+'" text-anchor="middle" font-size="'+dimSize.toFixed(2)+'">'+escapeHtml(piece.size)+'</text>';
+      codeLines.forEach((line, index)=>{
+        out += '<text class="part-code" x="'+(x + w / 2).toFixed(2)+'" y="'+(codeY + index * codeSize * 1.1).toFixed(2)+'" text-anchor="middle" font-size="'+codeSize.toFixed(2)+'">'+escapeHtml(line)+'</text>';
+      });
+      if(h > 72 && w > 110){
+        const meta = sheetLabel(sheetKey(piece)).replace(/^Sheet\s+/,'Sheet ') + ' / ' + piece.uid;
+        out += '<text class="part-meta" x="'+(x + w / 2).toFixed(2)+'" y="'+(y + h - pad).toFixed(2)+'" text-anchor="middle" font-size="'+metaSize.toFixed(2)+'">'+escapeHtml(meta)+'</text>';
+      }
+      out += '</g>';
+      return out;
+    }
+
+    function renderSheetMap(sheet){
+      if(!sheet){
+        els.sheetSvgWrap.innerHTML = '<div class="empty" style="margin:12px">No checklist data loaded.</div>';
+        return;
+      }
+      const placed = layoutFallbackPieces(sheet.pieces);
+      const done = sheet.pieces.filter(piece=>state.scanned.has(piece.uid)).length;
+      els.sheetTitle.textContent = sheetLabel(sheet.key) + ' Map';
+      els.sheetNote.textContent = 'Preview layout: current checklist data has no nesting coordinates. ' + done + ' / ' + sheet.pieces.length + ' scanned on this sheet.';
+      let svg = '<svg class="sheet-svg" viewBox="0 0 '+FALLBACK_SHEET.width+' '+FALLBACK_SHEET.height+'" xmlns="http://www.w3.org/2000/svg" aria-label="'+escapeHtml(sheetLabel(sheet.key))+'">';
+      svg += '<rect x="4" y="4" width="'+(FALLBACK_SHEET.width - 8)+'" height="'+(FALLBACK_SHEET.height - 8)+'" fill="#fff" stroke="#111" stroke-width="8"/>';
+      svg += placed.map(pieceSvg).join('');
+      svg += '</svg>';
+      els.sheetSvgWrap.innerHTML = svg;
+    }
+
+    function renderTabs(){
+      const sheets = groupSheets(state.job).sort(naturalSheetOrder);
+      els.sheetTabs.innerHTML = sheets.map(sheet=>{
+        const done = sheet.pieces.filter(piece=>state.scanned.has(piece.uid)).length;
+        const active = sheet.key === state.activeSheet;
+        const complete = done === sheet.pieces.length && sheet.pieces.length;
+        return '<button type="button" class="sheet-tab '+(active ? 'active ' : '')+(complete ? 'done' : '')+'" data-sheet="'+escapeHtml(sheet.key)+'">'+
+          escapeHtml(sheetLabel(sheet.key))+' <span class="tab-count">'+done+'/'+sheet.pieces.length+'</span></button>';
+      }).join('');
+    }
+
+    function renderList(){
+      if(!state.job){
+        els.pieceList.innerHTML = '<div class="empty" style="margin:12px">No pieces loaded.</div>';
+        return;
+      }
+      const query = els.pieceSearch.value.trim().toLowerCase();
+      const active = findSheet(state.activeSheet);
+      let pieces = active ? active.pieces : state.job.pieces;
+      if(state.showMissingOnly) pieces = pieces.filter(piece=>!state.scanned.has(piece.uid));
+      if(query){
+        pieces = pieces.filter(piece=>[
+          piece.partNo,piece.uid,piece.size,piece.code,piece.sheet,piece.sheetShort,piece.qrPayload
+        ].join(' ').toLowerCase().includes(query));
+      }
+      if(!pieces.length){
+        els.pieceList.innerHTML = '<div class="empty" style="margin:12px">No matching pieces.</div>';
+        return;
+      }
+      els.pieceList.innerHTML = pieces.map(piece=>{
+        const scanned = state.scanned.has(piece.uid);
+        return '<article class="piece-row '+(scanned ? 'scanned' : '')+'" data-row-piece="'+escapeHtml(piece.uid)+'">'+
+          '<div class="piece-no">'+escapeHtml(piece.partNo)+'</div>'+
+          '<div class="piece-main"><b>'+escapeHtml(piece.code)+'</b><span>'+escapeHtml(sheetLabel(sheetKey(piece))+' / UID '+piece.uid)+'</span></div>'+
+          '<div class="piece-size">'+escapeHtml(piece.size)+'</div>'+
+        '</article>';
+      }).join('');
+    }
+
+    function renderRecent(){
+      if(!state.recent.length){
+        els.recentList.innerHTML = '<div class="empty">No scans yet.</div>';
+        return;
+      }
+      els.recentList.innerHTML = state.recent.map(item=>{
+        const label = item.mode === 'duplicate' ? 'Duplicate' : item.mode === 'cleared' ? 'Cleared' : item.mode === 'found' ? 'Found' : 'Scanned';
+        return '<div class="recent-item">'+escapeHtml(label+' Part '+item.partNo+' - '+item.size)+'<small>'+escapeHtml(sheetLabel(item.sheet)+' / '+item.code)+'</small></div>';
+      }).join('');
+    }
+
+    function renderMetrics(){
+      const total = state.job?.pieces.length || 0;
+      const done = state.scanned.size;
+      const left = Math.max(0, total - done);
+      els.doneMetric.textContent = done;
+      els.leftMetric.textContent = left;
+      els.completionText.textContent = done + ' / ' + total;
+      els.progressFill.style.width = total ? ((done / total) * 100).toFixed(1) + '%' : '0%';
+      els.demoScanBtn.disabled = !total || done >= total;
+      els.resetBtn.disabled = !total || !done;
+      els.toggleAllBtn.disabled = !total;
+      els.clearSheetBtn.disabled = !total;
+      els.scanBtn.disabled = !total;
+      els.cameraBtn.disabled = !total;
+    }
+
+    function renderJobHeader(){
+      if(!state.job){
+        els.jobName.textContent = 'No job loaded';
+        els.jobMeta.textContent = 'Use Sample Job or import a checklist JSON.';
+        els.topSubtitle.textContent = 'Load a checklist job to start scanning.';
+        return;
+      }
+      const totalSheets = groupSheets(state.job).length;
+      els.jobName.textContent = state.job.client || state.job.quote || 'Checklist Job';
+      els.jobMeta.textContent = (state.job.quote || '') + ' / ' + state.job.pieces.length + ' parts / ' + totalSheets + ' sheets';
+      els.topSubtitle.textContent = (state.job.quote || 'Checklist') + ' - ' + state.scanned.size + ' of ' + state.job.pieces.length + ' scanned';
+    }
+
+    function render(){
+      renderJobHeader();
+      renderMetrics();
+      renderTabs();
+      renderSheetMap(findSheet(state.activeSheet));
+      renderList();
+      renderRecent();
+      els.showMissingBtn.textContent = state.showMissingOnly ? 'All' : 'Missing';
+    }
+
+    async function startCamera(){
+      if(state.cameraStream){ stopCamera(); return; }
+      if(!('BarcodeDetector' in window)){
+        setStatus('Camera QR detection is not supported in this browser. Use the scan box.', 'warn');
+        return;
+      }
+      try{
+        state.detector = new BarcodeDetector({formats:['qr_code']});
+        state.cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
+        els.cameraVideo.srcObject = state.cameraStream;
+        await els.cameraVideo.play();
+        els.cameraBox.classList.add('active');
+        els.cameraBtn.textContent = 'Stop';
+        setStatus('Camera scanner active.', 'ok');
+        state.cameraTimer = setInterval(detectCameraCode, 600);
+      }catch(error){
+        setStatus('Camera could not start. Use localhost and allow camera access.', 'err');
+        stopCamera();
+      }
+    }
+
+    function stopCamera(){
+      if(state.cameraTimer) clearInterval(state.cameraTimer);
+      state.cameraTimer = null;
+      if(state.cameraStream){
+        state.cameraStream.getTracks().forEach(track=>track.stop());
+      }
+      state.cameraStream = null;
+      els.cameraVideo.srcObject = null;
+      els.cameraBox.classList.remove('active');
+      els.cameraBtn.textContent = 'Camera';
+    }
+
+    async function detectCameraCode(){
+      if(!state.detector || !state.cameraStream) return;
+      try{
+        const codes = await state.detector.detect(els.cameraVideo);
+        if(codes && codes[0]?.rawValue){
+          handleScan(codes[0].rawValue);
+        }
+      }catch(error){}
+    }
+
+    els.loadSampleBtn.addEventListener('click', loadSampleJob);
+    els.resetBtn.addEventListener('click', resetJob);
+    els.cameraBtn.addEventListener('click', startCamera);
+    els.scanBtn.addEventListener('click', ()=>{
+      const value = els.scanInput.value.trim();
+      if(!value) return;
+      handleScan(value);
+      els.scanInput.select();
+    });
+    els.scanInput.addEventListener('keydown', event=>{
+      if(event.key === 'Enter'){
+        event.preventDefault();
+        els.scanBtn.click();
+      }
+    });
+    els.fileInput.addEventListener('change', event=>importFile(event.target.files[0]));
+    els.demoScanBtn.addEventListener('click', demoScanNext);
+    els.toggleAllBtn.addEventListener('click', toggleActiveSheet);
+    els.clearSheetBtn.addEventListener('click', clearActiveSheet);
+    els.pieceSearch.addEventListener('input', renderList);
+    els.showMissingBtn.addEventListener('click', ()=>{
+      state.showMissingOnly = !state.showMissingOnly;
+      render();
+    });
+    els.sheetTabs.addEventListener('click', event=>{
+      const button = event.target.closest('[data-sheet]');
+      if(!button) return;
+      state.activeSheet = button.dataset.sheet;
+      render();
+    });
+    document.addEventListener('click', event=>{
+      const pieceTarget = event.target.closest('[data-row-piece]');
+      if(!pieceTarget || !state.job) return;
+      const piece = pieceByUid(pieceTarget.dataset.rowPiece);
+      if(!piece) return;
+      if(state.scanned.has(piece.uid)){
+        setStatus('Already found: Part ' + piece.partNo + ' - ' + piece.size + '.', 'warn');
+        addRecent(piece, 'duplicate');
+        beep('warn');
+        render();
+        flashPiece(piece.uid);
+        return;
+      }
+      markPiece(piece, true, 'found');
+    });
+    document.addEventListener('pointerdown', startHoldMark);
+    document.addEventListener('pointermove', moveHoldMark);
+    document.addEventListener('pointerup', cancelHoldMark);
+    document.addEventListener('pointercancel', cancelHoldMark);
+    document.addEventListener('contextmenu', event=>{
+      if(event.target.closest('[data-click-piece]')) event.preventDefault();
+    });
+    document.addEventListener('keydown', event=>{
+      if(event.key !== 'Enter' && event.key !== ' ') return;
+      const target = event.target.closest('[data-click-piece]');
+      if(!target || !state.job) return;
+      event.preventDefault();
+      const piece = pieceByUid(target.dataset.clickPiece);
+      if(!piece) return;
+      if(state.scanned.has(piece.uid)){
+        setStatus('Already found: Part ' + piece.partNo + ' - ' + piece.size + '.', 'warn');
+        flashPiece(piece.uid);
+        return;
+      }
+      markPiece(piece, true, 'found');
+    });
+
+    render();
+    loadSampleJob();
+  </script>
+</body>
+</html>
