@@ -50,7 +50,7 @@ http://127.0.0.1:8765/Cnc%20Calculator%20UI%20Test.html
 
 - `Cnc Calculator UI Test.html` - official version 1.0 app and GitHub Pages entry point.
 - `CNC Calculator 1.0.html` - identical local mirror of the official version 1.0 app.
-- `prototypes/new-design/index.html` - separate New Design prototype.
+- `prototypes/panels-new-design/index.html` - separate Panels New Design prototype.
 - `prototypes/order-entry/index.html` - separate Order Entry prototype.
 - `prototypes/order-entry/beta.html` - related Order Entry beta prototype.
 - `order-entry-beta.html` - root compatibility copy for the original Order Entry beta GitHub Pages URL.
