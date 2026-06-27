@@ -595,7 +595,7 @@ Regras:
 - `PART_NUMBER` deve ficar separado do texto normal no layer `PART_NUMBER` e usar a mesma numeracao global das labels/preview.
 - Texto informativo de offcut deve ficar no layer `OFFCUT` e usar a mesma regra de orientacao/inicio do texto de pecas: `0 graus` pela esquerda quando largo, `90 graus` pela parte de baixo quando alto.
 - Texto de tamanho, descricao e offcut deve quebrar linhas e reduzir fonte quando necessario para permanecer dentro da peca/offcut.
-- A estimativa de largura do texto DXF deve ser conservadora para quebrar labels longas antes de elas sairem da peca.
+- A estimativa de largura do texto DXF deve ser bem conservadora para quebrar labels longas em mais linhas antes de elas sairem da peca/offcut.
 
 ## Toolpath / NC
 

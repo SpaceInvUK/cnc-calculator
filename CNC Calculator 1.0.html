@@ -15714,8 +15714,12 @@
         if(current) lines.push(current);
         return lines;
       }
+      const DXF_TEXT_WIDTH_FACTOR = 0.82;
       function dxfTextWidth(text, size){
-        return String(text || '').length * Number(size || 0) * 0.64;
+        return String(text || '').length * Number(size || 0) * DXF_TEXT_WIDTH_FACTOR;
+      }
+      function dxfWrapCharsForWidth(width, font){
+        return Math.max(3, Math.floor(Number(width || 0) / Math.max(1, Number(font || 0) * DXF_TEXT_WIDTH_FACTOR)));
       }
       function fitDxfPartText(sizeText, labelText, major, minor){
         const cleanSize = String(sizeText || '').trim();
@@ -15723,7 +15727,7 @@
         const minFont = 1.8;
         const maxFont = Math.max(minFont, Math.min(14, minor * 0.22, major * 0.075));
         for(let font=maxFont; font>=minFont; font-=0.35){
-          const maxChars = Math.max(3, Math.floor(major / Math.max(1, font * 0.58)));
+          const maxChars = dxfWrapCharsForWidth(major, font);
           const lines = [];
           if(cleanSize) lines.push(...wrapDxfText(cleanSize, maxChars));
           if(cleanLabel) lines.push(...wrapDxfText(cleanLabel, maxChars));
@@ -15737,7 +15741,7 @@
           }
         }
         const font = minFont;
-        const maxChars = Math.max(3, Math.floor(major / Math.max(1, font * 0.58)));
+        const maxChars = dxfWrapCharsForWidth(major, font);
         const lines = [];
         if(cleanSize) lines.push(...wrapDxfText(cleanSize, maxChars));
         if(cleanLabel) lines.push(...wrapDxfText(cleanLabel, maxChars));
