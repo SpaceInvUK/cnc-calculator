@@ -589,6 +589,12 @@ Regras:
 - Smart Takeoff DXF sem layers deve preferir outer shape.
 - Exemplo: DXF `300x750` nao deve virar `295x755`.
 - Se detectar frame via layers/retangulos internos, deve configurar frame e door type automaticamente quando possivel.
+- Texto de pecas no DXF deve ser calculado pela caixa final exportada, nao pela geometria local antes da transformacao da sheet.
+- Pecas mais largas que altas devem ter texto horizontal em `0 graus`, iniciando dentro da peca pelo lado esquerdo.
+- Pecas mais altas que largas devem ter texto vertical em `90 graus`, iniciando dentro da peca pela parte de baixo.
+- `PART_NUMBER` deve ficar separado do texto normal no layer `PART_NUMBER` e usar a mesma numeracao global das labels/preview.
+- Texto informativo de offcut deve ficar no layer `OFFCUT`.
+- Texto de tamanho e descricao deve quebrar linhas e reduzir fonte quando necessario para permanecer dentro da peca.
 
 ## Toolpath / NC
 
