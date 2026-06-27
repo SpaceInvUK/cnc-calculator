@@ -596,6 +596,8 @@ Regras:
 - Texto informativo de offcut deve ficar no layer `OFFCUT` e usar a mesma regra de orientacao/inicio do texto de pecas: `0 graus` pela esquerda quando largo, `90 graus` pela parte de baixo quando alto.
 - Texto de tamanho, descricao e offcut deve quebrar linhas e reduzir fonte quando necessario para permanecer dentro da peca/offcut.
 - A estimativa de largura do texto DXF deve ser bem conservadora para quebrar labels longas em mais linhas antes de elas sairem da peca/offcut.
+- A referencia grafica de offcut no DXF nao deve ser um retangulo fechado quando seus lados tocam a sheet; lados que coincidem com a borda da sheet devem desaparecer.
+- Quando dois offcuts encostam e criam linhas duplicadas, deve ficar apenas uma linha; por regra, a linha menor desaparece e a maior permanece.
 
 ## Toolpath / NC
 

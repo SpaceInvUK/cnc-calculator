@@ -15865,6 +15865,59 @@
           textEntityWorld(tx, ty, fit.font, lineText, 'OFFCUT', 'left', {rotation:m.rotation});
         });
       }
+      function dxfOffcutSides(offcut, index=0){
+        const x = Number(offcut.x || 0);
+        const y = Number(offcut.y || 0);
+        const w = Math.max(0, Number(offcut.w || 0));
+        const h = Math.max(0, Number(offcut.h || 0));
+        return [
+          {owner:index, name:'top', orientation:'h', x1:x, y1:y, x2:x+w, y2:y, length:w},
+          {owner:index, name:'right', orientation:'v', x1:x+w, y1:y, x2:x+w, y2:y+h, length:h},
+          {owner:index, name:'bottom', orientation:'h', x1:x, y1:y+h, x2:x+w, y2:y+h, length:w},
+          {owner:index, name:'left', orientation:'v', x1:x, y1:y, x2:x, y2:y+h, length:h}
+        ].filter(side=>side.length > 0.5);
+      }
+      function nearlyDxfSame(a, b, eps=0.5){
+        return Math.abs(Number(a || 0) - Number(b || 0)) <= eps;
+      }
+      function dxfRangesOverlap(a1, a2, b1, b2, eps=0.5){
+        const minA = Math.min(a1, a2);
+        const maxA = Math.max(a1, a2);
+        const minB = Math.min(b1, b2);
+        const maxB = Math.max(b1, b2);
+        return Math.min(maxA, maxB) - Math.max(minA, minB) > eps;
+      }
+      function dxfOffcutSideTouchesSheet(side, size){
+        if(!side || !size) return false;
+        if(side.orientation === 'h') return nearlyDxfSame(side.y1, 0) || nearlyDxfSame(side.y1, size.height);
+        return nearlyDxfSame(side.x1, 0) || nearlyDxfSame(side.x1, size.width);
+      }
+      function dxfOffcutSidesOverlap(a, b){
+        if(!a || !b || a.orientation !== b.orientation) return false;
+        if(a.orientation === 'h'){
+          return nearlyDxfSame(a.y1, b.y1) && dxfRangesOverlap(a.x1, a.x2, b.x1, b.x2);
+        }
+        return nearlyDxfSame(a.x1, b.x1) && dxfRangesOverlap(a.y1, a.y2, b.y1, b.y2);
+      }
+      function shouldDrawDxfOffcutSide(side, allSides, sheetSize){
+        if(dxfOffcutSideTouchesSheet(side, sheetSize)) return false;
+        return !(allSides || []).some(other=>{
+          if(!other || other === side || other.owner === side.owner) return false;
+          if(dxfOffcutSideTouchesSheet(other, sheetSize)) return false;
+          if(!dxfOffcutSidesOverlap(side, other)) return false;
+          if(side.length < other.length - 0.5) return true;
+          if(nearlyDxfSame(side.length, other.length) && side.owner > other.owner) return true;
+          return false;
+        });
+      }
+      function drawOffcutReferenceDxf(offcuts, sheetSize){
+        const allSides = (offcuts || []).flatMap((offcut, index)=>dxfOffcutSides(offcut, index));
+        allSides.forEach(side=>{
+          if(shouldDrawDxfOffcutSide(side, allSides, sheetSize)){
+            line('OFFCUT', side.x1, side.y1, side.x2, side.y2);
+          }
+        });
+      }
       function writeTables(target){
         const dxfLayers = [...usedDxfLayers.values()];
         pairTo(target,0,'SECTION'); pairTo(target,2,'TABLES');
@@ -16193,8 +16246,9 @@
         if(!includeOffcuts) return;
         const hasCustomOffcut = !!(options.offcutTemplateId || (Array.isArray(options.offcutPlacements) && options.offcutPlacements.length));
         if(!hasCustomOffcut){
-          offcutRectsFromSheet(sheet, sizeKey).forEach(offcut=>{
-            rect('OFFCUT', offcut.x, offcut.y, offcut.w, offcut.h);
+          const offcuts = offcutRectsFromSheet(sheet, sizeKey);
+          drawOffcutReferenceDxf(offcuts, sheetRuntimeSize(sizeKey, sheet));
+          offcuts.forEach(offcut=>{
             drawOffcutTextDxf(offcut);
           });
         }
