@@ -599,7 +599,6 @@ Regras:
 - A referencia grafica de offcut no DXF nao deve ser um retangulo fechado quando seus lados tocam a sheet; lados que coincidem com a borda da sheet devem desaparecer.
 - Quando dois offcuts encostam e criam linhas duplicadas, deve ficar apenas uma linha; por regra, a linha menor desaparece e a maior permanece.
 - Offcut so deve ser mostrado quando for util: se o lado maior passar de `1000mm`, o lado menor precisa ter pelo menos `150mm`; se o lado maior nao passar de `1000mm`, o lado menor precisa ter pelo menos `350mm`.
-- Uma faixa lateral de offcut que nao passa sozinha nos requisitos pode ser anexada a outro offcut quando compartilhar uma borda vertical por pelo menos `600mm`, formando uma referencia composta tipo L-shape.
 
 ## Toolpath / NC
 

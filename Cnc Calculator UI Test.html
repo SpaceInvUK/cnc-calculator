@@ -9535,9 +9535,6 @@
         offcutH:Math.max(0, Math.round(rect.offcutH || rect.h || 0))
       };
     }
-    function offcutRectKey(rect){
-      return [Math.round(rect.x || 0), Math.round(rect.y || 0), Math.round(rect.w || 0), Math.round(rect.h || 0)].join(':');
-    }
     function isUsefulOffcutRect(rect){
       const normalized = normalizeOffcutRect(rect);
       const w = Number(normalized.offcutW || 0);
@@ -9547,58 +9544,6 @@
       const shortSide = Math.min(w, h);
       if(longSide > 1000) return shortSide >= 150;
       return shortSide >= 350;
-    }
-    function offcutVerticalSharedLength(a, b){
-      if(!a || !b) return 0;
-      const aRight = Number(a.x || 0) + Number(a.w || 0);
-      const bRight = Number(b.x || 0) + Number(b.w || 0);
-      const touchesSide = Math.abs(aRight - Number(b.x || 0)) <= 0.5 || Math.abs(bRight - Number(a.x || 0)) <= 0.5;
-      if(!touchesSide) return 0;
-      const top = Math.max(Number(a.y || 0), Number(b.y || 0));
-      const bottom = Math.min(Number(a.y || 0) + Number(a.h || 0), Number(b.y || 0) + Number(b.h || 0));
-      return Math.max(0, bottom - top);
-    }
-    function combineOffcutRects(rects){
-      const unique = [];
-      const seen = new Set();
-      (rects || []).forEach(rect=>{
-        const normalized = normalizeOffcutRect(rect);
-        const key = offcutRectKey(normalized);
-        if(seen.has(key)) return;
-        seen.add(key);
-        unique.push(normalized);
-      });
-      if(!unique.length) return null;
-      const minX = Math.min(...unique.map(rect=>Number(rect.x || 0)));
-      const minY = Math.min(...unique.map(rect=>Number(rect.y || 0)));
-      const maxX = Math.max(...unique.map(rect=>Number(rect.x || 0) + Number(rect.w || 0)));
-      const maxY = Math.max(...unique.map(rect=>Number(rect.y || 0) + Number(rect.h || 0)));
-      const area = unique.reduce((sum, rect)=>sum + Math.max(0, Number(rect.w || 0)) * Math.max(0, Number(rect.h || 0)), 0);
-      return normalizeOffcutRect({
-        x:minX,
-        y:minY,
-        w:maxX - minX,
-        h:maxY - minY,
-        area,
-        labelX:(minX + maxX) / 2,
-        labelY:(minY + maxY) / 2,
-        rects:unique
-      });
-    }
-    function expandUsefulOffcutRects(candidates){
-      const normalized = (candidates || []).map(normalizeOffcutRect);
-      const expanded = new Map();
-      normalized.forEach(rect=>expanded.set(offcutRectKey(rect), rect));
-      normalized.forEach(base=>{
-        const attached = normalized.filter(other=>other !== base && !rectsOverlap(base, other) && offcutVerticalSharedLength(base, other) >= 600);
-        if(!attached.length) return;
-        const combined = combineOffcutRects([base, ...attached]);
-        if(combined && isUsefulOffcutRect(combined)){
-          const key = (combined.rects || [combined]).map(offcutRectKey).sort().join('|');
-          expanded.set(key, combined);
-        }
-      });
-      return [...expanded.values()];
     }
     function offcutRectsFromSheet(sheet, sizeKey){
       if(!sheet.placements || !sheet.placements.length) return [];
@@ -9661,14 +9606,12 @@
       }
       const viable = candidates
         .map(normalizeOffcutRect)
-        .filter(r=>r.area > 2500);
-      const expandedViable = expandUsefulOffcutRects(viable)
         .filter(r=>r.area > 2500 && isUsefulOffcutRect(r))
         .sort((a,b)=>b.area-a.area)
         .slice(0,300);
-      const primary = expandedViable[0];
+      const primary = viable[0];
       const best = primary ? [primary] : [];
-      const secondary = primary ? expandedViable.find(r=>!rectsOverlap(primary, r)) : null;
+      const secondary = primary ? viable.find(r=>!rectsOverlap(primary, r)) : null;
       if(secondary) best.push(secondary);
       return best
         .sort((a,b)=>b.area-a.area)
@@ -15931,10 +15874,7 @@
         });
       }
       function drawOffcutTextDxf(offcut){
-        const labelRect = Array.isArray(offcut.rects) && offcut.rects.length
-          ? offcut.rects.slice().sort((a,b)=>Number(b.area || b.w * b.h || 0) - Number(a.area || a.w * a.h || 0))[0]
-          : offcut;
-        const m = dxfTextMetricsForBounds(dxfWorldBoundsForRect(labelRect.x, labelRect.y, labelRect.w, labelRect.h), '');
+        const m = dxfTextMetricsForBounds(dxfWorldBoundsForRect(offcut.x, offcut.y, offcut.w, offcut.h), '');
         const fit = fitDxfPartText('', offcutRectLabel(offcut), Math.max(1, m.vertical ? m.contentH : m.contentW), Math.max(1, m.vertical ? m.contentW : m.contentH));
         if(!fit || !fit.lines.length) return;
         fit.lines.forEach((lineText, lineIndex)=>{
@@ -15944,19 +15884,16 @@
         });
       }
       function dxfOffcutSides(offcut, index=0){
-        const rects = Array.isArray(offcut.rects) && offcut.rects.length ? offcut.rects : [offcut];
-        return rects.flatMap((rect, rectIndex)=>{
-          const x = Number(rect.x || 0);
-          const y = Number(rect.y || 0);
-          const w = Math.max(0, Number(rect.w || 0));
-          const h = Math.max(0, Number(rect.h || 0));
-          return [
-            {owner:index, rectIndex, name:'top', orientation:'h', x1:x, y1:y, x2:x+w, y2:y, length:w},
-            {owner:index, rectIndex, name:'right', orientation:'v', x1:x+w, y1:y, x2:x+w, y2:y+h, length:h},
-            {owner:index, rectIndex, name:'bottom', orientation:'h', x1:x, y1:y+h, x2:x+w, y2:y+h, length:w},
-            {owner:index, rectIndex, name:'left', orientation:'v', x1:x, y1:y, x2:x, y2:y+h, length:h}
-          ].filter(side=>side.length > 0.5);
-        });
+        const x = Number(offcut.x || 0);
+        const y = Number(offcut.y || 0);
+        const w = Math.max(0, Number(offcut.w || 0));
+        const h = Math.max(0, Number(offcut.h || 0));
+        return [
+          {owner:index, name:'top', orientation:'h', x1:x, y1:y, x2:x+w, y2:y, length:w},
+          {owner:index, name:'right', orientation:'v', x1:x+w, y1:y, x2:x+w, y2:y+h, length:h},
+          {owner:index, name:'bottom', orientation:'h', x1:x, y1:y+h, x2:x+w, y2:y+h, length:w},
+          {owner:index, name:'left', orientation:'v', x1:x, y1:y, x2:x, y2:y+h, length:h}
+        ].filter(side=>side.length > 0.5);
       }
       function nearlyDxfSame(a, b, eps=0.5){
         return Math.abs(Number(a || 0) - Number(b || 0)) <= eps;
@@ -15983,10 +15920,9 @@
       function shouldDrawDxfOffcutSide(side, allSides, sheetSize){
         if(dxfOffcutSideTouchesSheet(side, sheetSize)) return false;
         return !(allSides || []).some(other=>{
-          if(!other || other === side) return false;
+          if(!other || other === side || other.owner === side.owner) return false;
           if(dxfOffcutSideTouchesSheet(other, sheetSize)) return false;
           if(!dxfOffcutSidesOverlap(side, other)) return false;
-          if(other.owner === side.owner) return true;
           if(side.length < other.length - 0.5) return true;
           if(nearlyDxfSame(side.length, other.length) && side.owner > other.owner) return true;
           return false;
