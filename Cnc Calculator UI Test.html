@@ -15658,7 +15658,15 @@
         pair(0,'CIRCLE'); pair(8,layer);
         pair(10,fmt(p.x)); pair(20,fmt(p.y)); pair(40,fmt(r));
       }
-      function textEntity(x,y,hgt,text,layer='text', align='left'){
+      function normalizeDxfRotation(value){
+        let angle = Number(value || 0) % 360;
+        if(angle < 0) angle += 360;
+        return Math.round(angle * 1000) / 1000;
+      }
+      function dxfRotationForLocalAngle(localAngle=0){
+        return normalizeDxfRotation((activeTextRotation || 0) - Number(localAngle || 0));
+      }
+      function textEntity(x,y,hgt,text,layer='text', align='left', options={}){
         layer = useDxfLayer(layer);
         const p = transformPoint(x, y);
         pair(0,'TEXT'); pair(8,layer);
@@ -15668,8 +15676,65 @@
           pair(72,1); pair(73,2);
         }
         pair(40,fmt(hgt));
-        if(activeTextRotation) pair(50,fmt(activeTextRotation));
+        const rotation = options.rotation == null ? activeTextRotation : options.rotation;
+        if(rotation) pair(50,fmt(normalizeDxfRotation(rotation)));
         pair(1,String(text));
+      }
+      function splitDxfLongWord(word, maxChars){
+        const text = String(word || '');
+        const chunks = [];
+        for(let i=0;i<text.length;i+=maxChars) chunks.push(text.slice(i, i + maxChars));
+        return chunks.length ? chunks : [''];
+      }
+      function wrapDxfText(text, maxChars){
+        const safeMax = Math.max(3, Math.floor(Number(maxChars || 0)));
+        const words = String(text || '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+        const lines = [];
+        let current = '';
+        words.forEach(word=>{
+          const pieces = word.length > safeMax ? splitDxfLongWord(word, safeMax) : [word];
+          pieces.forEach(piece=>{
+            const next = current ? current + ' ' + piece : piece;
+            if(next.length <= safeMax){
+              current = next;
+            } else {
+              if(current) lines.push(current);
+              current = piece;
+            }
+          });
+        });
+        if(current) lines.push(current);
+        return lines;
+      }
+      function dxfTextWidth(text, size){
+        return String(text || '').length * Number(size || 0) * 0.58;
+      }
+      function fitDxfPartText(sizeText, labelText, major, minor){
+        const cleanSize = String(sizeText || '').trim();
+        const cleanLabel = String(labelText || '').replace(/\s+/g, ' ').trim();
+        const minFont = 2.2;
+        const maxFont = Math.max(minFont, Math.min(24, minor * 0.34, major * 0.13));
+        for(let font=maxFont; font>=minFont; font-=0.35){
+          const maxChars = Math.max(3, Math.floor(major / Math.max(1, font * 0.58)));
+          const lines = [];
+          if(cleanSize) lines.push(...wrapDxfText(cleanSize, maxChars));
+          if(cleanLabel) lines.push(...wrapDxfText(cleanLabel, maxChars));
+          if(!lines.length) return null;
+          const lineGap = Math.max(0.45, font * 0.26);
+          const linePitch = font + lineGap;
+          const blockH = lines.length * font + Math.max(0, lines.length - 1) * lineGap;
+          const blockW = Math.max(...lines.map(line=>dxfTextWidth(line, font)), 1);
+          if(blockW <= major + 0.01 && blockH <= minor + 0.01){
+            return {lines, font, linePitch, blockH};
+          }
+        }
+        const font = minFont;
+        const maxChars = Math.max(3, Math.floor(major / Math.max(1, font * 0.58)));
+        const lines = [];
+        if(cleanSize) lines.push(...wrapDxfText(cleanSize, maxChars));
+        if(cleanLabel) lines.push(...wrapDxfText(cleanLabel, maxChars));
+        const lineGap = Math.max(0.35, font * 0.22);
+        return {lines, font, linePitch:font + lineGap, blockH:lines.length * font + Math.max(0, lines.length - 1) * lineGap};
       }
       function dxfPartNumberForPlacement(p, options={}){
         return placementPartNumberFromMap(
@@ -15680,16 +15745,64 @@
           ''
         );
       }
-      function drawPartNumberDxf(p, partNo){
-        if(!partNo) return;
+      function dxfPartTextMetrics(p, partNo){
         const x = Number(p.x || 0);
         const y = Number(p.y || 0);
         const w = Math.max(1, Number(p.w || p.width || 0));
         const h = Math.max(1, Number(p.h || p.height || 0));
-        const font = Math.max(8, Math.min(22, Math.min(w, h) * 0.22, Math.max(w, h) * 0.06));
-        const insetX = Math.max(8, Math.min(28, w * 0.04));
-        const insetY = Math.max(font + 4, Math.min(34, h * 0.08));
-        textEntity(x + insetX, y + insetY, font, String(partNo), 'PART_NUMBER', 'left');
+        const vertical = h > w;
+        const localAngle = vertical ? 90 : 0;
+        const major = vertical ? h : w;
+        const minor = vertical ? w : h;
+        const margin = Math.max(3, Math.min(28, Math.min(w, h) * 0.08));
+        const number = String(partNo || '').trim();
+        const numberFont = number ? Math.max(3, Math.min(18, Math.min(w, h) * 0.18, Math.max(w, h) * 0.055)) : 0;
+        const numberW = number ? dxfTextWidth(number, numberFont) : 0;
+        const numberH = number ? numberFont * 1.15 : 0;
+        let contentX = x + margin;
+        let contentY = y + margin;
+        let contentW = Math.max(1, w - margin * 2);
+        let contentH = Math.max(1, h - margin * 2);
+        if(number){
+          if(vertical){
+            const reserve = Math.min(Math.max(0, contentW - 4), numberH + margin);
+            contentX += reserve;
+            contentW = Math.max(1, contentW - reserve);
+          } else {
+            const reserve = Math.min(Math.max(0, contentH - 4), numberH + margin);
+            contentY += reserve;
+            contentH = Math.max(1, contentH - reserve);
+          }
+        }
+        return {x,y,w,h,vertical,localAngle,margin,major,minor,numberFont,numberW,numberH,contentX,contentY,contentW,contentH};
+      }
+      function drawPartNumberDxf(p, partNo){
+        if(!partNo) return;
+        const m = dxfPartTextMetrics(p, partNo);
+        const number = String(partNo);
+        const localRotation = m.localAngle;
+        const worldRotation = dxfRotationForLocalAngle(localRotation);
+        const centerX = m.vertical ? m.x + m.margin + m.numberFont * 0.58 : m.x + m.margin + m.numberW / 2;
+        const centerY = m.vertical ? m.y + m.margin + m.numberW / 2 : m.y + m.margin + m.numberFont * 0.58;
+        textEntity(centerX, centerY, m.numberFont, number, 'PART_NUMBER', 'center', {rotation:worldRotation});
+      }
+      function drawPartTextDxf(p, partNo){
+        const m = dxfPartTextMetrics(p, partNo);
+        const sizeText = formatMm(p.origW || p.w || 0) + ' x ' + formatMm(p.origH || p.h || 0);
+        const labelText = placementLabel(p);
+        const contentMajor = Math.max(1, m.vertical ? m.contentH : m.contentW);
+        const contentMinor = Math.max(1, m.vertical ? m.contentW : m.contentH);
+        const fit = fitDxfPartText(sizeText, labelText, contentMajor, contentMinor);
+        if(!fit || !fit.lines.length) return;
+        const worldRotation = dxfRotationForLocalAngle(m.localAngle);
+        const centerMajor = m.vertical ? m.contentY + m.contentH / 2 : m.contentX + m.contentW / 2;
+        const centerMinor = m.vertical ? m.contentX + m.contentW / 2 : m.contentY + m.contentH / 2;
+        fit.lines.forEach((lineText, lineIndex)=>{
+          const offset = (lineIndex - (fit.lines.length - 1) / 2) * fit.linePitch;
+          const tx = m.vertical ? centerMinor + offset : centerMajor;
+          const ty = m.vertical ? centerMajor : centerMinor + offset;
+          textEntity(tx, ty, fit.font, lineText, 'text', 'center', {rotation:worldRotation});
+        });
       }
       function writeTables(target){
         const dxfLayers = [...usedDxfLayers.values()];
@@ -15903,7 +16016,6 @@
             writePolyline('OFFSET_A', shifted, true);
           }
         });
-        textEntity(ox + Number(p.x || 0) + Number(p.w || p.width || 0) / 2, oy + Number(p.y || 0) + Number(p.h || p.height || 0) / 2, 18, placementLabel(p), 'text', 'center');
       }
       function drawFlatPocketFrame(p, ox, oy, frameValue, face='front'){
         placementOutline('OUT', p, ox, oy);
@@ -15964,11 +16076,13 @@
         const partNo = dxfPartNumberForPlacement(p, options);
         if(isPanelPlacement(p)){
           drawPanelPartDxf(p, 0, 0, face);
+          drawPartTextDxf(p, partNo);
           drawPartNumberDxf(p, partNo);
           return;
         }
         if(isBeadingPart(p)){
           drawBeadingPartDxf(p, 0, 0);
+          drawPartTextDxf(p, partNo);
           drawPartNumberDxf(p, partNo);
           return;
         }
@@ -16010,8 +16124,7 @@
           }
         }
         hingeCentersForPlacement(p).forEach(c=>circle(c.x, c.y, 17.5, 'hinges'));
-        const label = placementLabel(p);
-        textEntity(p.x + p.w/2, p.y + p.h/2, 18, label, 'text', 'center');
+        drawPartTextDxf(p, partNo);
         drawPartNumberDxf(p, partNo);
       }
       function drawSheetPlacements(sheet, placements, sizeKey, includeOffcuts, options={}){
