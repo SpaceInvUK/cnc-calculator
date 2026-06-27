@@ -598,6 +598,7 @@ Regras:
 - A estimativa de largura do texto DXF deve ser bem conservadora para quebrar labels longas em mais linhas antes de elas sairem da peca/offcut.
 - A referencia grafica de offcut no DXF nao deve ser um retangulo fechado quando seus lados tocam a sheet; lados que coincidem com a borda da sheet devem desaparecer.
 - Quando dois offcuts encostam e criam linhas duplicadas, deve ficar apenas uma linha; por regra, a linha menor desaparece e a maior permanece.
+- Offcut so deve ser mostrado quando for util: se o lado maior passar de `1000mm`, o lado menor precisa ter pelo menos `150mm`; se o lado maior nao passar de `1000mm`, o lado menor precisa ter pelo menos `350mm`.
 
 ## Toolpath / NC
 

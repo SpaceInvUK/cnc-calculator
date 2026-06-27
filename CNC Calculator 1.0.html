@@ -9528,6 +9528,23 @@
     function offcutLabel(wl){
       return 'Offcut ' + Math.max(0, Math.round(wl.offcutW || 0)) + ' x ' + Math.max(0, Math.round(wl.offcutH || 0));
     }
+    function normalizeOffcutRect(rect){
+      return {
+        ...rect,
+        offcutW:Math.max(0, Math.round(rect.offcutW || rect.w || 0)),
+        offcutH:Math.max(0, Math.round(rect.offcutH || rect.h || 0))
+      };
+    }
+    function isUsefulOffcutRect(rect){
+      const normalized = normalizeOffcutRect(rect);
+      const w = Number(normalized.offcutW || 0);
+      const h = Number(normalized.offcutH || 0);
+      if(!(w > 0 && h > 0)) return false;
+      const longSide = Math.max(w, h);
+      const shortSide = Math.min(w, h);
+      if(longSide > 1000) return shortSide >= 150;
+      return shortSide >= 350;
+    }
     function offcutRectsFromSheet(sheet, sizeKey){
       if(!sheet.placements || !sheet.placements.length) return [];
       const size = sheetRuntimeSize(sizeKey, sheet);
@@ -9588,7 +9605,8 @@
         }
       }
       const viable = candidates
-        .filter(r=>r.area > 2500)
+        .map(normalizeOffcutRect)
+        .filter(r=>r.area > 2500 && isUsefulOffcutRect(r))
         .sort((a,b)=>b.area-a.area)
         .slice(0,300);
       const primary = viable[0];
@@ -9598,7 +9616,7 @@
       return best
         .sort((a,b)=>b.area-a.area)
         .slice(0,2)
-        .map(r=>({...r, offcutW:Math.round(r.w), offcutH:Math.round(r.h)}));
+        .map(normalizeOffcutRect);
     }
     function rectsOverlap(a,b){
       return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
