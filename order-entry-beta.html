@@ -152,7 +152,8 @@
   .nest-rules{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px;margin:6px 0 12px}
   .sheet-card{border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:10px;background:#fff}
   .sheet-head{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
-  .sheet-svg{width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:6px;display:block}
+  .sheet-svg{width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:6px;display:block;user-select:none;-webkit-user-select:none}
+  #nest,#zoomInner,.zoomscroll{user-select:none;-webkit-user-select:none}
   .nlabel{font-size:5px;font-family:Arial;fill:#1e3a8a;font-weight:700;text-anchor:middle}
   .sheet-svg.editing{cursor:default}
   .sheet-svg.editing .npart{cursor:move}
@@ -336,8 +337,8 @@
         <div class="grp-h">Sheet &amp; layout options</div>
         <div class="nest-rules">
           <div class="qa-field"><label>Sheet size</label><span style="display:inline-flex;align-items:center"><select id="nestSizeSel" onchange="setNestSize(this.value)"><option value="8x4">8x4 — 2440×1220</option><option value="10x4">10x4 — 3050×1220</option><option value="10x5">10x5 — 3050×1525</option><option value="jumbo">Jumbo — 2800×2070</option><option value="custom">Custom…</option></select><span id="customSheetWrap" style="display:none;align-items:center;gap:4px;margin-left:6px"><input type="number" id="csW" value="2440" onchange="setCustomSheet('w',this.value)" style="width:72px" title="Custom width (mm)"><span class="sub">×</span><input type="number" id="csH" value="1220" onchange="setCustomSheet('h',this.value)" style="width:72px" title="Custom height (mm)"><span class="sub">mm</span></span></span></div>
-          <div class="qa-field"><label>Outer margin (mm)</label><input type="number" value="7" style="width:70px"></div>
-          <div class="qa-field"><label>Spacing (mm)</label><input type="number" value="7" style="width:70px"></div>
+          <div class="qa-field"><label>Board margin (mm)</label><input type="number" id="nestMarginIn" value="7" min="0" style="width:70px" onchange="setNestMargin(this.value)"></div>
+          <div class="qa-field"><label>Spacing (mm)</label><input type="number" id="nestGapIn" value="7" min="0" style="width:70px" onchange="setNestGap(this.value)"></div>
           <div class="qa-field"><label>Respect grain</label><select><option>On</option><option>Off</option></select></div>
           <div class="qa-field"><label>Allow 90° rotate</label><select><option>On</option><option>Off</option></select></div>
           <div class="qa-field"><label>Offcuts</label><select><option>Normal offcut</option><option>Save largest offcut</option><option>Ignore</option></select></div>
@@ -585,7 +586,7 @@
   function downloadFastCnc(name){const doc=buildFastCnc();const blob=new Blob([JSON.stringify(doc,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(name||'ORDER')+'.fastcnc.json';document.body.appendChild(a);a.click();a.remove();}
   function saveAsFastCnc(){const n=prompt('Save as — file name:','ORDER');if(n)downloadFastCnc(n.replace(/\.fastcnc\.json$/i,''));}
   // ---- faithful DXF export: 1 file per thickness, production layer scheme + colours ----
-  const DXF_LAYERS={'0':7,'text':7,'SHEET':7,'BOARD':24,'OUT':150,'OFFCUT':6,'hinges':7,'IN':5,'REEDED':132,'OFFSET_A':30,'OFFSET_B':1,'OFFSET_C':5,'OFFSET_D':210,'OFFSET_E':94,'OFFSET_F':30,'OFFSET_G':32};
+  const DXF_LAYERS={'0':7,'text':7,'PART_NUMBER':5,'SHEET':7,'BOARD':24,'OUT':150,'OFFCUT':6,'hinges':7,'IN':5,'REEDED':132,'OFFSET_A':30,'OFFSET_B':1,'OFFSET_C':5,'OFFSET_D':210,'OFFSET_E':94,'OFFSET_F':30,'OFFSET_G':32};
   function fnum(n){return (Math.round(n*100)/100).toString();}
   function dxfText(layer,x,y,h,txt,center){
     if(center)return '0\nTEXT\n8\n'+layer+'\n10\n'+fnum(x)+'\n20\n'+fnum(y)+'\n11\n'+fnum(x)+'\n21\n'+fnum(y)+'\n72\n1\n73\n2\n40\n'+fnum(h)+'\n1\n'+txt+'\n';
@@ -596,7 +597,7 @@
     text=String(text||'').replace(/\s+/g,' ').trim();if(!text||boxW<=0||boxH<=0)return null;
     const words=text.split(' ');
     for(let fs=maxF;fs>=minF;fs-=Math.max(0.05,maxF/40)){
-      const cw=fs*0.6,lh=fs*1.15,maxC=Math.floor(boxW/cw);
+      const cw=fs*0.6,lh=fs*1.3,maxC=Math.floor(boxW/cw);
       if(maxC<1){continue;}
       let ok=true,lines=[],cur='';
       for(const w of words){
@@ -607,14 +608,14 @@
       if(lines.length*lh<=boxH)return {lines,fs,lh};
     }
     // smallest size: hard-wrap by character so it still fits the width, clip extra lines
-    const fs=minF,cw=fs*0.6,lh=fs*1.15,maxC=Math.max(1,Math.floor(boxW/cw)),maxL=Math.max(1,Math.floor(boxH/lh)),lines=[];
+    const fs=minF,cw=fs*0.6,lh=fs*1.3,maxC=Math.max(1,Math.floor(boxW/cw)),maxL=Math.max(1,Math.floor(boxH/lh)),lines=[];
     for(let i=0;i<text.length&&lines.length<maxL;i+=maxC)lines.push(text.slice(i,i+maxC));
     return {lines,fs,lh};
   }
   // multi-line centred TEXT inside the part's DXF box (mm). cyTop = top edge y.
   function dxfLabel(layer,boxW,boxH,cx,cyTop,text){
-    const fit=fitText(text,boxW*0.92,boxH*0.9,18,3.5);if(!fit)return '';
-    let y=cyTop-(boxH-fit.lines.length*fit.lh)/2-fit.fs,body='';
+    const fit=fitText(text,boxW*0.9,boxH*0.86,16,4.5);if(!fit)return '';
+    const total=fit.lines.length*fit.lh;let y=cyTop-(boxH-total)/2-fit.lh/2,body='';   // centred block; 73=2 anchors each line at its middle
     fit.lines.forEach(ln=>{body+=dxfText(layer,cx,y,fit.fs,ln,true);y-=fit.lh;});
     return body;
   }
@@ -673,6 +674,7 @@
         }
         if(p.hinge&&p.hinge.on){layers.add('hinges');hingeCenters(p,bx,by).forEach(c=>{var pc=rPtD(c.x,c.y);body+=dxfCircle('hinges',pc.x,pc.y,17.5);});}
         if(p.text){var q1=rPtD(bx,by),q2=rPtD(bx+p.w,by+p.h);var bxw=Math.abs(q2.x-q1.x),bxh=Math.abs(q2.y-q1.y),bcx=(q1.x+q2.x)/2,btop=Math.max(q1.y,q2.y);body+=dxfLabel('text',bxw,bxh,bcx,btop,p.text);}
+        if(p.pnum){var n1=rPtD(bx,by),n2=rPtD(bx+p.w,by+p.h);var nxl=Math.min(n1.x,n2.x),nyt=Math.max(n1.y,n2.y),nh=Math.max(8,Math.min(28,Math.min(Math.abs(n2.x-n1.x),Math.abs(n2.y-n1.y))*0.24));layers.add('PART_NUMBER');body+=dxfText('PART_NUMBER',nxl+nh*0.35,nyt-nh*1.15,nh,String(p.pnum),false);}
       });
       yOrigin+=Hp+SHEETGAP;
     });
@@ -778,7 +780,7 @@
   // ---- render list ----
   function render(){
     // manual nesting is invalidated when the part set / sheet sizing changes (footprint signature)
-    const sig=items.map(it=>[it.type,it.w,it.h,it.q,it.mat,it.size,it.pocketSide,it.grain?1:0].join(',')).join('|')+'#'+nestSize+'#'+JSON.stringify(sheetSizeOv);
+    const sig=items.map(it=>[it.type,it.w,it.h,it.q,it.mat,it.size,it.pocketSide,it.grain?1:0].join(',')).join('|')+'#'+nestSize+'#'+JSON.stringify(sheetSizeOv)+'#'+nestMargin+'#'+nestGap+'#'+customSheet.w+'x'+customSheet.h;
     if(sig!==lastSig){placements=null;selKey=null;lastSig=sig;}
     if(selItem>=items.length)selItem=items.length-1;
     if(selItem<0&&items.length)selItem=0;
@@ -981,6 +983,9 @@
 
   // ---- nesting ----
   let nestSize='8x4',sheetSizeOv={},nestSvgs=[];
+  let nestMargin=7,nestGap=7;                 // board (all-around) margin + spacing between parts, user-editable
+  function setNestMargin(v){nestMargin=Math.max(0,Math.round(+v||0));render();}
+  function setNestGap(v){nestGap=Math.max(0,Math.round(+v||0));render();}
   let nestMatCost=0,nestCncCost=0,nestSheets=0;
   let editMode=false, placements=null, selKey=null, dragState=null, lastSig='';
   function setNestSize(v){nestSize=v;sheetSizeOv={};toggleCustomSheetUI();render();}
@@ -992,9 +997,14 @@
   function closeZoom(){const ov=document.getElementById('zoomOverlay');if(ov)ov.classList.remove('show');}
   // Click a part in the nest = select it (syncs list + inspector). Shift+click = zoom the sheet.
   function nestClick(ev,zi){
-    if(ev.shiftKey){openZoom(zi);return;}
+    if(ev.shiftKey){if(ev.preventDefault)ev.preventDefault();if(window.getSelection)try{window.getSelection().removeAllRanges();}catch(e){}openZoom(zi);return;}
     const g=ev.target&&ev.target.closest?ev.target.closest('.npart'):null;
-    if(g&&g.getAttribute('data-key')!=null){const i=parseInt(g.getAttribute('data-key'),10);if(!isNaN(i)&&i>=0&&i<items.length){sel(i);renderNest();}}
+    if(g&&g.getAttribute('data-key')!=null){const i=parseInt(g.getAttribute('data-key'),10);if(!isNaN(i)&&i>=0&&i<items.length){
+      sel(i);renderNest();
+      // if a sheet is open in the zoom, refresh it so the selection highlight shows there too
+      const ov=document.getElementById('zoomOverlay'),inner=document.getElementById('zoomInner');
+      if(ov&&ov.classList.contains('show')&&inner&&nestSvgs[zi])inner.innerHTML=nestSvgs[zi].svg;
+    }}
     // plain click on empty sheet area does nothing — zoom is Shift+click only
   }
 
@@ -1002,7 +1012,7 @@
   // Rigid (grain) = the LONGEST side runs along the sheet grain (sheet width / X). So a rigid part is
   // always oriented long-side-horizontal and is never rotated the other way by the auto-packer.
   function rigidOrient(p){if(p.grain&&p.h>p.w)return {w:p.h,h:p.w};return {w:p.w,h:p.h};}
-  function sheetMeta(mat,idx){const sz=sheetSizeOv[mat+'#'+idx]||nestSize;const S=sheetDef(sz);const g=(sz==='jumbo'?13:7);return {sz,S,g};}
+  function sheetMeta(mat,idx){const sz=sheetSizeOv[mat+'#'+idx]||nestSize;const S=sheetDef(sz);return {sz,S,g:Math.max(0,nestGap),margin:Math.max(0,nestMargin)};}
   function genParts(){
     const groups=new Map();const add=(mat,p)=>{if(!groups.has(mat))groups.set(mat,[]);groups.get(mat).push(p);};
     items.forEach((it,i)=>{
@@ -1016,7 +1026,7 @@
     });
     return groups;
   }
-  function clampPos(m,p){const S=m.S,g=m.g;return {x:Math.max(g,Math.min(p.x,S.w-g-p.w)),y:Math.max(g,Math.min(p.y,(S.uh||S.h)-g-p.h))};}
+  function clampPos(m,p){const S=m.S,M=m.margin;return {x:Math.max(M,Math.min(p.x,S.w-M-p.w)),y:Math.max(M,Math.min(p.y,(S.uh||S.h)-M-p.h))};}
   // framed doors (Traditional/Flushback/Reeded) have an open centre — small parts can nest inside it
   function isHost(p){return (p.type==='trad'||p.type==='flush'||p.type==='reeded')&&!p.isInsert&&!p.isBack;}
   function cavPlace(cav,pw,ph){const g=cav.g;if(cav.cx+pw<=cav.w&&cav.cy+ph<=cav.h){const r={x:cav.x0+cav.cx,y:cav.y0+cav.cy};cav.cx+=pw+g;cav.rowH=Math.max(cav.rowH,ph);return r;}const ny=cav.cy+cav.rowH+g;if(pw<=cav.w&&ny+ph<=cav.h){cav.cx=pw+g;cav.cy=ny;cav.rowH=ph;return {x:cav.x0,y:cav.y0+ny};}return null;}
@@ -1044,9 +1054,9 @@
     bin.free=mrPrune(nf);
     return {x:placed.x,y:placed.y,w:pw,h:ph,rot:bRot};
   }
-  function mrNewBin(mat,idx){const m=sheetMeta(mat,idx),g=m.g,W=m.S.w-g,H=(m.S.uh||m.S.h)-g;return {idx,m,g,W,H,free:[{x:0,y:0,w:W,h:H}],parts:[]};}
+  function mrNewBin(mat,idx){const m=sheetMeta(mat,idx),g=m.g,M=m.margin,W=(m.S.w-2*M)+g,H=((m.S.uh||m.S.h)-2*M)+g;return {idx,m,g,margin:M,W,H,free:[{x:0,y:0,w:W,h:H}],parts:[]};}
   function mrPartDims(p){if(p.grain){const o=rigidOrient(p);return {w:o.w,h:o.h,rot:false};}return {w:p.w,h:p.h,rot:true};}
-  function mrEmit(bin,p,r){const rw=r.w-bin.g,rh=r.h-bin.g;bin.parts.push(Object.assign({},p,{x:bin.g+r.x,y:bin.g+r.y,w:rw,h:rh,rot:(rw!==p.w)?90:0}));
+  function mrEmit(bin,p,r){const rw=r.w-bin.g,rh=r.h-bin.g;bin.parts.push(Object.assign({},p,{x:bin.margin+r.x,y:bin.margin+r.y,w:rw,h:rh,rot:(rw!==p.w)?90:0}));
     if(isHost(p)){const f=p.frame||{t:0,r:0,b:0,l:0};let fl=f.l,fr=f.r,ft=f.t,fb=f.b;if(rw!==p.w){fl=f.t;fr=f.b;ft=f.l;fb=f.r;}
       const cw=rw-fl-fr-2*bin.g,ch=rh-ft-fb-2*bin.g;if(cw>=100&&ch>=100){bin.free.push({x:r.x+fl+bin.g,y:r.y+ft+bin.g,w:cw,h:ch});bin.free=mrPrune(bin.free);}}}
   function mrPackBins(mat,items){
@@ -1054,7 +1064,7 @@
     items.forEach(p=>{const d=mrPartDims(p);let r=null,bin=null;
       for(const b of bins){r=mrInsert(b,d.w+b.g,d.h+b.g,d.rot);if(r){bin=b;break;}}
       if(!r){bin=mrNewBin(mat,bins.length);bins.push(bin);r=mrInsert(bin,d.w+bin.g,d.h+bin.g,d.rot);}
-      if(!r){bin.parts.push(Object.assign({},p,{x:bin.g,y:bin.g,w:p.w,h:p.h,rot:0}));return;}  // oversize -> keep (don't drop)
+      if(!r){bin.parts.push(Object.assign({},p,{x:bin.margin,y:bin.margin,w:p.w,h:p.h,rot:0}));return;}  // oversize -> keep (don't drop)
       mrEmit(bin,p,r);
     });
     return bins;
@@ -1065,13 +1075,13 @@
     const sorts=[(a,b)=>(b.w*b.h)-(a.w*a.h),(a,b)=>Math.max(b.w,b.h)-Math.max(a.w,a.h),(a,b)=>b.h-a.h,(a,b)=>b.w-a.w,(a,b)=>(b.w+b.h)-(a.w+a.h)];
     let best=null;
     for(const cmp of sorts){const bins=mrPackBins(mat,parts.slice().sort(cmp));if(!best||bins.length<best.length)best=bins;}
-    return best.map(b=>({sz:b.m.sz,S:b.m.S,g:b.g,parts:b.parts}));
+    return best.map(b=>({sz:b.m.sz,S:b.m.S,g:b.g,margin:b.margin,parts:b.parts}));
   }
   function packInto(m,parts){   // re-pack a fixed set into ONE sheet (re-nest keeps sheet membership)
-    const g=m.g,W=m.S.w-g,H=(m.S.uh||m.S.h)-g,bin={idx:0,m,g,W,H,free:[{x:0,y:0,w:W,h:H}],parts:[]};
+    const g=m.g,M=m.margin,W=(m.S.w-2*M)+g,H=((m.S.uh||m.S.h)-2*M)+g,bin={idx:0,m,g,margin:M,W,H,free:[{x:0,y:0,w:W,h:H}],parts:[]};
     parts.slice().sort((a,b)=>(b.w*b.h)-(a.w*a.h)).forEach(p=>{
       const d=mrPartDims(p);const r=mrInsert(bin,d.w+g,d.h+g,d.rot);
-      if(!r){bin.parts.push(Object.assign({},p,{x:g,y:g,w:p.w,h:p.h,rot:0}));return;}
+      if(!r){bin.parts.push(Object.assign({},p,{x:M,y:M,w:p.w,h:p.h,rot:0}));return;}
       mrEmit(bin,p,r);
     });
     return bin.parts;
@@ -1088,12 +1098,16 @@
         const mine=parts.filter(p=>placements[p.key]&&placements[p.key].g===mat);
         const orphans=parts.filter(p=>!(placements[p.key]&&placements[p.key].g===mat));
         let maxS=0;mine.forEach(p=>maxS=Math.max(maxS,placements[p.key].s));
-        const sheets=[];for(let s=0;s<=maxS;s++){const m=sheetMeta(mat,s);sheets.push({sz:m.sz,S:m.S,g:m.g,parts:[]});}
+        const sheets=[];for(let s=0;s<=maxS;s++){const m=sheetMeta(mat,s);sheets.push({sz:m.sz,S:m.S,g:m.g,margin:m.margin,parts:[]});}
         mine.forEach(p=>{const pl=placements[p.key];const w=pl.rot?p.h:p.w,h=pl.rot?p.w:p.h;const m=sheetMeta(mat,pl.s);const c=clampPos(m,{x:pl.x,y:pl.y,w,h});sheets[pl.s].parts.push(Object.assign({},p,{x:c.x,y:c.y,w,h,rot:pl.rot}));});
         if(orphans.length) autoPack(mat,orphans).forEach(sh=>sheets.push(sh));
         out.set(mat,sheets);
       } else out.set(mat,autoPack(mat,parts));
     });
+    // sequential part numbers across ALL sheets of the job, in reading order (top->bottom, left->right) per sheet
+    let pn=0;out.forEach(sheets=>sheets.forEach(sh=>{
+      sh.parts.slice().sort((a,b)=>(Math.abs(a.y-b.y)>80?(a.y-b.y):(a.x-b.x))).forEach(p=>{p.pnum=++pn;});
+    }));
     return out;
   }
   function toggleEdit(){editMode=!editMode;selKey=null;render();}
@@ -1131,8 +1145,8 @@
         if(S.uh&&S.uh<S.h)svg+=`<rect x="0.25" y="${(S.uh/10).toFixed(1)}" width="${(vbW-0.5).toFixed(1)}" height="${((S.h-S.uh)/10).toFixed(1)}" fill="#fee2e2"/>`;
         sh.parts.forEach(p=>{svg+=drawPart(p,p.key===selKey||parseInt(p.key,10)===selItem);});
         svg+='</svg>';
-        nestSvgs.push({label:parseMat(mat).name+' · '+parseMat(mat).th+' · '+S.label+' · gap '+sh.g+'mm',svg});
-        html+=`<div class="sheet-card" style="border-left:5px solid ${bcolSheet}"><div class="sheet-head"><span>${matInp} ${sizeSel} <span style="color:#94a3b8">· ${sh.parts.length} part${sh.parts.length===1?'':'s'} · gap ${sh.g}mm</span></span><span>${used.toFixed(0)}% used</span></div>${svg}</div>`;
+        nestSvgs.push({label:parseMat(mat).name+' · '+parseMat(mat).th+' · '+S.label+' · '+sh.margin+'mm margin · '+sh.g+'mm gap',svg});
+        html+=`<div class="sheet-card" style="border-left:5px solid ${bcolSheet}"><div class="sheet-head"><span>${matInp} ${sizeSel} <span style="color:#94a3b8">· ${sh.parts.length} part${sh.parts.length===1?'':'s'} · ${sh.margin}mm margin · ${sh.g}mm gap</span></span><span>${used.toFixed(0)}% used</span></div>${svg}</div>`;
       });
     });
     nestMatCost=nMat;nestCncCost=nCnc;nestSheets=nSheets;
@@ -1191,6 +1205,7 @@
         else{for(let lx=X+1.6;lx<=X+W-1.6;lx+=sp)s+=`<line x1="${lx.toFixed(1)}" y1="${(Y+1.4).toFixed(1)}" x2="${lx.toFixed(1)}" y2="${(Y+H-1.4).toFixed(1)}" stroke="${OFFCOL.E}" stroke-width="0.16"/>`;}
       }
       if(W>=9&&H>=8)s+=`<text x="${(X+W/2).toFixed(1)}" y="${(Y+H/2+1.2).toFixed(1)}" font-size="3.2" font-family="Arial" text-anchor="middle" fill="${DXFC.OUT}">Ins ${p.insTh}mm</text>`;
+      if(p.pnum&&W>=3.6&&H>=3){const ns=Math.max(1.3,Math.min(3.2,Math.min(W*0.3,H*0.32)));s+=`<text x="${(X+W-0.7).toFixed(2)}" y="${(Y+0.5+ns).toFixed(2)}" font-size="${ns.toFixed(2)}" font-family="Arial" font-weight="800" text-anchor="end" fill="#2563eb">#${p.pnum}</text>`;}
       s+='</g>';return s;
     }
     const f=p.frame||{t:0,r:0,b:0,l:0};
@@ -1213,10 +1228,12 @@
       if(horiz){const x1=cx-L/2,x2=cx+L/2;s+=`<line x1="${x1.toFixed(1)}" y1="${cy.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${cy.toFixed(1)}" stroke="${col}" stroke-width="${sw.toFixed(2)}"/><path d="M${(x1+a).toFixed(1)} ${(cy-a).toFixed(1)} L${x1.toFixed(1)} ${cy.toFixed(1)} L${(x1+a).toFixed(1)} ${(cy+a).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw.toFixed(2)}"/><path d="M${(x2-a).toFixed(1)} ${(cy-a).toFixed(1)} L${x2.toFixed(1)} ${cy.toFixed(1)} L${(x2-a).toFixed(1)} ${(cy+a).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw.toFixed(2)}"/>`;}
       else{const y1=cy-L/2,y2=cy+L/2;s+=`<line x1="${cx.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="${sw.toFixed(2)}"/><path d="M${(cx-a).toFixed(1)} ${(y1+a).toFixed(1)} L${cx.toFixed(1)} ${y1.toFixed(1)} L${(cx+a).toFixed(1)} ${(y1+a).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw.toFixed(2)}"/><path d="M${(cx-a).toFixed(1)} ${(y2-a).toFixed(1)} L${cx.toFixed(1)} ${y2.toFixed(1)} L${(cx+a).toFixed(1)} ${(y2-a).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw.toFixed(2)}"/>`;}
     }
-    // dimension (top-left, short) + part label (centred, wrapped & scaled) — both kept INSIDE the part
+    // dimension (top-left) + part number (top-right, blue, distinct) + part label (centred, wrapped) — all kept INSIDE the part
     const showDim=W>=6&&H>=4.5;
     if(showDim){const dim=p.w+'×'+p.h,df=Math.max(0.9,Math.min(2.1,(W-1.4)/(dim.length*0.62)));s+=`<text x="${(X+0.9).toFixed(2)}" y="${(Y+0.6+df).toFixed(2)}" font-size="${df.toFixed(2)}" font-family="Arial" font-weight="700" fill="${DXFC.OUT}">${dim}</text>`;}
-    if(p.text){const topRes=showDim?2.3:0.5;s+=svgLabel(p.text,X,Y+topRes,W,H-topRes,p.isBack?'#dc2626':'#0f172a',2.9);}
+    const showNum=p.pnum&&W>=3.6&&H>=3;
+    if(showNum){const ns=Math.max(1.3,Math.min(3.2,Math.min(W*0.3,H*0.32)));s+=`<text x="${(X+W-0.7).toFixed(2)}" y="${(Y+0.5+ns).toFixed(2)}" font-size="${ns.toFixed(2)}" font-family="Arial" font-weight="800" text-anchor="end" fill="#2563eb">#${p.pnum}</text>`;}
+    if(p.text){const topRes=(showDim||showNum)?2.4:0.5;s+=svgLabel(p.text,X,Y+topRes,W,H-topRes,p.isBack?'#dc2626':'#0f172a',2.9);}
     s+='</g>';return s;
   }
 
