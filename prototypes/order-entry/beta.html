@@ -588,9 +588,10 @@
   // ---- faithful DXF export: 1 file per thickness, production layer scheme + colours ----
   const DXF_LAYERS={'0':7,'text':7,'PART_NUMBER':5,'SHEET':7,'OUT':150,'OFFCUT':6,'hinges':7,'IN':5,'REEDED':132,'OFFSET_A':30,'OFFSET_B':1,'OFFSET_C':5,'OFFSET_D':210,'OFFSET_E':94,'OFFSET_F':30,'OFFSET_G':32};
   function fnum(n){return (Math.round(n*100)/100).toString();}
-  function dxfText(layer,x,y,h,txt,center){
-    if(center)return '0\nTEXT\n8\n'+layer+'\n10\n'+fnum(x)+'\n20\n'+fnum(y)+'\n11\n'+fnum(x)+'\n21\n'+fnum(y)+'\n72\n1\n73\n2\n40\n'+fnum(h)+'\n1\n'+txt+'\n';
-    return '0\nTEXT\n8\n'+layer+'\n10\n'+fnum(x)+'\n20\n'+fnum(y)+'\n40\n'+fnum(h)+'\n1\n'+txt+'\n';
+  function dxfText(layer,x,y,h,txt,center,rot){
+    var r=rot?('\n50\n'+fnum(rot)):'';
+    if(center)return '0\nTEXT\n8\n'+layer+'\n10\n'+fnum(x)+'\n20\n'+fnum(y)+'\n11\n'+fnum(x)+'\n21\n'+fnum(y)+'\n72\n1\n73\n2\n40\n'+fnum(h)+r+'\n1\n'+txt+'\n';
+    return '0\nTEXT\n8\n'+layer+'\n10\n'+fnum(x)+'\n20\n'+fnum(y)+'\n40\n'+fnum(h)+r+'\n1\n'+txt+'\n';
   }
   // ---- text fitting: wrap into lines + scale font so a label fits inside boxW × boxH (same units as font) ----
   function fitText(text,boxW,boxH,maxF,minF){
@@ -619,6 +620,15 @@
     fit.lines.forEach(ln=>{body+=dxfText(layer,cx,y,fit.fs,ln,true);y-=fit.lh;});
     return body;
   }
+  // DXF label centred in a box, read along +x (rot 0) or +y / bottom-to-top (rot 90); wrap+scale so it never leaves the box
+  function dxfLabelRot(layer,boxW,boxH,cx,cy,text,rot){
+    const fit=fitText(text,boxW*0.9,boxH*0.84,20,4);if(!fit)return '';
+    const total=fit.lines.length*fit.lh;let body='';
+    fit.lines.forEach((ln,i)=>{const off=total/2-fit.lh/2-i*fit.lh;let tx,ty;
+      if(!rot){tx=cx;ty=cy+off;}else{tx=cx-off;ty=cy;}
+      body+=dxfText(layer,tx,ty,fit.fs,ln,true,rot);});
+    return body;
+  }
   // multi-line centred SVG label inside a part (viewBox units)
   function svgLabel(text,X,Y,W,H,col,maxF){
     const pad=0.5,bw=W-2*pad,bh=H-2*pad;if(bw<1.4||bh<1)return '';
@@ -640,41 +650,44 @@
     return out;
   }
   function dxfForThickness(th,list){
-    const SHEETGAP=250;let body='';const layers=new Set(['0','text']);
-    // DXF matches the website nesting: LANDSCAPE, y-flipped only (no 90deg rotation), sheets stacked top-down (sheet 1 on top)
-    let totalH=0;list.forEach((e,i)=>{totalH+=e.sh.S.h+(i?SHEETGAP:0);});
-    let top=totalH,sheetNo=0;
+    const SHEETGAP=250;let body='';const layers=new Set(['0','text']);let yOrigin=0,sheetNo=0;
     list.forEach(entry=>{
-      const sh=entry.sh,mat=entry.mat,S=sh.S,Hn=S.h;sheetNo++;
-      const oy=top-Hn;                                   // bottom of this sheet band (CAD y-up)
+      const sh=entry.sh,mat=entry.mat,S=sh.S;sheetNo++;
+      const Wn=S.w,Hn=S.h,Wp=Hn,Hp=Wn,oy=yOrigin;       // portrait sheet (Hn wide x Wn tall); sheet 1 at the BOTTOM
+      // rotate each sheet's content so it lands the way Ednei needs: landscape-local (x,y,y-up) -> (Hn-y, x)
+      const rRectD=(x,y,w,h)=>({x:Hn-(y+h),y:oy+x,w:h,h:w});
+      const rPtD=(x,y)=>({x:Hn-y,y:oy+x});
       layers.add('SHEET');
-      body+=dxfRect('SHEET',0,oy,S.w,Hn);               // ONE consistent layer name everywhere: SHEET (never BOARD)
-      body+=dxfText('text',60,oy+Hn-30,22,'SHEET '+sheetNo+' '+(parseMat(mat).name)+' '+th,false);
+      body+=dxfRect('SHEET',0,oy,Wp,Hp);                 // ONE consistent layer name everywhere: SHEET (never BOARD)
+      body+=dxfText('text',60,oy+Hp+12,22,'SHEET '+sheetNo+' '+(parseMat(mat).name)+' '+th,false);   // caption just ABOVE the sheet, clear of all parts
       sh.parts.forEach(p=>{
-        const X=p.x,yB=oy+(Hn-(p.y+p.h)),yT=oy+(Hn-p.y);   // CAD box mirrors the preview (y flipped, NOT rotated)
+        const bx=p.x,by=Hn-(p.y+p.h);                    // landscape-local, y-up
         const f=p.frame||{t:0,r:0,b:0,l:0};
         const framed=(p.type==='trad'||p.type==='flush'||p.type==='reeded')&&!p.isInsert;
         const round=(p.lines||[]).some(l=>l.rd);
         layers.add('OUT');
-        if(round)body+=dxfRoundRect('OUT',X,yB,p.w,p.h,2.5);else body+=dxfRect('OUT',X,yB,p.w,p.h);
-        if(framed&&!(p.lines&&p.lines.length)){const iw=p.w-f.l-f.r,ih=p.h-f.t-f.b;if(iw>1&&ih>1){layers.add('OFFSET_A');body+=dxfRect('OFFSET_A',X+f.l,yB+f.b,iw,ih);}}
-        (p.lines||[]).forEach(l=>{const lyr='OFFSET_'+l.L;layers.add(lyr);const iw=p.w-f.l-f.r-2*l.mm,ih=p.h-f.t-f.b-2*l.mm;if(iw>1&&ih>1){if(l.rd)body+=dxfRoundRect(lyr,X+f.l+l.mm,yB+f.b+l.mm,iw,ih,2.5);else body+=dxfRect(lyr,X+f.l+l.mm,yB+f.b+l.mm,iw,ih);}});
+        var o=rRectD(bx,by,p.w,p.h);
+        if(round)body+=dxfRoundRect('OUT',o.x,o.y,o.w,o.h,2.5);else body+=dxfRect('OUT',o.x,o.y,o.w,o.h);
+        if(framed&&!(p.lines&&p.lines.length)){const iw=p.w-f.l-f.r,ih=p.h-f.t-f.b;if(iw>1&&ih>1){layers.add('OFFSET_A');var fr=rRectD(bx+f.l,by+f.b,iw,ih);body+=dxfRect('OFFSET_A',fr.x,fr.y,fr.w,fr.h);}}
+        (p.lines||[]).forEach(l=>{const lyr='OFFSET_'+l.L;layers.add(lyr);const iw=p.w-f.l-f.r-2*l.mm,ih=p.h-f.t-f.b-2*l.mm;if(iw>1&&ih>1){var rr=rRectD(bx+f.l+l.mm,by+f.b+l.mm,iw,ih);if(l.rd)body+=dxfRoundRect(lyr,rr.x,rr.y,rr.w,rr.h,2.5);else body+=dxfRect(lyr,rr.x,rr.y,rr.w,rr.h);}});
         if(p.isInsert){
           layers.add('IN');
-          [7,14].forEach(off=>{if(off<Math.min(p.w,p.h)/2-1)body+=dxfRect('IN',X+off,yB+off,p.w-2*off,p.h-2*off);});
+          [7,14].forEach(off=>{if(off<Math.min(p.w,p.h)/2-1){var ri=rRectD(bx+off,by+off,p.w-2*off,p.h-2*off);body+=dxfRect('IN',ri.x,ri.y,ri.w,ri.h);}});
           var rc=p.reed||(p.kind==='reeded'?{dir:'vertical',spacing:12.5}:null);
           if(rc){layers.add('REEDED');var sp=Math.max(1,+rc.spacing||12.5),k=0;
-            if(rc.dir==='horizontal'){for(let yy=8;yy<p.h-6;yy+=sp){var ly=yB+yy;if(k%2===0)body+=dxfLine('REEDED',X+8,ly,X+p.w-8,ly);else body+=dxfLine('REEDED',X+p.w-8,ly,X+8,ly);k++;}}
-            else{for(let xx=8;xx<p.w-6;xx+=sp){var lx=X+xx;if(k%2===0)body+=dxfLine('REEDED',lx,yB+8,lx,yB+p.h-8);else body+=dxfLine('REEDED',lx,yB+p.h-8,lx,yB+8);k++;}}
+            if(rc.dir==='horizontal'){for(let yy=8;yy<p.h-6;yy+=sp){var a1=rPtD(bx+8,by+yy),b1=rPtD(bx+p.w-8,by+yy);if(k%2===0)body+=dxfLine('REEDED',a1.x,a1.y,b1.x,b1.y);else body+=dxfLine('REEDED',b1.x,b1.y,a1.x,a1.y);k++;}}
+            else{for(let xx=8;xx<p.w-6;xx+=sp){var a2=rPtD(bx+xx,by+8),b2=rPtD(bx+xx,by+p.h-8);if(k%2===0)body+=dxfLine('REEDED',a2.x,a2.y,b2.x,b2.y);else body+=dxfLine('REEDED',b2.x,b2.y,a2.x,a2.y);k++;}}
           }
         }
-        if(p.hinge&&p.hinge.on){layers.add('hinges');hingeCenters(p,X,yB).forEach(c=>{body+=dxfCircle('hinges',c.x,c.y,17.5);});}
-        // part number (top-left, own PART_NUMBER layer) + label (centred below it) — separate, no overlap, inside the part
-        var nh=Math.max(10,Math.min(24,Math.min(p.w,p.h)*0.22)),topStrip=Math.min(p.h*0.42,nh+6);
-        if(p.pnum){layers.add('PART_NUMBER');body+=dxfText('PART_NUMBER',X+3,yT-nh-2,nh,String(p.pnum),false);}
-        if(p.text)body+=dxfLabel('text',p.w,p.h-topStrip,X+p.w/2,yT-topStrip,p.text);
+        if(p.hinge&&p.hinge.on){layers.add('hinges');hingeCenters(p,bx,by).forEach(c=>{var pc=rPtD(c.x,c.y);body+=dxfCircle('hinges',pc.x,pc.y,17.5);});}
+        // text reads along the part's LONG side (horizontal when wide, bottom-to-top when tall), centred; number in a top strip — never leaves the part
+        var R=o,nh=Math.max(10,Math.min(22,Math.min(R.w,R.h)*0.2));
+        if(p.pnum){layers.add('PART_NUMBER');body+=dxfText('PART_NUMBER',R.x+3,R.y+R.h-nh-2,nh,String(p.pnum),false);}
+        if(p.text){var strip=Math.min(R.h*0.4,nh+4),availH=R.h-strip,cxc=R.x+R.w/2,cyc=R.y+availH/2;
+          if(R.w>=R.h)body+=dxfLabelRot('text',R.w,availH,cxc,cyc,p.text,0);
+          else body+=dxfLabelRot('text',availH,R.w,cxc,cyc,p.text,90);}
       });
-      top=oy-SHEETGAP;
+      yOrigin+=Hp+SHEETGAP;
     });
     const layerArr=Array.from(layers);
     let s='0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n';
