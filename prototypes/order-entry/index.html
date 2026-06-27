@@ -586,7 +586,7 @@
   function downloadFastCnc(name){const doc=buildFastCnc();const blob=new Blob([JSON.stringify(doc,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(name||'ORDER')+'.fastcnc.json';document.body.appendChild(a);a.click();a.remove();}
   function saveAsFastCnc(){const n=prompt('Save as — file name:','ORDER');if(n)downloadFastCnc(n.replace(/\.fastcnc\.json$/i,''));}
   // ---- faithful DXF export: 1 file per thickness, production layer scheme + colours ----
-  const DXF_LAYERS={'0':7,'text':7,'PART_NUMBER':5,'SHEET':7,'BOARD':24,'OUT':150,'OFFCUT':6,'hinges':7,'IN':5,'REEDED':132,'OFFSET_A':30,'OFFSET_B':1,'OFFSET_C':5,'OFFSET_D':210,'OFFSET_E':94,'OFFSET_F':30,'OFFSET_G':32};
+  const DXF_LAYERS={'0':7,'text':7,'PART_NUMBER':5,'SHEET':7,'OUT':150,'OFFCUT':6,'hinges':7,'IN':5,'REEDED':132,'OFFSET_A':30,'OFFSET_B':1,'OFFSET_C':5,'OFFSET_D':210,'OFFSET_E':94,'OFFSET_F':30,'OFFSET_G':32};
   function fnum(n){return (Math.round(n*100)/100).toString();}
   function dxfText(layer,x,y,h,txt,center){
     if(center)return '0\nTEXT\n8\n'+layer+'\n10\n'+fnum(x)+'\n20\n'+fnum(y)+'\n11\n'+fnum(x)+'\n21\n'+fnum(y)+'\n72\n1\n73\n2\n40\n'+fnum(h)+'\n1\n'+txt+'\n';
@@ -640,43 +640,41 @@
     return out;
   }
   function dxfForThickness(th,list){
-    const SHEETGAP=250;let body='';const layers=new Set(['0','text']);let yOrigin=0,sheetNo=0;
+    const SHEETGAP=250;let body='';const layers=new Set(['0','text']);
+    // DXF matches the website nesting: LANDSCAPE, y-flipped only (no 90deg rotation), sheets stacked top-down (sheet 1 on top)
+    let totalH=0;list.forEach((e,i)=>{totalH+=e.sh.S.h+(i?SHEETGAP:0);});
+    let top=totalH,sheetNo=0;
     list.forEach(entry=>{
-      const sh=entry.sh,mat=entry.mat,S=sh.S;sheetNo++;
-      const Wn=S.w,Hn=S.h,Wp=Hn,Hp=Wn,oy=yOrigin;       // export sheets VERTICAL/portrait (item 3): rotate 90deg
-      const rRectD=(x,y,w,h)=>({x:y,y:oy+(Wn-(x+w)),w:h,h:w});
-      const rPtD=(x,y)=>({x:y,y:oy+(Wn-x)});
-      const sheetLayer=(sheetNo%2===0)?'BOARD':'SHEET';layers.add(sheetLayer);
-      body+=dxfRect(sheetLayer,0,oy,Wp,Hp);
-      body+=dxfText('text',60,oy+Hp-30,22,'SHEET '+sheetNo+' '+(parseMat(mat).name)+' '+th,false);
+      const sh=entry.sh,mat=entry.mat,S=sh.S,Hn=S.h;sheetNo++;
+      const oy=top-Hn;                                   // bottom of this sheet band (CAD y-up)
+      layers.add('SHEET');
+      body+=dxfRect('SHEET',0,oy,S.w,Hn);               // ONE consistent layer name everywhere: SHEET (never BOARD)
+      body+=dxfText('text',60,oy+Hn-30,22,'SHEET '+sheetNo+' '+(parseMat(mat).name)+' '+th,false);
       sh.parts.forEach(p=>{
-        const bx=p.x,by=Hn-(p.y+p.h);                    // landscape-local, y-up
+        const X=p.x,yB=oy+(Hn-(p.y+p.h)),yT=oy+(Hn-p.y);   // CAD box mirrors the preview (y flipped, NOT rotated)
         const f=p.frame||{t:0,r:0,b:0,l:0};
         const framed=(p.type==='trad'||p.type==='flush'||p.type==='reeded')&&!p.isInsert;
         const round=(p.lines||[]).some(l=>l.rd);
         layers.add('OUT');
-        var o=rRectD(bx,by,p.w,p.h);
-        if(round)body+=dxfRoundRect('OUT',o.x,o.y,o.w,o.h,2.5);else body+=dxfRect('OUT',o.x,o.y,o.w,o.h);
-        if(framed&&!(p.lines&&p.lines.length)){const iw=p.w-f.l-f.r,ih=p.h-f.t-f.b;if(iw>1&&ih>1){layers.add('OFFSET_A');var fr=rRectD(bx+f.l,by+f.b,iw,ih);body+=dxfRect('OFFSET_A',fr.x,fr.y,fr.w,fr.h);}}
-        (p.lines||[]).forEach(l=>{
-          const lyr='OFFSET_'+l.L;layers.add(lyr);
-          const iw=p.w-f.l-f.r-2*l.mm,ih=p.h-f.t-f.b-2*l.mm;
-          if(iw>1&&ih>1){var rr=rRectD(bx+f.l+l.mm,by+f.b+l.mm,iw,ih);if(l.rd)body+=dxfRoundRect(lyr,rr.x,rr.y,rr.w,rr.h,2.5);else body+=dxfRect(lyr,rr.x,rr.y,rr.w,rr.h);}
-        });
+        if(round)body+=dxfRoundRect('OUT',X,yB,p.w,p.h,2.5);else body+=dxfRect('OUT',X,yB,p.w,p.h);
+        if(framed&&!(p.lines&&p.lines.length)){const iw=p.w-f.l-f.r,ih=p.h-f.t-f.b;if(iw>1&&ih>1){layers.add('OFFSET_A');body+=dxfRect('OFFSET_A',X+f.l,yB+f.b,iw,ih);}}
+        (p.lines||[]).forEach(l=>{const lyr='OFFSET_'+l.L;layers.add(lyr);const iw=p.w-f.l-f.r-2*l.mm,ih=p.h-f.t-f.b-2*l.mm;if(iw>1&&ih>1){if(l.rd)body+=dxfRoundRect(lyr,X+f.l+l.mm,yB+f.b+l.mm,iw,ih,2.5);else body+=dxfRect(lyr,X+f.l+l.mm,yB+f.b+l.mm,iw,ih);}});
         if(p.isInsert){
           layers.add('IN');
-          [7,14].forEach(off=>{if(off<Math.min(p.w,p.h)/2-1){var ri=rRectD(bx+off,by+off,p.w-2*off,p.h-2*off);body+=dxfRect('IN',ri.x,ri.y,ri.w,ri.h);}});
+          [7,14].forEach(off=>{if(off<Math.min(p.w,p.h)/2-1)body+=dxfRect('IN',X+off,yB+off,p.w-2*off,p.h-2*off);});
           var rc=p.reed||(p.kind==='reeded'?{dir:'vertical',spacing:12.5}:null);
           if(rc){layers.add('REEDED');var sp=Math.max(1,+rc.spacing||12.5),k=0;
-            if(rc.dir==='horizontal'){for(let yy=8;yy<p.h-6;yy+=sp){var a1=rPtD(bx+8,by+yy),b1=rPtD(bx+p.w-8,by+yy);if(k%2===0)body+=dxfLine('REEDED',a1.x,a1.y,b1.x,b1.y);else body+=dxfLine('REEDED',b1.x,b1.y,a1.x,a1.y);k++;}}
-            else{for(let xx=8;xx<p.w-6;xx+=sp){var a2=rPtD(bx+xx,by+8),b2=rPtD(bx+xx,by+p.h-8);if(k%2===0)body+=dxfLine('REEDED',a2.x,a2.y,b2.x,b2.y);else body+=dxfLine('REEDED',b2.x,b2.y,a2.x,a2.y);k++;}}
+            if(rc.dir==='horizontal'){for(let yy=8;yy<p.h-6;yy+=sp){var ly=yB+yy;if(k%2===0)body+=dxfLine('REEDED',X+8,ly,X+p.w-8,ly);else body+=dxfLine('REEDED',X+p.w-8,ly,X+8,ly);k++;}}
+            else{for(let xx=8;xx<p.w-6;xx+=sp){var lx=X+xx;if(k%2===0)body+=dxfLine('REEDED',lx,yB+8,lx,yB+p.h-8);else body+=dxfLine('REEDED',lx,yB+p.h-8,lx,yB+8);k++;}}
           }
         }
-        if(p.hinge&&p.hinge.on){layers.add('hinges');hingeCenters(p,bx,by).forEach(c=>{var pc=rPtD(c.x,c.y);body+=dxfCircle('hinges',pc.x,pc.y,17.5);});}
-        if(p.text){var q1=rPtD(bx,by),q2=rPtD(bx+p.w,by+p.h);var bxw=Math.abs(q2.x-q1.x),bxh=Math.abs(q2.y-q1.y),bcx=(q1.x+q2.x)/2,btop=Math.max(q1.y,q2.y);body+=dxfLabel('text',bxw,bxh,bcx,btop,p.text);}
-        if(p.pnum){var n1=rPtD(bx,by),n2=rPtD(bx+p.w,by+p.h);var nxl=Math.min(n1.x,n2.x),nyt=Math.max(n1.y,n2.y),nh=Math.max(8,Math.min(28,Math.min(Math.abs(n2.x-n1.x),Math.abs(n2.y-n1.y))*0.24));layers.add('PART_NUMBER');body+=dxfText('PART_NUMBER',nxl+nh*0.35,nyt-nh*1.15,nh,String(p.pnum),false);}
+        if(p.hinge&&p.hinge.on){layers.add('hinges');hingeCenters(p,X,yB).forEach(c=>{body+=dxfCircle('hinges',c.x,c.y,17.5);});}
+        // part number (top-left, own PART_NUMBER layer) + label (centred below it) — separate, no overlap, inside the part
+        var nh=Math.max(10,Math.min(24,Math.min(p.w,p.h)*0.22)),topStrip=Math.min(p.h*0.42,nh+6);
+        if(p.pnum){layers.add('PART_NUMBER');body+=dxfText('PART_NUMBER',X+3,yT-nh-2,nh,String(p.pnum),false);}
+        if(p.text)body+=dxfLabel('text',p.w,p.h-topStrip,X+p.w/2,yT-topStrip,p.text);
       });
-      yOrigin+=Hp+SHEETGAP;
+      top=oy-SHEETGAP;
     });
     const layerArr=Array.from(layers);
     let s='0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n';
