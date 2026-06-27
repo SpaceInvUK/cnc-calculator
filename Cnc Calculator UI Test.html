@@ -15715,7 +15715,7 @@
         return lines;
       }
       function dxfTextWidth(text, size){
-        return String(text || '').length * Number(size || 0) * 0.58;
+        return String(text || '').length * Number(size || 0) * 0.64;
       }
       function fitDxfPartText(sizeText, labelText, major, minor){
         const cleanSize = String(sizeText || '').trim();
@@ -15753,25 +15753,9 @@
           ''
         );
       }
-      function dxfWorldBoundsForPlacement(p){
-        let pts = [];
-        try{
-          pts = placementOutlinePoints(p).map(pt=>transformPoint(pt.x, pt.y));
-        } catch(err){
-          pts = [];
-        }
-        if(!pts.length){
-          const x = Number(p.x || 0);
-          const y = Number(p.y || 0);
-          const w = Math.max(1, Number(p.w || p.width || 0));
-          const h = Math.max(1, Number(p.h || p.height || 0));
-          pts = [
-            transformPoint(x, y),
-            transformPoint(x + w, y),
-            transformPoint(x + w, y + h),
-            transformPoint(x, y + h)
-          ];
-        }
+      function dxfWorldBoundsFromPoints(pts){
+        pts = (pts || []).filter(pt=>pt && Number.isFinite(Number(pt.x)) && Number.isFinite(Number(pt.y)));
+        if(!pts.length) return {minX:0, minY:0, maxX:1, maxY:1, w:1, h:1};
         const xs = pts.map(pt=>Number(pt.x || 0));
         const ys = pts.map(pt=>Number(pt.y || 0));
         const minX = Math.min(...xs);
@@ -15780,8 +15764,31 @@
         const maxY = Math.max(...ys);
         return {minX, minY, maxX, maxY, w:Math.max(1, maxX - minX), h:Math.max(1, maxY - minY)};
       }
-      function dxfPartTextMetrics(p, partNo){
-        const bounds = dxfWorldBoundsForPlacement(p);
+      function dxfWorldBoundsForRect(x, y, w, h){
+        x = Number(x || 0);
+        y = Number(y || 0);
+        w = Math.max(1, Number(w || 0));
+        h = Math.max(1, Number(h || 0));
+        return dxfWorldBoundsFromPoints([
+          transformPoint(x, y),
+          transformPoint(x + w, y),
+          transformPoint(x + w, y + h),
+          transformPoint(x, y + h)
+        ]);
+      }
+      function dxfWorldBoundsForPlacement(p){
+        let pts = [];
+        try{
+          pts = placementOutlinePoints(p).map(pt=>transformPoint(pt.x, pt.y));
+        } catch(err){
+          pts = [];
+        }
+        if(!pts.length){
+          return dxfWorldBoundsForRect(p.x, p.y, p.w || p.width, p.h || p.height);
+        }
+        return dxfWorldBoundsFromPoints(pts);
+      }
+      function dxfTextMetricsForBounds(bounds, partNo){
         const x = bounds.minX;
         const y = bounds.minY;
         const w = bounds.w;
@@ -15791,6 +15798,7 @@
         const major = vertical ? h : w;
         const minor = vertical ? w : h;
         const margin = Math.max(2, Math.min(22, Math.min(w, h) * 0.07));
+        const numberInset = Math.max(margin + 2, Math.min(30, margin + Math.min(w, h) * 0.035));
         const number = String(partNo || '').trim();
         const numberFont = number ? Math.max(2.4, Math.min(14, Math.min(w, h) * 0.16, Math.max(w, h) * 0.045)) : 0;
         const numberW = number ? dxfTextWidth(number, numberFont) : 0;
@@ -15809,7 +15817,10 @@
             contentH = Math.max(1, contentH - reserve);
           }
         }
-        return {...bounds,x,y,w,h,vertical,rotation,margin,major,minor,numberFont,numberW,numberH,contentX,contentY,contentW,contentH};
+        return {...bounds,x,y,w,h,vertical,rotation,margin,numberInset,major,minor,numberFont,numberW,numberH,contentX,contentY,contentW,contentH};
+      }
+      function dxfPartTextMetrics(p, partNo){
+        return dxfTextMetricsForBounds(dxfWorldBoundsForPlacement(p), partNo);
       }
       function drawPartNumberDxf(p, partNo){
         if(!partNo) return;
@@ -15817,12 +15828,12 @@
         const number = String(partNo);
         if(!(m.numberFont > 0)) return;
         if(m.vertical){
-          const tx = Math.min(m.maxX - m.margin, m.minX + m.margin + m.numberFont);
-          const ty = Math.max(m.minY + m.margin, m.maxY - m.margin - m.numberW);
+          const tx = Math.min(m.maxX - m.numberInset, m.minX + m.numberInset + m.numberFont);
+          const ty = Math.max(m.minY + m.numberInset, m.maxY - m.numberInset - m.numberW);
           textEntityWorld(tx, ty, m.numberFont, number, 'PART_NUMBER', 'left', {rotation:m.rotation});
         } else {
-          const tx = m.minX + m.margin;
-          const ty = Math.max(m.minY + m.margin, m.maxY - m.margin - m.numberFont);
+          const tx = m.minX + m.numberInset;
+          const ty = Math.max(m.minY + m.numberInset, m.maxY - m.numberInset - m.numberFont);
           textEntityWorld(tx, ty, m.numberFont, number, 'PART_NUMBER', 'left', {rotation:m.rotation});
         }
       }
@@ -15838,6 +15849,16 @@
           const tx = m.vertical ? m.contentX + fit.font + lineIndex * fit.linePitch : m.contentX;
           const ty = m.vertical ? m.contentY : m.contentY + fit.font + lineIndex * fit.linePitch;
           textEntityWorld(tx, ty, fit.font, lineText, 'text', 'left', {rotation:m.rotation});
+        });
+      }
+      function drawOffcutTextDxf(offcut){
+        const m = dxfTextMetricsForBounds(dxfWorldBoundsForRect(offcut.x, offcut.y, offcut.w, offcut.h), '');
+        const fit = fitDxfPartText('', offcutRectLabel(offcut), Math.max(1, m.vertical ? m.contentH : m.contentW), Math.max(1, m.vertical ? m.contentW : m.contentH));
+        if(!fit || !fit.lines.length) return;
+        fit.lines.forEach((lineText, lineIndex)=>{
+          const tx = m.vertical ? m.contentX + fit.font + lineIndex * fit.linePitch : m.contentX;
+          const ty = m.vertical ? m.contentY : m.contentY + fit.font + lineIndex * fit.linePitch;
+          textEntityWorld(tx, ty, fit.font, lineText, 'OFFCUT', 'left', {rotation:m.rotation});
         });
       }
       function writeTables(target){
@@ -16170,7 +16191,7 @@
         if(!hasCustomOffcut){
           offcutRectsFromSheet(sheet, sizeKey).forEach(offcut=>{
             rect('OFFCUT', offcut.x, offcut.y, offcut.w, offcut.h);
-            textEntity(offcut.labelX, offcut.labelY, 24, offcutRectLabel(offcut), 'OFFCUT', 'center');
+            drawOffcutTextDxf(offcut);
           });
         }
         drawOffcutTemplateDxf(sheet, sizeKey, options.offcutTemplateId || '', options.offcutPlacements || []);

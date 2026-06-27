@@ -593,8 +593,9 @@ Regras:
 - Pecas mais largas que altas devem ter texto horizontal em `0 graus`, iniciando dentro da peca pelo lado esquerdo.
 - Pecas mais altas que largas devem ter texto vertical em `90 graus`, iniciando dentro da peca pela parte de baixo.
 - `PART_NUMBER` deve ficar separado do texto normal no layer `PART_NUMBER` e usar a mesma numeracao global das labels/preview.
-- Texto informativo de offcut deve ficar no layer `OFFCUT`.
-- Texto de tamanho e descricao deve quebrar linhas e reduzir fonte quando necessario para permanecer dentro da peca.
+- Texto informativo de offcut deve ficar no layer `OFFCUT` e usar a mesma regra de orientacao/inicio do texto de pecas: `0 graus` pela esquerda quando largo, `90 graus` pela parte de baixo quando alto.
+- Texto de tamanho, descricao e offcut deve quebrar linhas e reduzir fonte quando necessario para permanecer dentro da peca/offcut.
+- A estimativa de largura do texto DXF deve ser conservadora para quebrar labels longas antes de elas sairem da peca.
 
 ## Toolpath / NC
 
