@@ -736,6 +736,18 @@
           var lty=M.vertical?M.contentY:M.contentY+fit.font+li*fit.linePitch;
           body+=dxfText('text',ltx,lty,fit.font,lt,false,M.rotation);});}
       });
+      // OFFCUT reference: open rectangle (sides on the sheet edge disappear) + size text on the OFFCUT layer
+      if(sh.offcut){
+        const o=sh.offcut,ox=o.x,oyu=Hn-(o.y+o.h),ow=o.w,oh=o.h,eps=0.8;
+        layers.add('OFFCUT');
+        [[ox,oyu,ox+ow,oyu,Math.abs(oyu)<=eps],
+         [ox+ow,oyu,ox+ow,oyu+oh,Math.abs((ox+ow)-Wn)<=eps],
+         [ox,oyu+oh,ox+ow,oyu+oh,Math.abs((oyu+oh)-Hn)<=eps],
+         [ox,oyu,ox,oyu+oh,Math.abs(ox)<=eps]].forEach(sd=>{if(sd[4])return;var a=rPtD(sd[0],sd[1]),b=rPtD(sd[2],sd[3]);body+=dxfLine('OFFCUT',a.x,a.y,b.x,b.y);});
+        var oR=rRectD(ox,oyu,ow,oh),oM=dxfPartMetrics(oR.x,oR.y,oR.w,oR.h,'');
+        var ofit=fitDxfPartText(o.w+' x '+o.h,'OFFCUT',Math.max(1,oM.vertical?oM.contentH:oM.contentW),Math.max(1,oM.vertical?oM.contentW:oM.contentH));
+        if(ofit&&ofit.lines.length)ofit.lines.forEach((lt,li)=>{var ltx=oM.vertical?oM.contentX+ofit.font+li*ofit.linePitch:oM.contentX,lty=oM.vertical?oM.contentY:oM.contentY+ofit.font+li*ofit.linePitch;body+=dxfText('OFFCUT',ltx,lty,ofit.font,lt,false,oM.rotation);});
+      }
       yOrigin+=Hp+SHEETGAP;
     });
     const layerArr=Array.from(layers);
@@ -1167,8 +1179,30 @@
     // sequential part numbers across ALL sheets of the job, in reading order (top->bottom, left->right) per sheet
     let pn=0;out.forEach(sheets=>sheets.forEach(sh=>{
       sh.parts.slice().sort((a,b)=>(Math.abs(a.y-b.y)>80?(a.y-b.y):(a.x-b.x))).forEach(p=>{p.pnum=++pn;});
+      sh.offcut=offcutForSheet(sh);                 // largest usable rectangular leftover (or null)
     }));
     return out;
+  }
+  // ---- offcut: biggest empty RECTANGLE left on a sheet (rectangle only for now) ----
+  function ivSub(intervals,a,b){const out=[];intervals.forEach(seg=>{const s=seg[0],e=seg[1];if(b<=s||a>=e){out.push([s,e]);return;}if(a>s)out.push([s,Math.min(a,e)]);if(b<e)out.push([Math.max(b,s),e]);});return out;}
+  function offcutForSheet(sh){
+    const S=sh.S,g=sh.g||7,W=S.w,Hu=(S.uh||S.h);    // full board width x usable height
+    const parts=(sh.parts||[]).filter(p=>!p.isBack);
+    if(!parts.length)return null;
+    const R=parts.map(p=>({x0:Math.max(0,p.x-g),y0:Math.max(0,p.y-g),x1:Math.min(W,p.x+p.w+g),y1:Math.min(Hu,p.y+p.h+g)}));
+    const xset=new Set([0,W]);R.forEach(r=>{xset.add(r.x0);xset.add(r.x1);});
+    const xa=[...xset].filter(x=>x>=0&&x<=W).sort((a,b)=>a-b);
+    let best=null;
+    for(let i=0;i<xa.length-1;i++)for(let j=i+1;j<xa.length;j++){
+      const xL=xa[i],xR=xa[j];if(xR-xL<20)continue;
+      const over=R.filter(r=>r.x0<xR-0.5&&r.x1>xL+0.5);
+      let iv=[[0,Hu]];over.forEach(r=>{iv=ivSub(iv,Math.max(0,r.y0),Math.min(Hu,r.y1));});
+      iv.forEach(seg=>{const hh=seg[1]-seg[0];if(hh<20)return;const area=(xR-xL)*hh;if(!best||area>best.area)best={x:xL,y:seg[0],w:xR-xL,h:hh,area};});
+    }
+    if(!best)return null;
+    const major=Math.max(best.w,best.h),minor=Math.min(best.w,best.h);
+    const ok=(major>1000&&minor>=150)||(major<=1000&&minor>=350);     // only show a useful offcut
+    return ok?{x:Math.round(best.x),y:Math.round(best.y),w:Math.round(best.w),h:Math.round(best.h)}:null;
   }
   function toggleEdit(){editMode=!editMode;selKey=null;render();}
   function resetNest(){placements=null;selKey=null;render();}
@@ -1204,6 +1238,9 @@
         let svg=`<svg class="sheet-svg${editMode?' editing':''}" data-group="${esc(mat)}" data-sheet="${idx}" data-size="${sh.sz}" ${clickAttr} viewBox="0 0 ${vbW} ${vbH}"><rect x="0.25" y="0.25" width="${(vbW-0.5).toFixed(1)}" height="${(vbH-0.5).toFixed(1)}" fill="#fff" stroke="#cbd5e1" stroke-width="0.4"/>`;
         if(S.uh&&S.uh<S.h)svg+=`<rect x="0.25" y="${(S.uh/10).toFixed(1)}" width="${(vbW-0.5).toFixed(1)}" height="${((S.h-S.uh)/10).toFixed(1)}" fill="#fee2e2"/>`;
         sh.parts.forEach(p=>{svg+=drawPart(p,p.key===selKey||parseInt(p.key,10)===selItem);});
+        if(sh.offcut){const o=sh.offcut,ox=o.x/10,oy=o.y/10,ow=o.w/10,oh=o.h/10,lx=ox+ow/2,ly=oy+oh/2;
+          svg+=`<rect x="${ox.toFixed(1)}" y="${oy.toFixed(1)}" width="${ow.toFixed(1)}" height="${oh.toFixed(1)}" fill="#0d948814" stroke="#0d9488" stroke-width="0.6" stroke-dasharray="3 2"/>`;
+          if(Math.min(ow,oh)>=8){svg+=`<text x="${lx.toFixed(1)}" y="${(ly-0.6).toFixed(1)}" font-size="${Math.max(2.6,Math.min(6.5,Math.min(ow,oh)*0.16)).toFixed(1)}" font-family="Arial" font-weight="800" text-anchor="middle" fill="#0d9488">OFFCUT</text><text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" font-size="${Math.max(2.3,Math.min(5.5,Math.min(ow,oh)*0.13)).toFixed(1)}" font-family="Arial" text-anchor="middle" fill="#0d9488">${o.w} × ${o.h}</text>`;}}
         svg+='</svg>';
         nestSvgs.push({label:parseMat(mat).name+' · '+parseMat(mat).th+' · '+S.label+' · '+sh.margin+'mm margin · '+sh.g+'mm gap',svg});
         html+=`<div class="sheet-card" style="border-left:5px solid ${bcolSheet}"><div class="sheet-head"><span>${matInp} ${sizeSel} <span style="color:#94a3b8">· ${sh.parts.length} part${sh.parts.length===1?'':'s'} · ${sh.margin}mm margin · ${sh.g}mm gap</span></span><span>${used.toFixed(0)}% used</span></div>${svg}</div>`;
