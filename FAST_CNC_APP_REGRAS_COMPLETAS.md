@@ -657,7 +657,7 @@ Esta secao descreve as regras oficiais de impressao do app. `Print Panels Only` 
   - nome/texto da peca;
   - tamanho da peca;
   - numero global da peca;
-  - numero da sheet/chapa;
+  - numero da sheet/chapa no formato curto;
   - cliente/data ou quote/date code no topo;
   - informacao FSC quando existir;
   - QR code quando couber sem prejudicar legibilidade.
@@ -667,6 +667,7 @@ Esta secao descreve as regras oficiais de impressao do app. `Print Panels Only` 
 - O texto principal deve ser completo, legivel e dentro da label.
 - O tamanho da peca deve ficar visualmente separado do texto da peca.
 - O numero global deve ser discreto, mas legivel.
+- No topo direito da CNC label, o texto de sheet deve ser `partNo - sheetShort`, por exemplo `3 - 1/14`; nao deve aparecer repetidamente como `SHEET 1`.
 - A fonte deve adaptar automaticamente conforme comprimento do texto e tamanho da label.
 - Textos longos podem quebrar em 2, 3 ou mais linhas.
 - O QR payload deve usar a mesma peca/uid/part relationship do checklist.
@@ -679,16 +680,19 @@ Esta secao descreve as regras oficiais de impressao do app. `Print Panels Only` 
 - Cada pagina representa uma sheet.
 - Cada peca no mapa deve mostrar o numero global da peca no canto superior esquerdo.
 - O numero global precisa bater exatamente com CNC Labels e A4 Labels.
+- O numero global no Labels Map deve ter tamanho consistente e legivel entre pecas grandes e pequenas; so pode reduzir em casos extremos onde a peca nao comporta o tamanho padrao.
 - O QR code deve ficar perto do numero da peca, preferencialmente logo apos o numero.
 - O QR code nao pode ficar colado na borda da peca nem encostar/queimar a linha do contorno.
-- Se nao houver espaco seguro perto do numero, o QR pode ir logo abaixo do numero; se ainda nao couber, nao deve ser desenhado.
+- O QR code deve tentar reduzir tamanho para ficar ao lado do numero sem tocar a borda; se ainda nao houver espaco seguro, nao deve ser desenhado.
+- O `sheetShort` da peca, por exemplo `1/14`, nao entra no texto principal da peca.
+- O `sheetShort` deve aparecer separado no canto inferior direito de cada peca.
 - O texto da label dentro da peca deve decidir orientacao por peca:
   - se a peca for mais larga que alta, texto horizontal;
   - se a peca for mais alta que larga, texto vertical/rotacionado;
   - a orientacao deve seguir o lado maior da peca renderizada no nesting.
 - A regra de orientacao vale por peca, nao por sheet.
 - O texto deve ficar dentro do retangulo/shape da peca.
-- O texto deve usar tamanho, nome/texto da peca e complemento de copia quando houver (`1 of 2`, `2 of 2`).
+- O texto principal deve usar tamanho, nome/texto da peca e complemento de copia quando houver (`1 of 2`, `2 of 2`), sem repetir `Sheet X/Y`.
 - O texto pode quebrar linhas e reduzir fonte para caber.
 - A area branca interna da peca existe para melhorar leitura, mas nao deve esconder o contorno da peca.
 - O titulo da sheet deve ser pequeno o suficiente para nao competir com as labels.
@@ -712,6 +716,8 @@ Esta secao descreve as regras oficiais de impressao do app. `Print Panels Only` 
   - texto/nome da peca;
   - quantidade/copia quando houver (`1 of 2`, `2 of 2`).
 - O QR code deve ficar perto do numero global, no canto superior esquerdo do bloco.
+- O numero global da peca deve ser maior que o texto auxiliar, para leitura rapida.
+- O `sheetShort`, por exemplo `1/14`, deve aparecer separado no canto inferior direito de cada bloco A4.
 - O QR code so aparece quando a celula tiver tamanho minimo para leitura.
 - Se o QR code reduzir demais a area do texto, a label deve priorizar texto legivel.
 

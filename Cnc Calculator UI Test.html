@@ -17302,10 +17302,11 @@
     function cncLabelSvg(label){
       const safe = value=>escapeHtml(String(value ?? ''));
       const sheetNo = String(label.sheetNo || String(label.sheetShort || '').split('/')[0] || '').trim();
-      const sheetText = sheetNo ? 'SHEET ' + sheetNo : String(label.sheet || '');
+      const sheetText = label.partNo && label.sheetShort ? String(label.partNo) + ' - ' + String(label.sheetShort) : (label.partNo ? String(label.partNo) : (label.sheetShort || (sheetNo ? 'SHEET ' + sheetNo : String(label.sheet || ''))));
       const fscText = String(label.fsc || '').trim();
       const headerText = cncLabelHeaderText(label);
       const headerFont = cncLabelSingleLineFont(headerText, 248, 18, 10);
+      const sheetFont = cncLabelSingleLineFont(sheetText, 146, 20, 11);
       const fullBox = {x:24, y:70, w:352, h:166};
       const qrBox = {x:24, y:70, w:238, h:166, qrX:280, qrY:86, qrSize:82};
       const fitWithQr = cncLabelFitContent(label, qrBox.w, qrBox.h);
@@ -17319,7 +17320,7 @@
         <line x1="5" y1="52" x2="395" y2="52" stroke="#000" stroke-width="3"/>
         <line x1="5" y1="246" x2="395" y2="246" stroke="#000" stroke-width="3"/>
         <text x="22" y="34" class="cnc-top" font-size="${headerFont.toFixed(1)}" text-anchor="start">${safe(headerText)}</text>
-        <text x="378" y="34" class="cnc-sheet" font-size="20" text-anchor="end">${safe(sheetText)}</text>`;
+        <text x="378" y="34" class="cnc-sheet" font-size="${sheetFont.toFixed(1)}" text-anchor="end">${safe(sheetText)}</text>`;
       svg += cncLabelTextSvg(fit, textBox.x, textBox.y, textBox.w, textBox.h);
       if(useQr) svg += qrSvgFragment(label.qrPayload || compactQrPayload(label), qrBox.qrX, qrBox.qrY, qrBox.qrSize);
       if(fscText) svg += `<text x="22" y="278" class="cnc-fsc" font-size="15" text-anchor="start">${safe(fscText)}</text>`;
@@ -17413,8 +17414,7 @@
     function labelMapFitLines(label, copyText, boxW, boxH){
       const sizeText = String(label.size || '').trim();
       const codeText = String(label.code || '').trim();
-      const sheetText = String(label.sheet || '').trim();
-      const metaText = [copyText, sheetText].filter(Boolean).join(' - ');
+      const metaText = String(copyText || '').trim();
       const minFont = Math.max(7, Math.min(14, boxH / 13));
       const startFont = Math.max(minFont, Math.min(82, boxH / 3.1, boxW / 4.8));
       let fallback = null;
@@ -17428,6 +17428,9 @@
         if(totalH <= boxH && widest <= boxW) return fallback;
       }
       return fallback || {font:minFont, lineHeight:minFont * 1.16, lines:[sizeText, codeText, metaText].filter(Boolean)};
+    }
+    function labelSheetShortText(label){
+      return String(label?.sheetShort || '').replace(/\s+/g, '').trim();
     }
     function labelMapTextSvg(lines, x, y, font, lineHeight, anchor='middle'){
       if(!lines.length) return '';
@@ -17465,8 +17468,8 @@
       const labelH = Math.max(1, h - pad * 2);
       svg += '<rect class="map-piece-label-bg" x="'+labelX+'" y="'+labelY+'" width="'+labelW+'" height="'+labelH+'" rx="'+Math.min(18, pad * 0.8)+'" ry="'+Math.min(18, pad * 0.8)+'"/>';
       const mapIndex = String(label.partNo || (index + 1));
-      const mapIndexSize = Math.max(12, Math.min(42, Math.min(w, h) * 0.17));
       const innerPad = Math.max(4, Math.min(16, pad * 0.45));
+      const mapIndexSize = Math.max(24, Math.min(34, labelH - innerPad * 2, labelW * 0.72));
       const indexX = labelX + innerPad;
       const indexY = labelY + innerPad + mapIndexSize;
       svg += '<text class="map-piece-index" x="'+indexX+'" y="'+indexY+'" font-size="'+mapIndexSize+'">'+escapeHtml(mapIndex)+'</text>';
@@ -17474,25 +17477,26 @@
       const qrPossible = labelW > 36 && labelH > 36;
       if(qrPossible){
         const estimatedIndexW = Math.max(mapIndexSize * 0.75, mapIndex.length * mapIndexSize * 0.62);
-        const qrSize = Math.max(16, Math.min(72, mapIndexSize * 1.2, labelW * 0.3, labelH * 0.28));
         let qrX = indexX + estimatedIndexW + innerPad;
         let qrY = labelY + innerPad;
-        let canPlaceQr = qrX + qrSize <= labelX + labelW - innerPad && qrY + qrSize <= labelY + labelH - innerPad;
-        if(!canPlaceQr && labelW >= qrSize + innerPad * 2 && labelH >= mapIndexSize + qrSize + innerPad * 3){
-          qrX = labelX + innerPad;
-          qrY = indexY + innerPad;
-          canPlaceQr = true;
-        }
-        if(canPlaceQr){
+        const availableQrW = labelX + labelW - innerPad - qrX;
+        const qrSize = Math.min(72, mapIndexSize * 1.05, labelH * 0.24, availableQrW);
+        if(qrSize >= 10 && qrY + qrSize <= labelY + labelH - innerPad){
           headerBottom = Math.max(headerBottom, qrY + qrSize);
           svg += qrSvgFragment(label.qrPayload || compactQrPayload(label), qrX, qrY, qrSize);
         }
+      }
+      const sheetMark = labelSheetShortText(label);
+      if(sheetMark){
+        const sheetMarkSize = Math.max(11, Math.min(18, labelH * 0.18, labelW * 0.22));
+        svg += '<text class="map-piece-sheet" x="'+(labelX + labelW - innerPad)+'" y="'+(labelY + labelH - innerPad)+'" text-anchor="end" font-size="'+sheetMarkSize+'">'+escapeHtml(sheetMark)+'</text>';
       }
       const reserveTop = Math.min(labelH * 0.42, headerBottom - labelY + innerPad);
       const textX = labelX + innerPad;
       const textY = labelY + reserveTop;
       const textW = Math.max(1, labelW - innerPad * 2);
-      const textH = Math.max(1, labelH - reserveTop - innerPad);
+      const sheetReserve = sheetMark ? Math.max(16, Math.min(24, labelH * 0.22)) : 0;
+      const textH = Math.max(1, labelH - reserveTop - innerPad - sheetReserve);
       const verticalText = h > w;
       const fitW = verticalText ? textH : textW;
       const fitH = verticalText ? textW : textH;
@@ -17536,6 +17540,7 @@
         .label-map-title{font-size:44px;font-weight:900}
         .map-piece-label-bg{fill:#fff;fill-opacity:.9;stroke:#111;stroke-width:2}
         .map-piece-index{font-weight:900;fill:#555}
+        .map-piece-sheet{font-weight:900;fill:#555}
         .piece-label-text{font-weight:900;dominant-baseline:auto}
         .qr-code rect{shape-rendering:crispEdges}
         @media screen{body{background:#e5e7eb}.label-map-page{margin:10px auto;border:1px solid #cbd5e1;box-shadow:0 8px 24px rgba(15,23,42,.13)}}
@@ -17596,7 +17601,8 @@
       const copyText = entry.copyText || '';
       const useQr = grid.cellW >= 24 && grid.cellH >= 22;
       const qrSize = useQr ? Math.max(6.5, Math.min(11, grid.cellW * 0.18, grid.cellH * 0.24)) : 0;
-      const contentHeight = grid.cellH - (useQr ? qrSize + 5.8 : 7);
+      const sheetMark = labelSheetShortText(label);
+      const contentHeight = grid.cellH - (useQr ? qrSize + 5.8 : 7) - (sheetMark ? 3.6 : 0);
       const baseFont = Math.max(2.55, Math.min(5.0, grid.cellW * 0.115, grid.cellH * 0.15));
       const maxChars = Math.max(6, Math.floor((grid.cellW - 5) / Math.max(1, baseFont * 0.48)));
       const codeLines = a4LabelWrapText(label.code || '', maxChars);
@@ -17610,6 +17616,7 @@
         '<div class="a4-label-dim">'+escapeHtml(label.size || '')+'</div>'+
         '<div class="a4-label-code">'+codeLines.map(line=>'<span>'+escapeHtml(line)+'</span>').join('')+'</div>'+
         (metaText ? '<div class="a4-label-meta">'+escapeHtml(metaText)+'</div>' : '')+
+        (sheetMark ? '<div class="a4-label-sheet">'+escapeHtml(sheetMark)+'</div>' : '')+
       '</article>';
     }
     function a4LabelsPrintHtml(pages){
@@ -17638,12 +17645,13 @@
         .a4-label-cell{position:relative;min-width:0;min-height:0;border:.35mm solid #111;border-radius:1.6mm;padding:2.1mm 1.8mm 1.7mm;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden}
         .a4-label-cell.has-qr{padding-top:calc(var(--qr) + 3mm)}
         .a4-label-corner{position:absolute;top:1mm;left:1.1mm;display:flex;align-items:flex-start;gap:.8mm;max-width:calc(100% - 2.2mm);pointer-events:none}
-        .a4-label-index{font:900 2mm Arial,Helvetica,sans-serif;color:#555;line-height:1}
+        .a4-label-index{font:900 3.2mm Arial,Helvetica,sans-serif;color:#555;line-height:1}
         .a4-label-qr{width:var(--qr);height:var(--qr);display:block;flex:0 0 auto}
         .a4-label-dim{font-size:var(--dim);font-weight:950;line-height:1.05;margin-bottom:.8mm;white-space:nowrap}
         .a4-label-code{font-size:var(--f);font-weight:950;line-height:1.08;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.15mm;width:100%;overflow:hidden}
         .a4-label-code span{display:block;max-width:100%;overflow:visible}
         .a4-label-meta{font-size:var(--meta);font-weight:900;line-height:1.05;margin-top:.9mm;color:#111;white-space:nowrap}
+        .a4-label-sheet{position:absolute;right:1.2mm;bottom:1mm;font:900 2.25mm Arial,Helvetica,sans-serif;color:#555;line-height:1}
         @media screen{body{background:#e5e7eb}.a4-label-page{margin:10px auto;border:1px solid #cbd5e1;box-shadow:0 8px 24px rgba(15,23,42,.13);padding:0}}
         @media print{.print-toolbar{display:none!important}body{background:#fff}.a4-label-page{margin:0;border:0;box-shadow:none}}
       </style></head><body><div class="print-toolbar"><button onclick="window.print()">Print</button><button class="secondary" onclick="window.close()">Close</button></div>${pageSections}</body></html>`;
