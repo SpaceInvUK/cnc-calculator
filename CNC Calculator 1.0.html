@@ -17188,6 +17188,19 @@
       });
       return `<g class="qr-code" transform="translate(${x} ${y}) scale(${scale})" shape-rendering="crispEdges"><rect x="0" y="0" width="${n + quiet * 2}" height="${n + quiet * 2}" fill="#fff"/><g fill="#000">${cells}</g></g>`;
     }
+    function qrSvgTag(payload, className='inline-qr'){
+      const modules = qrModules(payload || 'FASTCNC');
+      const quiet = 4;
+      const n = modules.length;
+      let cells = '';
+      modules.forEach((row, rowIndex)=>{
+        row.forEach((dark, colIndex)=>{
+          if(dark) cells += `<rect x="${colIndex + quiet}" y="${rowIndex + quiet}" width="1" height="1"/>`;
+        });
+      });
+      const size = n + quiet * 2;
+      return `<svg class="${className}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" shape-rendering="crispEdges"><rect x="0" y="0" width="${size}" height="${size}" fill="#fff"/><g fill="#000">${cells}</g></svg>`;
+    }
     function sprayArrowsSvg(sides, x, y, w, h){
       const set = new Set(normalizeSpraySides(sides));
       const cx = x + w / 2;
@@ -17425,6 +17438,19 @@
       out += '</text>';
       return out;
     }
+    function labelMapTextBlockSvg(fitted, boxX, boxY, boxW, boxH, vertical=false){
+      if(!fitted.lines.length || boxW <= 0 || boxH <= 0) return '';
+      const totalTextH = fitted.lines.length * fitted.lineHeight;
+      if(vertical){
+        const logicalH = boxW;
+        const firstY = -logicalH / 2 + Math.max(fitted.font, (logicalH - totalTextH) / 2 + fitted.font);
+        const cx = boxX + boxW / 2;
+        const cy = boxY + boxH / 2;
+        return '<g transform="translate('+cx+' '+cy+') rotate(-90)">'+labelMapTextSvg(fitted.lines, 0, firstY, fitted.font, fitted.lineHeight)+'</g>';
+      }
+      const firstY = boxY + Math.max(fitted.font, (boxH - totalTextH) / 2 + fitted.font);
+      return labelMapTextSvg(fitted.lines, boxX + boxW / 2, firstY, fitted.font, fitted.lineHeight);
+    }
     function labelMapPlacementSvg(entry, index){
       const p = entry.p;
       const label = entry.label;
@@ -17440,35 +17466,38 @@
       svg += '<rect class="map-piece-label-bg" x="'+labelX+'" y="'+labelY+'" width="'+labelW+'" height="'+labelH+'" rx="'+Math.min(18, pad * 0.8)+'" ry="'+Math.min(18, pad * 0.8)+'"/>';
       const mapIndex = String(label.partNo || (index + 1));
       const mapIndexSize = Math.max(12, Math.min(42, Math.min(w, h) * 0.17));
-      svg += '<text class="map-piece-index" x="'+(labelX + Math.max(6, pad * 0.55))+'" y="'+(labelY + mapIndexSize + Math.max(2, pad * 0.18))+'" font-size="'+mapIndexSize+'">'+escapeHtml(mapIndex)+'</text>';
-      const qrPossible = w > 45 && h > 45;
-      let textX = labelX;
-      let textY = labelY;
-      let textW = labelW;
-      let textH = labelH;
+      const innerPad = Math.max(4, Math.min(16, pad * 0.45));
+      const indexX = labelX + innerPad;
+      const indexY = labelY + innerPad + mapIndexSize;
+      svg += '<text class="map-piece-index" x="'+indexX+'" y="'+indexY+'" font-size="'+mapIndexSize+'">'+escapeHtml(mapIndex)+'</text>';
+      let headerBottom = indexY;
+      const qrPossible = labelW > 36 && labelH > 36;
       if(qrPossible){
-        const qrSize = Math.max(24, Math.min(w * 0.18, h * 0.48, Math.min(w, h) * 0.62, 135));
-        let qrX = labelX;
-        let qrY = labelY;
-        if(w > h * 1.55 && w > 220){
-          qrY = y + h / 2 - qrSize / 2;
-          textX = labelX + qrSize + pad;
-          textW = Math.max(1, w - qrSize - pad * 4);
-        } else if(h > w * 1.35){
-          qrX = x + w / 2 - qrSize / 2;
-          textY = labelY + qrSize + pad * 0.7;
-          textH = Math.max(1, h - qrSize - pad * 3);
-        } else {
-          qrX = x + w - pad - qrSize;
-          qrY = y + h / 2 - qrSize / 2;
-          textW = Math.max(1, w - qrSize - pad * 4);
+        const estimatedIndexW = Math.max(mapIndexSize * 0.75, mapIndex.length * mapIndexSize * 0.62);
+        const qrSize = Math.max(16, Math.min(72, mapIndexSize * 1.2, labelW * 0.3, labelH * 0.28));
+        let qrX = indexX + estimatedIndexW + innerPad;
+        let qrY = labelY + innerPad;
+        let canPlaceQr = qrX + qrSize <= labelX + labelW - innerPad && qrY + qrSize <= labelY + labelH - innerPad;
+        if(!canPlaceQr && labelW >= qrSize + innerPad * 2 && labelH >= mapIndexSize + qrSize + innerPad * 3){
+          qrX = labelX + innerPad;
+          qrY = indexY + innerPad;
+          canPlaceQr = true;
         }
-        svg += qrSvgFragment(label.qrPayload || compactQrPayload(label), qrX, qrY, qrSize);
+        if(canPlaceQr){
+          headerBottom = Math.max(headerBottom, qrY + qrSize);
+          svg += qrSvgFragment(label.qrPayload || compactQrPayload(label), qrX, qrY, qrSize);
+        }
       }
-      const fitted = labelMapFitLines(label, entry.copyText || '', textW, textH);
-      const totalTextH = fitted.lines.length * fitted.lineHeight;
-      const firstY = textY + Math.max(fitted.font, (textH - totalTextH) / 2 + fitted.font);
-      svg += labelMapTextSvg(fitted.lines, textX + textW / 2, firstY, fitted.font, fitted.lineHeight);
+      const reserveTop = Math.min(labelH * 0.42, headerBottom - labelY + innerPad);
+      const textX = labelX + innerPad;
+      const textY = labelY + reserveTop;
+      const textW = Math.max(1, labelW - innerPad * 2);
+      const textH = Math.max(1, labelH - reserveTop - innerPad);
+      const verticalText = h > w;
+      const fitW = verticalText ? textH : textW;
+      const fitH = verticalText ? textW : textH;
+      const fitted = labelMapFitLines(label, entry.copyText || '', fitW, fitH);
+      svg += labelMapTextBlockSvg(fitted, textX, textY, textW, textH, verticalText);
       return svg;
     }
     function labelMapSheetSvg(page){
@@ -17565,16 +17594,19 @@
     function a4LabelCellHtml(entry, grid, index){
       const label = entry.label;
       const copyText = entry.copyText || '';
+      const useQr = grid.cellW >= 24 && grid.cellH >= 22;
+      const qrSize = useQr ? Math.max(6.5, Math.min(11, grid.cellW * 0.18, grid.cellH * 0.24)) : 0;
+      const contentHeight = grid.cellH - (useQr ? qrSize + 5.8 : 7);
       const baseFont = Math.max(2.55, Math.min(5.0, grid.cellW * 0.115, grid.cellH * 0.15));
       const maxChars = Math.max(6, Math.floor((grid.cellW - 5) / Math.max(1, baseFont * 0.48)));
       const codeLines = a4LabelWrapText(label.code || '', maxChars);
       const metaText = copyText || '';
       const lineCount = 1 + codeLines.length + (metaText ? 1 : 0);
-      const fittedFont = Math.max(2.25, Math.min(baseFont, (grid.cellH - 7) / Math.max(1, lineCount * 1.12)));
+      const fittedFont = Math.max(2.25, Math.min(baseFont, contentHeight / Math.max(1, lineCount * 1.12)));
       const dimFont = Math.min(5.4, fittedFont * 1.12);
       const metaFont = Math.max(2.05, fittedFont * 0.74);
-      return '<article class="a4-label-cell" style="--f:'+fittedFont.toFixed(2)+'mm;--dim:'+dimFont.toFixed(2)+'mm;--meta:'+metaFont.toFixed(2)+'mm">'+
-        '<div class="a4-label-index">'+escapeHtml(String(label.partNo || (index + 1)))+'</div>'+
+      return '<article class="a4-label-cell'+(useQr ? ' has-qr' : '')+'" style="--f:'+fittedFont.toFixed(2)+'mm;--dim:'+dimFont.toFixed(2)+'mm;--meta:'+metaFont.toFixed(2)+'mm;--qr:'+qrSize.toFixed(2)+'mm">'+
+        '<div class="a4-label-corner"><span class="a4-label-index">'+escapeHtml(String(label.partNo || (index + 1)))+'</span>'+(useQr ? qrSvgTag(label.qrPayload || compactQrPayload(label), 'a4-label-qr') : '')+'</div>'+
         '<div class="a4-label-dim">'+escapeHtml(label.size || '')+'</div>'+
         '<div class="a4-label-code">'+codeLines.map(line=>'<span>'+escapeHtml(line)+'</span>').join('')+'</div>'+
         (metaText ? '<div class="a4-label-meta">'+escapeHtml(metaText)+'</div>' : '')+
@@ -17604,7 +17636,10 @@
         .a4-label-head small{font-size:2.15mm;font-weight:800;color:#111}
         .a4-label-grid{flex:1;display:grid;grid-template-columns:repeat(var(--cols),1fr);grid-template-rows:repeat(var(--rows),1fr);gap:var(--gap)}
         .a4-label-cell{position:relative;min-width:0;min-height:0;border:.35mm solid #111;border-radius:1.6mm;padding:2.1mm 1.8mm 1.7mm;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden}
-        .a4-label-index{position:absolute;top:1mm;left:1.1mm;font:900 2mm Arial,Helvetica,sans-serif;color:#555}
+        .a4-label-cell.has-qr{padding-top:calc(var(--qr) + 3mm)}
+        .a4-label-corner{position:absolute;top:1mm;left:1.1mm;display:flex;align-items:flex-start;gap:.8mm;max-width:calc(100% - 2.2mm);pointer-events:none}
+        .a4-label-index{font:900 2mm Arial,Helvetica,sans-serif;color:#555;line-height:1}
+        .a4-label-qr{width:var(--qr);height:var(--qr);display:block;flex:0 0 auto}
         .a4-label-dim{font-size:var(--dim);font-weight:950;line-height:1.05;margin-bottom:.8mm;white-space:nowrap}
         .a4-label-code{font-size:var(--f);font-weight:950;line-height:1.08;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.15mm;width:100%;overflow:hidden}
         .a4-label-code span{display:block;max-width:100%;overflow:visible}

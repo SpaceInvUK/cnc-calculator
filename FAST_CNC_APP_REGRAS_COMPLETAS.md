@@ -1,6 +1,6 @@
 # FAST CNC Calculator - Regras Completas do App
 
-Atualizado em: 2026-06-25  
+Atualizado em: 2026-06-28  
 Fonte principal: `Cnc Calculator UI Test.html` e `CNC Calculator 1.0.html`  
 URL publicada: https://spaceinvuk.github.io/cnc-calculator/Cnc%20Calculator%20UI%20Test.html
 
@@ -620,21 +620,115 @@ Regras:
 - Drilling como operacao e diferente do campo de preco `Drillings`, mas hinges ligam `Drillings`.
 - Pocket como toolpath e diferente das linhas de Offset/Pocketing de precificacao, mas faz parte da mesma familia de machining.
 
-## Labels e Checklist
+## Print / Save PDF e Labels
 
-- Labels precisam ser vetoriais/SVG/HTML de alta qualidade.
-- Labels nao devem ser raster blur.
-- Labels CNC e Labels Spray Finish sao separados.
-- `Print Labels Map` imprime uma pagina A4 landscape por sheet, mantendo o desenho/nesting da sheet como mapa de referencia.
-- `Print Labels Map` deve mostrar em cada peca o mesmo numero global usado nas labels CNC/A4, para a peca 1 bater com a peca 1, a peca 31 bater com a peca 31, e assim por diante.
-- `Print A4 Labels` imprime uma pagina A4 landscape por sheet, com blocos de labels legiveis em grid, sem usar nesting real/proporcional.
-- `Print A4 Labels` segue a ordem das pecas da sheet e usa o mesmo numero global da peca usado no Labels Map.
-- Em `Print A4 Labels`, cada label/bloco deve ocupar no maximo 1/4 da pagina; mesmo uma sheet com uma unica peca nao pode virar uma label de pagina inteira.
-- Em `Print A4 Labels`, o header `Sheet X of Y` fica pequeno e as informacoes principais sao dimensao, texto da peca, numero global e quantidade/copia quando aplicavel.
+Esta secao descreve as regras oficiais de impressao do app. `Print Panels Only` nao faz parte desta especificacao.
+
+### Regras gerais de impressao
+
+- Todas as saidas de print devem ser geradas em HTML/SVG vetorial, sem raster blur.
+- O app deve calcular antes de imprimir (`calculateAll`) para garantir que nesting, sheets, labels, numeros globais, quantidades e QR payload estejam atualizados.
+- As janelas de print sao abertas em uma nova janela/aba e chamam `window.print()`.
+- `Save as PDF` acontece pelo dialogo nativo do navegador/sistema, usando `Print / Save PDF`.
+- A barra de ferramentas da janela de print aparece na tela, mas desaparece em `@media print`.
+- O layout impresso deve usar `print-color-adjust: exact` para manter linhas, QR codes e textos nitidos.
+- Texto nunca deve sair da area util da label/peca.
+- Quando nao houver espaco, a ordem de prioridade e: quebrar texto em mais linhas, reduzir fonte, remover QR se necessario.
+- O numero global da peca precisa ser o mesmo em todos os modos: CNC Labels, Labels Map, A4 Labels e DXF.
+- O QR code precisa carregar o relacionamento da peca para o checklist app marcar cada peca correta.
+
+### Print / Save PDF
+
+- Botao/menu: `Print / Save PDF`.
+- Objetivo: imprimir ou salvar em PDF a quote/calculadora principal.
+- Usa o print normal da pagina atual.
+- A quote deve mostrar header de impressao com logo/dados da FAST CNC.
+- O modo `Hide Values` precisa esconder valores comerciais quando estiver ativo.
+- Drawings/nesting devem permanecer disponiveis depois do `Grand Total`.
+- O PDF salvo pelo navegador deve ser a mesma saida visual do print.
+- A acao nao deve alterar dados do job, nesting, labels ou DXF.
+
+### Print CNC Labels
+
+- Botao/menu: `Print CNC Labels`.
+- Objetivo: imprimir labels pequenas para aplicacao nas pecas cortadas.
+- Usa o layout pequeno original das CNC labels, mas com o mesmo conteudo usado pelas A4 Labels.
+- Cada label deve conter:
+  - nome/texto da peca;
+  - tamanho da peca;
+  - numero global da peca;
+  - numero da sheet/chapa;
+  - cliente/data ou quote/date code no topo;
+  - informacao FSC quando existir;
+  - QR code quando couber sem prejudicar legibilidade.
+- O nome do cliente e a data/quote code ficam no topo; nao usar `FAST CNC` como default se houver cliente real.
+- A informacao FSC fica embaixo quando existir.
+- O QR code e opcional: se ele roubar espaco e fizer o texto ficar pequeno, cortado ou sobreposto, o app remove o QR automaticamente.
+- O texto principal deve ser completo, legivel e dentro da label.
+- O tamanho da peca deve ficar visualmente separado do texto da peca.
+- O numero global deve ser discreto, mas legivel.
+- A fonte deve adaptar automaticamente conforme comprimento do texto e tamanho da label.
+- Textos longos podem quebrar em 2, 3 ou mais linhas.
+- O QR payload deve usar a mesma peca/uid/part relationship do checklist.
+
+### Print Labels Map
+
+- Botao/menu: `Print Labels Map`.
+- Objetivo: imprimir um mapa A4 landscape por sheet, mantendo o nesting real como referencia de onde cada peca esta na chapa.
+- Deve imprimir todas as sheets calculadas, nao apenas a primeira.
+- Cada pagina representa uma sheet.
+- Cada peca no mapa deve mostrar o numero global da peca no canto superior esquerdo.
+- O numero global precisa bater exatamente com CNC Labels e A4 Labels.
+- O QR code deve ficar perto do numero da peca, preferencialmente logo apos o numero.
+- O QR code nao pode ficar colado na borda da peca nem encostar/queimar a linha do contorno.
+- Se nao houver espaco seguro perto do numero, o QR pode ir logo abaixo do numero; se ainda nao couber, nao deve ser desenhado.
+- O texto da label dentro da peca deve decidir orientacao por peca:
+  - se a peca for mais larga que alta, texto horizontal;
+  - se a peca for mais alta que larga, texto vertical/rotacionado;
+  - a orientacao deve seguir o lado maior da peca renderizada no nesting.
+- A regra de orientacao vale por peca, nao por sheet.
+- O texto deve ficar dentro do retangulo/shape da peca.
+- O texto deve usar tamanho, nome/texto da peca e complemento de copia quando houver (`1 of 2`, `2 of 2`).
+- O texto pode quebrar linhas e reduzir fonte para caber.
+- A area branca interna da peca existe para melhorar leitura, mas nao deve esconder o contorno da peca.
+- O titulo da sheet deve ser pequeno o suficiente para nao competir com as labels.
+
+### Print A4 Labels
+
+- Botao/menu: `Print A4 Labels`.
+- Objetivo: imprimir labels legiveis em A4 landscape, usando blocos/retangulos uniformes em vez de nesting proporcional real.
+- Deve imprimir todas as sheets calculadas.
+- Cada pagina A4 representa uma sheet.
+- A ordem das labels deve seguir, o maximo possivel, a ordem das pecas dentro da sheet/nesting.
+- Nao faz nesting real nesta visualizacao; o foco e legibilidade.
+- Cada bloco representa uma peca da sheet.
+- O tamanho de cada bloco/label deve ser consistente dentro da pagina.
+- Cada bloco deve ocupar no maximo 1/4 da pagina; uma sheet com uma unica peca nao pode virar uma label de pagina inteira.
+- O header `Sheet X of Y` deve ficar pequeno.
+- Cada A4 label deve conter:
+  - numero global da peca;
+  - QR code quando couber;
+  - tamanho da peca;
+  - texto/nome da peca;
+  - quantidade/copia quando houver (`1 of 2`, `2 of 2`).
+- O QR code deve ficar perto do numero global, no canto superior esquerdo do bloco.
+- O QR code so aparece quando a celula tiver tamanho minimo para leitura.
+- Se o QR code reduzir demais a area do texto, a label deve priorizar texto legivel.
+
+### Labels Spray Finish
+
+- Labels Spray Finish sao separadas das CNC labels.
+- Mostram setas/lados marcados para spray.
+- Usam o QR payload da peca quando disponivel.
+- So devem imprimir quando houver Spray Finish ligado e lados marcados.
+
+### Checklist / QR
+
 - Checklist usa QR/job payload.
-- QR code deve carregar com part relationship para o checklist app marcar pecas completas.
-- Checklist QR depende de calculo/checklist file.
-- Label Spray mostra setas dos lados marcados para Spray Finish.
+- O master QR depende de calculo/checklist file.
+- O master QR deve carregar todas as pecas e grupos necessarios para conferir o job.
+- Labels individuais usam payload compacto por peca.
+- Cada payload precisa incluir dados suficientes para identificar uid, part number, tamanho, role, grupo, sheet e spray sides quando aplicavel.
 
 ## Smart Takeoff
 
