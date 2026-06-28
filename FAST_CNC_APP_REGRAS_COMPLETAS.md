@@ -22,6 +22,7 @@ Este documento registra as regras atuais do app FAST CNC Calculator, incluindo n
 - DXF Templates.
 - Toolpaths / NC.
 - Checklist / QR.
+- Send to Checklist.
 - Labels CNC.
 - Labels Spray Finish.
 - Smart Takeoff.
@@ -728,13 +729,46 @@ Esta secao descreve as regras oficiais de impressao do app. `Print Panels Only` 
 - Usam o QR payload da peca quando disponivel.
 - So devem imprimir quando houver Spray Finish ligado e lados marcados.
 
-### Checklist / QR
+### Checklist / Send to Checklist / QR
 
-- Checklist usa QR/job payload.
+- Checklist usa `fastcnc-checklist` job payload.
+- O app principal deve ter uma acao clara chamada `Send to Checklist`.
+- `Send to Checklist` deve calcular primeiro, gerar o mesmo payload completo usado pelo checklist JSON, e abrir/carregar o checklist app com esse job.
+- O fluxo deve evitar retrabalho manual: o usuario nao deve precisar baixar o arquivo e importar manualmente quando o app conseguir mandar o job diretamente.
+- O fallback obrigatorio continua sendo salvar/importar arquivo `.fastcnc-checklist.json`.
+- `Checklist QR` continua sendo o master QR do job quando o payload couber em um QR.
+- Se o job for grande demais para master QR, o app deve orientar usar `Send to Checklist` ou salvar o checklist file.
+- `Create Checklist` / TXT e uma saida auxiliar humana, nao deve substituir o payload JSON completo.
 - O master QR depende de calculo/checklist file.
 - O master QR deve carregar todas as pecas e grupos necessarios para conferir o job.
 - Labels individuais usam payload compacto por peca.
 - Cada payload precisa incluir dados suficientes para identificar uid, part number, tamanho, role, grupo, sheet e spray sides quando aplicavel.
+- O checklist app deve aceitar o mesmo schema `fastcnc-checklist` produzido pela calculadora oficial.
+- O checklist app deve agrupar por `sheetShort`, mostrar progresso por sheet e progresso total.
+- Cada peca precisa manter:
+  - `uid`;
+  - `partNo`;
+  - `total`;
+  - `code`;
+  - `client`;
+  - `size`;
+  - `sizeFull`;
+  - `material`;
+  - `sheet`;
+  - `sheetShort`;
+  - `role`;
+  - `group`;
+  - `matchKey`;
+  - `panelIndex` / `panelCount` quando aplicavel;
+  - `spraySides`;
+  - `qrPayload`;
+  - `sprayQrPayload` quando aplicavel.
+- O scan de uma label deve marcar exatamente a peca correspondente pelo `uid`/payload, nao apenas por texto visual.
+- O checklist app deve persistir progresso localmente por job/quote, para nao perder scans se a pagina recarregar.
+- O checklist app deve permitir reset geral, reset por sheet e mostrar pecas faltantes.
+- A visualizacao do checklist deve ser compativel com labels impressas: part number global, sheetShort e tamanho precisam bater com CNC Labels, Labels Map e A4 Labels.
+- Quando houver nesting coordinates no payload, o checklist app deve mostrar preview da sheet e pintar a peca escaneada.
+- Quando nao houver coordinates, o checklist app deve continuar funcionando em lista agrupada por sheet.
 
 ## Smart Takeoff
 
