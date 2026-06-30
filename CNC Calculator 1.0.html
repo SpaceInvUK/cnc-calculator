@@ -862,7 +862,7 @@
             <button class="command-primary" id="toolbarCalculateBtn" type="button">Calculate</button>
             <div class="top-tabs" aria-label="Calculator sections">
               <button class="top-tab active" id="calculatorTabBtn" type="button">Doors</button>
-              <button class="top-tab" id="panelTabBtn" type="button">Panneling</button>
+              <button class="top-tab" id="panelTabBtn" type="button">Paneling</button>
               <button class="top-tab" id="templatesTabBtn" type="button">DXF Templates</button>
               <button class="top-tab" id="toolpathsTabBtn" type="button">Toolpaths</button>
             </div>
@@ -1039,7 +1039,7 @@
               </div>
               <div class="manual-card">
                 <svg viewBox="0 0 150 110" aria-label="Panel wall diagram"><rect x="9" y="16" width="132" height="78" fill="#f0fdf4" stroke="#111"/><path d="M52 16v78M96 16v78M9 45h132M9 70h132" stroke="#16a34a"/><rect x="65" y="45" width="20" height="49" fill="#fee2e2" stroke="#b91c1c"/></svg>
-                <div><h3>Panneling</h3><p>Wall Setup creates balanced wall sections from a wall width and height. Panel Setup keeps the older single-panel workflow for individual panel pieces.</p></div>
+                <div><h3>Paneling</h3><p>Wall Setup creates balanced wall sections from a wall width and height. Panel Setup keeps the older single-panel workflow for individual panel pieces.</p></div>
               </div>
               <div class="manual-card">
                 <svg viewBox="0 0 150 110" aria-label="Offcut diagram"><rect x="10" y="15" width="125" height="80" fill="#fff" stroke="#111"/><rect x="16" y="21" width="46" height="42" fill="#e5e7eb" stroke="#111"/><path d="M92 40c8-16 34-9 22 14-8 14-22 21-22 21S78 68 70 54C58 31 84 24 92 40z" fill="none" stroke="#f97316" stroke-width="3"/></svg>
@@ -16530,7 +16530,7 @@
         if(await calculateAll() === false){ activeCalculatorMode = previousMode; return; }
         activeCalculatorMode = previousMode;
         const panelBlocks = blocks.filter(block=>isPanelBlock(block));
-        if(!panelBlocks.length){showMessage('No Panneling rooms to print.','error'); return;}
+        if(!panelBlocks.length){showMessage('No Paneling rooms to print.','error'); return;}
         const sections = panelBlocks.map(block=>{
           const preview = renderPanelWallPreview(block);
           const wrap = document.createElement('div');

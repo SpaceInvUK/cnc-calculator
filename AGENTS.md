@@ -15,7 +15,7 @@
 ## Hard Rules
 
 - Do not deploy to Netlify unless the user explicitly asks for that exact deployment.
-- Keep the spelling `Panneling`.
+- Keep the spelling `Paneling`.
 - Preserve 7mm sheet margin and 7mm spacing between nested front parts.
 - Do not stage or rewrite unrelated local files. In this workspace there may be untracked tools, gadgets, vendor files, and HTML copies.
 - Prefer small, focused edits and run an inline script syntax check after JavaScript changes.

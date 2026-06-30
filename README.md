@@ -1,6 +1,6 @@
 # CNC Calculator
 
-Single-file FAST CNC calculator for Doors and Panneling.
+Single-file FAST CNC calculator for Doors and Paneling.
 
 ## Current Codex Cloud Version
 
@@ -55,8 +55,8 @@ http://127.0.0.1:8765/Cnc%20Calculator%20UI%20Test.html
 - `prototypes/order-entry/beta.html` - related Order Entry beta prototype.
 - `order-entry-beta.html` - root compatibility copy for the original Order Entry beta GitHub Pages URL.
 - `CNC Calculator Handoff - regras e pendencias.txt` - full original handoff with all broad app rules and pending items.
-- `docs/PANNELING_IMPLEMENTATION_2026-05-19.md` - what was changed in this pass, current Panneling rules, QA notes, and GitHub instructions.
-- `docs/PANNELING_RULES_2026-05-20.md` - current confirmed Panneling rules after the latest annotation review.
+- `docs/PANELING_IMPLEMENTATION_2026-05-19.md` - what was changed in this pass, current Paneling rules, QA notes, and GitHub instructions.
+- `docs/PANELING_RULES_2026-05-20.md` - current confirmed Paneling rules after the latest annotation review.
 
 ## Backup
 
@@ -74,14 +74,14 @@ C:\Users\ednei\Documents\CNC App Backups\FAST CNC Calculator 1.0 - backup note -
 
 ## Hard Rules
 
-- Keep the tab spelling as `Panneling`.
+- Keep the tab spelling as `Paneling`.
 - Treat `Cnc Calculator UI Test.html` as the official 1.0 entry point unless the user explicitly switches versions.
 - Keep `CNC Calculator 1.0.html` synchronized when the user asks for the current 1.0 file to be updated.
 - Do not deploy to Netlify unless explicitly requested.
 - Keep this app as a single-file HTML app unless a later task explicitly asks for a build system.
 - Preserve 7mm sheet margin and 7mm spacing between nested parts.
 
-## Latest Panneling Work
+## Latest Paneling Work
 
 Implemented in `Cnc Calculator UI Test.html`:
 
@@ -104,7 +104,7 @@ Implemented in `Cnc Calculator UI Test.html`:
 - Custom Room names prefix wall/panel labels, for example `Kitchen Wall 1 - P2`.
 - UI density was reduced with smaller, more professional controls.
 - Rooms can now carry up to 50 walls each.
-- Panneling shakers are now controlled per wall and per panel, with auto sizing around 350mm.
+- Paneling shakers are now controlled per wall and per panel, with auto sizing around 350mm.
 - If a requested shaker count cannot physically fit inside the max panel width, the app raises it to the smallest count that fits.
 - Per-panel shaker overrides now update wall preview, nesting/sheet preview, and generated cavity geometry for that selected physical panel.
 - Horizontal/vertical panel heights are editable without changing frame width.
@@ -113,7 +113,7 @@ Implemented in `Cnc Calculator UI Test.html`:
 - Empty spaces remove panel coverage from that wall span.
 - Vertical wall orientation fills the wall with vertical panels using the 1206mm max-width rule.
 - Skirting default is 225mm; the dashed guide is wall-preview only, and shaker openings start at skirting plus frame.
-- Panneling sheet counts and sheet captions are per Room instead of grouping matching rooms together.
+- Paneling sheet counts and sheet captions are per Room instead of grouping matching rooms together.
 
 ## Validation Done
 
@@ -131,7 +131,7 @@ Implemented in `Cnc Calculator UI Test.html`:
 
 Known unrelated issue:
 
-- QR generation can log `QR library is not loaded`. That was not part of this Panneling pass.
+- QR generation can log `QR library is not loaded`. That was not part of this Paneling pass.
 
 ## Publish To GitHub
 

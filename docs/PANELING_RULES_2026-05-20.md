@@ -1,11 +1,11 @@
-# Panneling Rules - 2026-05-20
+# Paneling Rules - 2026-05-20
 
-This document records the current confirmed Panneling rules for the active app:
+This document records the current confirmed Paneling rules for the active app:
 
 - Active file: `Cnc Calculator UI Test.html`.
 - Do not touch `Cnc Calculator 1.0.html` unless explicitly requested.
 - Do not deploy to Netlify unless explicitly requested in that session.
-- Panneling spelling stays as-is.
+- Paneling spelling stays as-is.
 
 ## Rooms And Walls
 
@@ -23,7 +23,7 @@ This document records the current confirmed Panneling rules for the active app:
 - Vertical cut panels use a maximum width of 1206mm.
 - Vertical cut panels keep the standard height of 3000mm unless edited.
 - Wall height can be 3200mm while vertical panels remain 3000mm.
-- Horizontal panel height and vertical panel height are editable from Panneling controls and per wall.
+- Horizontal panel height and vertical panel height are editable from Paneling controls and per wall.
 - Per-wall horizontal panel height must drive the generated wall panels immediately, even if the source part still has an older saved height.
 - The frame size still controls rail/stile/frame width; panel height controls do not change frame width.
 
@@ -70,7 +70,7 @@ This document records the current confirmed Panneling rules for the active app:
 - Legacy quote files that store doors/windows in old `wallDoor*` / `wallWindow*` fields must be converted into editable `wallOpenings` on load so those openings can be deleted.
 - Clicking an opening in the wall preview gives it keyboard focus so Delete/Backspace removes it even when the previous focus was an input.
 - Opening labels in the wall preview show the opening width and height inside the opening with lighter text.
-- Window sill height is a Panneling setting. Default is 22mm. Window-side panel joints use this setting as the rule basis for the lower sill/joint area.
+- Window sill height is a Paneling setting. Default is 22mm. Window-side panel joints use this setting as the rule basis for the lower sill/joint area.
 
 ## Skirting
 
@@ -85,7 +85,7 @@ This document records the current confirmed Panneling rules for the active app:
 - Wall preview, nesting/sheet preview, labels, and DXF names must match.
 - Names use `Wall N - P1`, `Wall N - P2V`, etc.
 - If a Room has a custom name, labels use that prefix, for example `Kitchen Wall 1 - P1`.
-- Sheet counts and sheet captions are per Room in Panneling mode.
+- Sheet counts and sheet captions are per Room in Paneling mode.
 - Do not show `lower combined` labels.
 - If horizontal pieces merge physically, keep normal panel names such as `P3`, `P4`.
 - Numeric labels preserve decimals where the user entered decimals; do not round 385.6mm to 386mm.
@@ -123,7 +123,7 @@ This document records the current confirmed Panneling rules for the active app:
 
 ## Latest QA Fixes
 
-- Panneling Material & Pricing is full width in panel mode so Wall Setup has room to breathe.
+- Paneling Material & Pricing is full width in panel mode so Wall Setup has room to breathe.
 - Wall Setup rows are compact and put Door, Window, and Object actions beneath the wall size/orientation controls.
 - Full-wall vertical orientation must not leave empty gaps inside generated vertical sections.
 - Irregular Shape is stored per selected physical panel instance, including residual/secondary vertical pieces.

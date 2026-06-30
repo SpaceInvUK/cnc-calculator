@@ -1,9 +1,9 @@
-﻿CNC CALCULATOR HANDOFF - REGRAS, ESTADO ATUAL E PENDENCIAS
+CNC CALCULATOR HANDOFF - REGRAS, ESTADO ATUAL E PENDENCIAS
 Data: 18 May 2026
 Atualizado: 20 May 2026
 Arquivo principal em uso: C:\Users\ednei\Documents\CNC App\Cnc Calculator UI Test.html
 
-ATUALIZACAO PANNELING - 24 May 2026
+ATUALIZACAO PANELING - 24 May 2026
 - Nao fazer deploy no Netlify nesta rodada.
 - Sheets/nesting por Room ficam ocultos por default; botao Nesting mostra/oculta as sheets depois das previews das walls.
 - Em Window, o step lateral eh frame-only: depois do Window Sill Height, meia-frame entra para dentro da janela, sem deslocar nem redimensionar os shakers/cavidades do painel.
@@ -30,7 +30,7 @@ ATUALIZACAO PANNELING - 24 May 2026
 - Cavidades/shakers e textos no SVG da wall nao bloqueiam mais clique no panel fisico.
 - Selecionar panel e trocar orientacao por seta mantem o panel selecionado depois que a wall regenera os pedacos vertical/residual.
 
-ATUALIZACAO PANNELING - 23 May 2026
+ATUALIZACAO PANELING - 23 May 2026
 - Nao fazer deploy no Netlify nesta rodada.
 - Empty passa a ser chamado de Object na interface; o tipo interno pode continuar como empty para compatibilidade de arquivos.
 - Object padrao continua 2000mm x 2000mm e remove cobertura de painel no trecho da wall.
@@ -40,7 +40,7 @@ ATUALIZACAO PANNELING - 23 May 2026
 - Inputs numericos precisam aceitar decimais digitados, mas as setas podem continuar andando de 1mm em 1mm.
 - O cursor/prompt do input nao pode pular para o lado esquerdo enquanto o usuario digita.
 - Labels de milimetros nao podem remover zeros de inteiros: 3500mm fica 3500mm, nao 35mm.
-- Window Sill padrao 22mm foi adicionado como configuracao de Panneling.
+- Window Sill padrao 22mm foi adicionado como configuracao de Paneling.
 - Part Dimensions deve ter ajuda curta; notas de 7mm/rotacao ficam perto das sheets.
 - Header da panoramic view usa nome da room e quantidade de walls, sem "panels shown in green".
 - Cores das rooms devem ser sobrias: verdes, castanhos, cinzas quentes e musgo; sem rosa, roxo, azul bebe ou amarelo.
@@ -49,9 +49,9 @@ ATUALIZACAO PANNELING - 23 May 2026
 - Follow-up: X From mostra o toggle L/R ao lado do label e o campo de distancia embaixo.
 - Follow-up: Object cap panel e lower panel de Window ficam horizontais e nao herdam override vertical de outro panel.
 
-ATUALIZACAO PANNELING - 20 May 2026
+ATUALIZACAO PANELING - 20 May 2026
 - Nao fazer deploy no Netlify nesta rodada.
-- Regras atuais tambem foram registradas em docs/PANNELING_RULES_2026-05-20.md.
+- Regras atuais tambem foram registradas em docs/PANELING_RULES_2026-05-20.md.
 - Cada Room pode ter ate 50 walls.
 - Vertical panel continua com largura maxima 1206mm.
 - Vertical panel continua com altura padrao 3000mm mesmo quando a wall tem 3200mm.
@@ -78,9 +78,9 @@ ATUALIZACAO PANNELING - 20 May 2026
 - Guia de skirting nao aparece no nesting/sheet nem no DXF.
 - Full-wall vertical orientation deve preencher a parede com panels verticais sem deixar vazios dentro das secoes geradas.
 - Irregular Shape deve ser salvo por panel fisico selecionado, incluindo residual/secondary vertical pieces.
-- Em Panneling, Material & Pricing ocupa a largura toda e Wall Setup deve ficar compacto.
+- Em Paneling, Material & Pricing ocupa a largura toda e Wall Setup deve ficar compacto.
 - Se a Room tiver nome, labels usam prefixo da Room, exemplo Kitchen Wall 1 - P1.
-- Sheets no Panneling devem ser contadas por Room e captions das sheets mostram a Room.
+- Sheets no Paneling devem ser contadas por Room e captions das sheets mostram a Room.
 
 IMPORTANTE
 - Este eh o arquivo de teste ativo.
@@ -88,10 +88,10 @@ IMPORTANTE
 - Nao fazer deploy no Netlify ate o usuario pedir explicitamente.
 - O Browser do Codex pode bloquear QA visual direto em file://. Se acontecer, validar com Node/JS e testar visualmente abrindo/atualizando o HTML manualmente no browser.
 
-ATUALIZACAO PANNELING - 19 May 2026
+ATUALIZACAO PANELING - 19 May 2026
 - O projeto agora esta preparado como repositorio Git local.
 - README.md explica como abrir localmente e como publicar no GitHub/GitHub Pages.
-- docs/PANNELING_IMPLEMENTATION_2026-05-19.md registra o que foi feito e os testes.
+- docs/PANELING_IMPLEMENTATION_2026-05-19.md registra o que foi feito e os testes.
 - Wall Setup ganhou Panel Orientation por wall.
 - Default de wall agora eh 5200mm de largura por 3200mm de altura.
 - Quando uma wall esta em Vertical, todos os panels daquela wall viram verticais.
@@ -123,8 +123,8 @@ ATUALIZACAO PANNELING - 19 May 2026
 - Erro conhecido fora deste passe: QR library is not loaded.
 
 O QUE ESSE APP EH
-Eh uma calculadora/gerador para trabalhos CNC da FastCNC. Ela calcula materiais, CNC service, pocketing, drilling, spray, labels, DXF, NC/toolpaths, checklist por QR Code, doors e panneling/walls.
-O app esta ficando grande, entao a direcao atual eh organizar tudo em abas/secoes: Doors, Panneling, DXF Templates, Toolpath/NC, Checklist/Labels.
+Eh uma calculadora/gerador para trabalhos CNC da FastCNC. Ela calcula materiais, CNC service, pocketing, drilling, spray, labels, DXF, NC/toolpaths, checklist por QR Code, doors e paneling/walls.
+O app esta ficando grande, entao a direcao atual eh organizar tudo em abas/secoes: Doors, Paneling, DXF Templates, Toolpath/NC, Checklist/Labels.
 
 REGRAS GERAIS
 - Sempre respeitar 7mm de margem externa da sheet e 7mm entre pecas.
@@ -304,8 +304,8 @@ SPRAY
   - Label Spray mostra setas dos lados marcados.
   - Nao cria layer DXF extra para isso.
 
-PANNELING / WALLS
-A aba deve se chamar Panneling.
+PANELING / WALLS
+A aba deve se chamar Paneling.
 
 Conceitos:
 - Wall = referencia/parede, nao eh cortada.
@@ -380,7 +380,7 @@ COISAS AJUSTADAS MAIS RECENTEMENTE
 
 AINDA NAO ESTA 100% / PRECISA CONSERTAR
 - QA visual nao foi confirmado pelo Browser porque o Codex bloqueou reload direto em file://.
-- Panneling vertical ainda precisa teste visual forte nos exemplos do usuario.
+- Paneling vertical ainda precisa teste visual forte nos exemplos do usuario.
 - Confirmar se P2/P3 realmente batem com wall preview e nesting depois do refresh.
 - Confirmar se horizontal lower combined vira uma peca so onde deve.
 - Confirmar DXF export para vertical panel usa exatamente o mesmo shape da wall.
@@ -391,7 +391,7 @@ AINDA NAO ESTA 100% / PRECISA CONSERTAR
 
 PROXIMOS PASSOS SUGERIDOS
 1. Abrir Cnc Calculator UI Test.html e fazer refresh manual.
-2. Testar Panneling com 3-4 walls, um painel vertical isolado, e comparar wall view vs nesting.
+2. Testar Paneling com 3-4 walls, um painel vertical isolado, e comparar wall view vs nesting.
 3. Testar P2/P3: shakers iguais/corretos, sem overlap, sem linhas finas falsas.
 4. Exportar DXF e abrir no VCarve/CAD para confirmar shapes.
 5. Testar Smart Takeoff com DXF 300x750 e offcut circle.

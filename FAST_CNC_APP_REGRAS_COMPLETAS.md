@@ -4,7 +4,7 @@ Atualizado em: 2026-06-28
 Fonte principal: `Cnc Calculator UI Test.html` e `CNC Calculator 1.0.html`  
 URL publicada: https://spaceinvuk.github.io/cnc-calculator/Cnc%20Calculator%20UI%20Test.html
 
-Este documento registra as regras atuais do app FAST CNC Calculator, incluindo nomes, valores, produtos, precificacao, machining, nesting, DXF, labels, checklist, Doors e Panneling.
+Este documento registra as regras atuais do app FAST CNC Calculator, incluindo nomes, valores, produtos, precificacao, machining, nesting, DXF, labels, checklist, Doors e Paneling.
 
 ## Arquivos Oficiais
 
@@ -12,13 +12,13 @@ Este documento registra as regras atuais do app FAST CNC Calculator, incluindo n
 - Espelho local da versao 1.0: `CNC Calculator 1.0.html`.
 - Esses dois arquivos devem ficar sincronizados quando a calculadora oficial 1.0 for alterada.
 - O app continua sendo um HTML unico, sem build system, a menos que seja pedido explicitamente.
-- A aba deve continuar escrita como `Panneling`.
+- A aba deve continuar escrita como `Paneling`.
 - Nao fazer deploy no Netlify a menos que seja pedido explicitamente.
 
 ## Modulos do App
 
 - Doors.
-- Panneling.
+- Paneling.
 - DXF Templates.
 - Toolpaths / NC.
 - Checklist / QR.
@@ -438,9 +438,9 @@ Regras:
 - Spacing minimo: `1mm`.
 - No DXF, reeded lines devem fazer zig-zag: uma linha de cima para baixo, proxima de baixo para cima, e assim por diante.
 
-## Panneling - Regras Gerais
+## Paneling - Regras Gerais
 
-- O nome da aba fica `Panneling`.
+- O nome da aba fica `Paneling`.
 - Room pode conter ate `50` walls.
 - Cada Room tem walls, panel setup, previews, nesting e sheets proprios.
 - Default wall size: `5200mm x 3200mm`.
@@ -457,7 +457,7 @@ Regras:
 - Room names prefixam labels: exemplo `Kitchen Wall 1 - P2`.
 - Wall preview, sheet preview, labels e DXF devem usar a mesma geometria fisica e o mesmo nome.
 
-## Panneling - Rooms e Walls
+## Paneling - Rooms e Walls
 
 - Room Setup tem Add Room e Remove Room.
 - Remover a ultima Room deve criar uma Room vazia em vez de quebrar o app.
@@ -472,7 +472,7 @@ Regras:
 - Object pode ter nome editavel.
 - Object e tratado como espaco sem panel.
 
-## Panneling - Shakers
+## Paneling - Shakers
 
 - Auto shaker por wall mira aproximadamente `350mm`.
 - Global shaker quantity foi removido do Panel Setup.
@@ -488,7 +488,7 @@ Regras:
 - Vertical panel em Auto volta para `2` shaker rows.
 - Row count vertical so muda por override manual daquele panel.
 
-## Panneling - Vertical Panels
+## Paneling - Vertical Panels
 
 - Vertical individual pode usar Irregular Shape ON por default.
 - Vertical por wall usa regular shape por default.
@@ -502,7 +502,7 @@ Regras:
 - Quando vertical encontra horizontal/residual, aplica step/joint.
 - Se lado do vertical termina a wall, volta para frame normal cheio.
 
-## Panneling - Side Rules
+## Paneling - Side Rules
 
 Side rules disponiveis:
 
@@ -523,7 +523,7 @@ Regras:
 - Side rules devem poder ser setadas por lado de panel fisico, nao apenas por wall.
 - Overrides de side rules devem fluir para wall preview, nesting/sheet preview e geometria/DXF.
 
-## Panneling - Skirting
+## Paneling - Skirting
 
 - Skirting default: `225mm`.
 - Skirting pode comecar como default da Room e ser override por wall.
@@ -534,7 +534,7 @@ Regras:
 - Skirting guide nao aparece no nesting/sheet.
 - Skirting guide nao aparece no DXF.
 
-## Panneling - Doors, Windows e Objects
+## Paneling - Doors, Windows e Objects
 
 - Door aparece na wall preview, mas nao vira peca no nesting.
 - Window pode criar lower panel separado.
@@ -550,7 +550,7 @@ Regras:
 - Object cap panel cobre largura do Object + half frame de cada lado quando ha espaco, limitado pela wall/openings vizinhos.
 - Object cap panels e window lower panels permanecem horizontais e nao herdam vertical override de vizinhos.
 
-## Panneling - Teclado e Selecionar Panels
+## Paneling - Teclado e Selecionar Panels
 
 - Em wall/panoramic preview, `ArrowUp` transforma panel selecionado em vertical.
 - Em wall/panoramic preview, `ArrowDown` transforma panel selecionado em horizontal.
@@ -562,7 +562,7 @@ Regras:
 - `Delete` ou `Backspace` remove opening selecionado.
 - `Delete` ou `Backspace` pode remover panel fisico selecionado sem esticar/reconstruir vizinhos.
 
-## Panneling - Previews e Sheets
+## Paneling - Previews e Sheets
 
 - Panoramic header usa nome da Room e quantidade de walls.
 - Nao deve dizer "panels shown in green".
@@ -572,8 +572,8 @@ Regras:
 - Textos de milimetros nao podem remover zeros: `3500mm` deve aparecer como `3500mm`, nao `35mm`.
 - Part Dimensions deve ter ajuda curta.
 - Notas de `7mm` e rotacao devem ficar perto das sheets.
-- Nesting/sheets no Panneling ficam ocultos por default; botao `Nesting` mostra/oculta sheets depois das wall previews.
-- Sheet counts e captions sao por Room em Panneling.
+- Nesting/sheets no Paneling ficam ocultos por default; botao `Nesting` mostra/oculta sheets depois das wall previews.
+- Sheet counts e captions sao por Room em Paneling.
 
 ## DXF
 
@@ -789,7 +789,7 @@ Esta secao descreve as regras oficiais de impressao do app. `Print Panels Only` 
 
 - A command bar fica fixa no topo.
 - Menu superior inclui File, Edit, View, Print, Checklist.
-- Linha de comandos inclui Calculate, Doors, Panneling, DXF Templates, Toolpaths.
+- Linha de comandos inclui Calculate, Doors, Paneling, DXF Templates, Toolpaths.
 - Remover/evitar botao `Round?` se nao for util.
 - UI deve ser compacta e profissional.
 - Fontes devem ser menores, claras e legiveis.
@@ -859,7 +859,7 @@ http://127.0.0.1:8765/Cnc%20Calculator%20UI%20Test.html
 
 ## Pendencias / Cuidados Conhecidos
 
-- QR library pode falhar se nao carregar, fora do escopo de Panneling.
+- QR library pode falhar se nao carregar, fora do escopo de Paneling.
 - Smart Takeoff precisa mais exemplos reais para aceitar mais variacoes.
 - DXF deve ser revisado para garantir que nao cria retangulos extras que prejudiquem corte.
 - Nesting manual precisa evitar overlaps em todos os casos.

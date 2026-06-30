@@ -40,11 +40,11 @@ git pull --ff-only
 
 - Removed the fixed/top `Round?` command button.
 - Changed sheet pricing logic so used sheets bill as full sheets only. Old saved `1/3` or `2/3` values normalize to full sheet billing.
-- Added `Remove Room` control for Panneling rooms.
+- Added `Remove Room` control for Paneling rooms.
 - Room removal now works even when there is only one room; it replaces the last room with a fresh empty room.
 - Wall removal can leave zero walls instead of silently recreating one.
 - Per-wall skirting controls were added: inherit room default, force Yes/No, and custom skirting height.
-- Selected physical panneling panels can be deleted with Delete/Backspace or the row delete button without stretching/rebuilding neighboring panels.
+- Selected physical paneling panels can be deleted with Delete/Backspace or the row delete button without stretching/rebuilding neighboring panels.
 - Individual panel orientation can be changed even when the wall or imported JSON originally made all panels vertical.
 
 ## Current User Intent For The 1.0 File
@@ -53,9 +53,9 @@ The user has moved active work from `Cnc Calculator UI Test.html` to `CNC Calcul
 
 Main requested direction:
 
-- Doors and Panneling should share cleaner pricing behavior.
+- Doors and Paneling should share cleaner pricing behavior.
 - The app should no longer expose half-sheet, third-sheet, or two-third-sheet charging as the active pricing model.
-- Panneling Room Setup must support Add Room and Remove Room.
+- Paneling Room Setup must support Add Room and Remove Room.
 - Loaded jobs, including the James JSON example, must allow removing rooms, walls, openings, and selected panels.
 - Skirting starts from a room/default value but can be overridden per wall.
 - Selected panels should be deletable without recalculating the whole wall.
@@ -64,7 +64,7 @@ Main requested direction:
 
 ## Important Existing Rules
 
-- Keep spelling `Panneling`.
+- Keep spelling `Paneling`.
 - Do not deploy to Netlify unless explicitly requested.
 - Keep the app single-file unless explicitly requested otherwise.
 - Preserve 7mm sheet margin and 7mm spacing for normal/front nesting.
