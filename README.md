@@ -51,9 +51,7 @@ http://127.0.0.1:8765/Cnc%20Calculator%20UI%20Test.html
 - `Cnc Calculator UI Test.html` - official version 1.0 app and GitHub Pages entry point.
 - `CNC Calculator 1.0.html` - identical local mirror of the official version 1.0 app.
 - `prototypes/panels-new-design/index.html` - separate Panels New Design prototype.
-- `prototypes/order-entry/index.html` - separate Order Entry prototype.
-- `prototypes/order-entry/beta.html` - related Order Entry beta prototype.
-- `order-entry-beta.html` - root compatibility copy for the original Order Entry beta GitHub Pages URL.
+- Kabacal app moved to its own repository: `SpaceInvUK/kabacal` (https://github.com/SpaceInvUK/kabacal).
 - `CNC Calculator Handoff - regras e pendencias.txt` - full original handoff with all broad app rules and pending items.
 - `docs/PANELING_IMPLEMENTATION_2026-05-19.md` - what was changed in this pass, current Paneling rules, QA notes, and GitHub instructions.
 - `docs/PANELING_RULES_2026-05-20.md` - current confirmed Paneling rules after the latest annotation review.
