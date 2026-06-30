@@ -21,34 +21,6 @@ GitHub Pages:
 https://spaceinvuk.github.io/cnc-calculator/prototypes/panels-new-design/
 ```
 
-## Order Entry
+## Kabacal
 
-Local file:
-
-```text
-C:\Users\ednei\Documents\CNC App\prototypes\order-entry\index.html
-```
-
-GitHub Pages:
-
-```text
-https://spaceinvuk.github.io/cnc-calculator/prototypes/order-entry/
-```
-
-Related beta file:
-
-```text
-C:\Users\ednei\Documents\CNC App\prototypes\order-entry\beta.html
-```
-
-Original/root beta URL kept for compatibility:
-
-```text
-https://spaceinvuk.github.io/cnc-calculator/order-entry-beta.html
-```
-
-Beta GitHub Pages:
-
-```text
-https://spaceinvuk.github.io/cnc-calculator/prototypes/order-entry/beta.html
-```
+The Kabacal app moved to its own repository: `SpaceInvUK/kabacal` (https://github.com/SpaceInvUK/kabacal).
