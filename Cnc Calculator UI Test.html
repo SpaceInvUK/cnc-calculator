@@ -3999,7 +3999,179 @@
       const size = width > 0 && height > 0 ? width + ' x ' + height + 'mm' : 'wall size open';
       return walls + ' wall' + (walls === 1 ? '' : 's') + ' • ' + size;
     }
+    function normalizeTakeoffDimensionLabel(value){
+      const label = String(value || '').toLowerCase().replace(/[^a-z]/g, '');
+      if(label === 'w' || label === 'width') return 'width';
+      if(label === 'h' || label === 'height') return 'height';
+      if(label === 't' || label === 'thick' || label === 'thickness') return 'thickness';
+      return '';
+    }
+    function takeoffDimensionTokenCount(value){
+      const matches = String(value || '').match(/\d+(?:[.,]\d+)?/g) || [];
+      return matches.length;
+    }
+    function cleanTakeoffRemainder(value){
+      return takeoffCellText(String(value || '').replace(/^[\s@*xX\-:;,]+/g, '').replace(/[\s@*xX\-:;,]+$/g, ' '));
+    }
+    function takeoffDimensionTokens(value){
+      const text = String(value || '').replace(/[×]/g, 'x').replace(/\bby\b/gi, 'x').replace(/,/g, '.');
+      const tokens = [];
+      const regex = /((?:w(?:idth)?|h(?:eight)?|t(?:hick(?:ness)?)?)\s*)?(\d+(?:\.\d+)?)(\s*mm)?\s*((?:w(?:idth)?|h(?:eight)?|t(?:hick(?:ness)?)?)?)/gi;
+      let match;
+      while((match = regex.exec(text))){
+        const rawNumber = match[2];
+        const valueNumber = Number(rawNumber);
+        if(!Number.isFinite(valueNumber) || valueNumber <= 0) continue;
+        const numberOffset = match[0].indexOf(rawNumber);
+        const prefixLabel = normalizeTakeoffDimensionLabel(match[1]);
+        const suffixLabel = normalizeTakeoffDimensionLabel(match[4]);
+        tokens.push({
+          value:valueNumber,
+          label:prefixLabel || suffixLabel,
+          hasUnit:!!match[3],
+          start:match.index + Math.max(0, numberOffset),
+          end:regex.lastIndex
+        });
+      }
+      return tokens;
+    }
+    function stripLeadingTakeoffQuantity(value){
+      const raw = String(value || '').trim();
+      const labeled = raw.match(/^\s*(?:qty|quantity|copies)\s*[:#-]?\s*@?\s*(\d{1,3})\s*(?:@|\*|x|pcs?|pieces?|panels?)?\s*/i);
+      if(labeled){
+        return {quantity:Math.min(999, Math.max(1, Math.round(Number(labeled[1])))), text:raw.slice(labeled[0].length).trim(), explicit:true};
+      }
+      const explicit = raw.match(/^\s*(\d{1,3})\s*(?:@|\*|pcs?|pieces?|panels?)\s*/i);
+      if(explicit){
+        return {quantity:Math.min(999, Math.max(1, Math.round(Number(explicit[1])))), text:raw.slice(explicit[0].length).trim(), explicit:true};
+      }
+      const xPrefix = raw.match(/^\s*(\d{1,3})\s*x\s*/i);
+      if(xPrefix){
+        const qty = Number(xPrefix[1]);
+        const after = raw.slice(xPrefix[0].length).trim();
+        if(qty > 0 && qty <= 50 && takeoffDimensionTokenCount(after) >= 2){
+          return {quantity:Math.min(999, Math.max(1, Math.round(qty))), text:after, explicit:true};
+        }
+      }
+      const loose = raw.match(/^\s*(\d{1,3})\s+/);
+      if(loose){
+        const qty = Number(loose[1]);
+        const after = raw.slice(loose[0].length).trim();
+        if(qty > 0 && qty <= 50 && takeoffDimensionTokenCount(after) >= 3){
+          return {quantity:Math.min(999, Math.max(1, Math.round(qty))), text:after, explicit:true};
+        }
+      }
+      return {quantity:null, text:raw, explicit:false};
+    }
+    function stripTrailingTakeoffQuantity(value){
+      let text = String(value || '').trim();
+      const patterns = [
+        /\s+(?:qty|quantity|copies)\s*[:#-]?\s*(\d{1,3})\s*$/i,
+        /\s+x\s*(\d{1,3})\s*$/i,
+        /\s+(\d{1,3})\s*(?:pcs?|pieces?|panels?)\s*$/i
+      ];
+      for(const pattern of patterns){
+        const match = text.match(pattern);
+        if(match){
+          return {quantity:Math.min(999, Math.max(1, Math.round(Number(match[1])))), text:text.slice(0, match.index).trim()};
+        }
+      }
+      return {quantity:null, text};
+    }
+    function escapeRegExp(value){
+      return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    function takeoffMaterialAliases(){
+      const aliases = [];
+      const push = (label, material)=>{
+        const clean = takeoffCellText(label);
+        if(clean && material) aliases.push({label:clean, material});
+      };
+      materialOptions.forEach(material=>{
+        push(material, material);
+        push(material.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim(), material);
+      });
+      push('MR MDF', 'Moisture-Resistant MDF (MR MDF)');
+      push('MOISTURE RESISTANT MDF', 'Moisture-Resistant MDF (MR MDF)');
+      push('FR MDF', 'Fire-Rated MDF (FR MDF)');
+      push('FIRE RATED MDF', 'Fire-Rated MDF (FR MDF)');
+      push('HIDROFUGO PLUS', 'MDF Hidrofugo Plus');
+      push('MDF HIDROFUGO', 'MDF Hidrofugo Plus');
+      push('MDF HIDROFUGO PLUS', 'MDF Hidrofugo Plus');
+      return aliases
+        .filter((item, index, list)=>list.findIndex(other=>other.label.toUpperCase() === item.label.toUpperCase() && other.material === item.material) === index)
+        .sort((a,b)=>b.label.length - a.label.length);
+    }
+    function splitTakeoffMaterialAndText(value){
+      let text = cleanTakeoffRemainder(value);
+      if(!text) return {material:'', text:''};
+      for(const alias of takeoffMaterialAliases()){
+        const tokens = alias.label.toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+        if(!tokens.length) continue;
+        const pattern = new RegExp('^\\s*' + tokens.map(escapeRegExp).join('[^A-Za-z0-9]+') + '(?=$|[^A-Za-z0-9])', 'i');
+        const match = text.match(pattern);
+        if(match){
+          return {
+            material:alias.material,
+            text:normalizeTakeoffPartText(text.slice(match[0].length))
+          };
+        }
+      }
+      return {material:'', text:normalizeTakeoffPartText(text)};
+    }
+    function parseFlexibleTakeoffLine(line){
+      let raw = String(line || '').replace(/[×]/g, 'x').replace(/\bby\b/gi, 'x').replace(/[,;]/g, ' ').replace(/\s+/g, ' ').trim();
+      if(!raw) return null;
+      const shortcut = raw.match(/^\s*([DEPWG])(?:\b|:|-)/i);
+      let shortcutText = shortcut ? normalizePartTextShortcut(shortcut[1]) : '';
+      if(shortcut) raw = raw.slice(shortcut[0].length).trim();
+      const qtyInfo = stripLeadingTakeoffQuantity(raw);
+      raw = qtyInfo.text;
+      const tokens = takeoffDimensionTokens(raw);
+      if(tokens.length < 2) return null;
+      let widthToken = tokens.find(token=>token.label === 'width');
+      let heightToken = tokens.find(token=>token.label === 'height');
+      let thicknessToken = tokens.find(token=>token.label === 'thickness');
+      if(!widthToken || !heightToken){
+        widthToken = tokens[0];
+        heightToken = tokens[1];
+      }
+      const used = new Set([widthToken, heightToken]);
+      let thirdQty = null;
+      let thirdQtyToken = null;
+      if(!thicknessToken){
+        const afterMainEnd = Math.max(widthToken.end, heightToken.end);
+        const candidate = tokens.find(token=>!used.has(token) && token.start >= afterMainEnd);
+        if(candidate){
+          const candidateRest = cleanTakeoffRemainder(raw.slice(candidate.end));
+          if(candidate.label === 'thickness' || candidate.hasUnit || candidate.value > 10 || candidateRest){
+            thicknessToken = candidate;
+          } else {
+            thirdQty = Math.min(999, Math.max(1, Math.round(candidate.value)));
+            thirdQtyToken = candidate;
+          }
+        }
+      }
+      const lastToken = thicknessToken || thirdQtyToken || (widthToken.end >= heightToken.end ? widthToken : heightToken);
+      const trailing = stripTrailingTakeoffQuantity(raw.slice(lastToken.end));
+      const materialText = splitTakeoffMaterialAndText(trailing.text);
+      const quantity = qtyInfo.quantity || thirdQty || trailing.quantity || 1;
+      const width = Number(widthToken.value);
+      const height = Number(heightToken.value);
+      if(!(width > 0 && height > 0)) return null;
+      return {
+        quantity:Math.min(999, Math.max(1, Math.round(Number(quantity || 1)))),
+        width:roundPanelMm(width),
+        height:roundPanelMm(height),
+        thickness:thicknessToken && thicknessToken.value > 0 ? thicknessToken.value : undefined,
+        material:materialText.material || '',
+        text:materialText.text || shortcutText,
+        explicitQuantity:!!qtyInfo.explicit || !!thirdQty || !!trailing.quantity
+      };
+    }
     function parseTakeoffLine(line){
+      const flexible = parseFlexibleTakeoffLine(line);
+      if(flexible) return flexible;
       let raw = String(line || '').replace(/[×]/g, 'x').replace(/\bby\b/gi, 'x').replace(/[,;]/g, ' ').replace(/\s+/g, ' ').trim();
       if(!raw) return null;
       const shortcut = raw.match(/^\s*([DEPWG])(?:\b|:|-)/i);
@@ -4251,19 +4423,8 @@
     function parseAtQuantityTakeoffLine(line){
       const raw = takeoffCellText(String(line || '').replace(/\t/g, ' '));
       if(!raw || !raw.includes('@')) return null;
-      const match = raw.match(/^\s*(\d{1,3})\s*@\s*(\d+(?:[.,]\d+)?)\s*(?:mm)?\s*(?:x|×)\s*(\d+(?:[.,]\d+)?)(?:\s*mm)?\s*(.*?)\s*$/i);
-      if(!match) return null;
-      const qty = Math.min(999, Math.max(1, Math.round(Number(match[1]))));
-      const width = Number(String(match[2]).replace(',', '.'));
-      const height = Number(String(match[3]).replace(',', '.'));
-      const text = normalizeTakeoffPartText(match[4]);
-      if(!(width > 0 && height > 0)) return null;
-      return {
-        quantity:qty,
-        width:roundPanelMm(width),
-        height:roundPanelMm(height),
-        text
-      };
+      const item = parseFlexibleTakeoffLine(raw);
+      return item && item.width > 0 && item.height > 0 ? item : null;
     }
     function parseExcelTakeoffText(text){
       const lines = String(text || '').replace(/\r/g, '\n').split(/\n+/).map(line=>line.trim()).filter(Boolean);
@@ -4314,8 +4475,6 @@
     }
     function parseTakeoffText(text){
       const normalized = String(text || '').replace(/\r/g, '\n');
-      const atLines = normalized.split(/\n+/).map(line=>parseAtQuantityTakeoffLine(line)).filter(item=>item && item.width > 0 && item.height > 0);
-      if(atLines.length) return atLines;
       const excelParsed = parseExcelTakeoffText(normalized);
       if(excelParsed.length) return excelParsed;
       const lines = normalized.split(/\n+/).map(line=>line.trim()).filter(Boolean);
@@ -4593,11 +4752,21 @@
       recordHistory('added smart takeoff parts');
       const firstIsBlank = block.parts.length === 1 && !Number(block.parts[0].width || 0) && !Number(block.parts[0].height || 0) && !String(block.parts[0].text || '').trim();
       if(firstIsBlank) block.parts = [];
+      const parsedMaterials = [...new Set(clean.map(item=>String(item.material || '').trim()).filter(material=>materialOptions.includes(material)))];
       const parsedThicknesses = [...new Set(clean.map(item=>Number(item.thickness || 0)).filter(n=>n > 0).map(n=>Math.round(n * 100) / 100))];
+      let pricingBasisChanged = false;
+      if(parsedMaterials.length === 1 && block.material !== parsedMaterials[0]){
+        block.material = parsedMaterials[0];
+        pricingBasisChanged = true;
+      }
       if(parsedThicknesses.length === 1){
         const thicknessLabel = formatTakeoffThickness(parsedThicknesses[0]);
-        if(thicknessLabel) block.thickness = thicknessLabel;
+        if(thicknessLabel && block.thickness !== thicknessLabel){
+          block.thickness = thicknessLabel;
+          pricingBasisChanged = true;
+        }
       }
+      if(pricingBasisChanged) block.materialCost = suggestedCost(block.material, block.thickness, block.size);
       clean.forEach(item=>{
         const doorType = normalizeDoorTypeValue(item.doorType || '', '');
         if(item.frame && Number(item.frame) > 0) block.frameSize = Math.max(1, Number(item.frame || block.frameSize || 50));

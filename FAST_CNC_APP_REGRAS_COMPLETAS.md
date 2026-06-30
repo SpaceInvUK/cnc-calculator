@@ -777,6 +777,14 @@ Esta secao descreve as regras oficiais de impressao do app. `Print Panels Only` 
 - Smart Takeoff aceita linhas coladas do Excel/listas de corte com quantidade em formato `2 @ 2305 x 710 texto`.
 - O valor antes de `@` e a quantidade de pecas iguais daquele tamanho.
 - O texto depois das dimensoes deve ser preservado/resumido no campo de texto da peca; exemplo: `2 @ 2305 x 710 SA-4 SIDES- 2S/2L` cria 2 pecas `2305 x 710` com texto `SA-4 SIDES- 2S/2L`.
+- Smart Takeoff deve tentar identificar, em linhas livres, esta ordem de dados: quantidade, largura, altura, espessura, material e texto.
+- Formatos aceitos para quantidade no inicio incluem `2 @`, `2 *`, `2 x`, `2x`, `Qty 2`, `Quantity 2`, `Copies 2`, `2 pcs`, `2 pieces` e `2 panels`.
+- Formatos aceitos para quantidade no fim incluem `x2`, `qty 2` e `2pcs`.
+- Dimensoes podem usar `x`, `X`, `*`, espacos simples ou `mm`: exemplos `710mm x 2305mm x 18mm`, `710 x 2305 x 18`, `710 2305 18`.
+- Dimensoes nomeadas tambem devem ser aceitas: `W710 H2305 T18`, `Width 710 Height 2305`, `710w x 2305h x 18`.
+- Quando uma linha livre tiver uma unica espessura valida, o bloco deve mudar para essa espessura automaticamente.
+- Quando todas as linhas livres detectarem o mesmo material valido, o bloco deve mudar para esse material automaticamente.
+- Exemplos livres validos: `2 @ 710mm x 2305mm x 18mm MDF SIDES 2S/2L`, `2x710mm x 2305mm x 18mm MDF SIDES 2S/2L`, `710mm x 2305mm x 18mm MDF SIDES 2S/2L qty 2`, `100 100 18 MDF TEST PIECE 2pcs`.
 - Quando houver coluna/valor de Sub-Assembly, o texto final pode usar prefixo `SA-<valor>` para manter a referencia do conjunto.
 - As quantidades importadas precisam ser respeitadas, criando linhas/pecas suficientes para cada quantidade detectada.
 - OCR carrega imagens.
