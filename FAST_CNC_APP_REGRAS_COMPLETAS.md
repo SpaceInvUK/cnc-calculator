@@ -416,6 +416,8 @@ Regras:
 - A altura da peca acompanha a direcao do grain.
 - A sheet deve mostrar textura woodgrain quando grain estiver ligado.
 - Parts com grain devem mostrar simbolo/direcao de grain.
+- Inserts automaticos criados por Flushback, Reeded ou template `Frame + Insert` devem herdar o mesmo Grain Direction efetivo da peca/frame original.
+- Se o frame/part original estiver com Grain Direction ON, cada insert correspondente tambem deve ficar com Grain Direction ON.
 
 ## Beading / Biding
 

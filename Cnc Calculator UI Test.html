@@ -13183,6 +13183,7 @@
           const blockGlassMode = block.bidingEnabled === 'Yes';
           const needsBeadingForPart = blockGlassMode || partIsGlass;
           const needsInsertForPart = !needsBeadingForPart;
+          const sourceGrainDirection = partGrainDirectionValue(p, block);
 
           let panelPieces = [];
           const insertKind = secondaryInsertKind(doorType);
@@ -13210,6 +13211,7 @@
                 hingeOffset:100,
                 text:panelTextLabel(p.text, k, cavities.length),
                 quantity,
+                grainDirection:sourceGrainDirection,
                 insertKind,
                 parentBlockId:block.id,
                 parentPartIndex:sourcePartIndex,
