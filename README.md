@@ -55,6 +55,7 @@ http://127.0.0.1:8765/Cnc%20Calculator%20UI%20Test.html
 - `CNC Calculator Handoff - regras e pendencias.txt` - full original handoff with all broad app rules and pending items.
 - `docs/PANELING_IMPLEMENTATION_2026-05-19.md` - what was changed in this pass, current Paneling rules, QA notes, and GitHub instructions.
 - `docs/PANELING_RULES_2026-05-20.md` - current confirmed Paneling rules after the latest annotation review.
+- `docs/PANELING_INTEGRATION_REFERENCE.md` - current technical map for Material/MDF family, Door Setup, Paneling, inserts, offsets, nesting, DXF, and print integration.
 
 ## Backup
 
