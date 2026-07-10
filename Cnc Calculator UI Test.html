@@ -50,7 +50,8 @@
     .material-block.collapsed .dimensions-title,
     .material-block.collapsed .helper-line,
     .material-block.collapsed .dimension-head,
-    .material-block.collapsed .dimensions-list{display:none!important}
+    .material-block.collapsed .dimensions-list,
+    .material-block.collapsed .nestingMessage{display:none!important}
     .material-block.collapsed .dimensions-wrap{margin-top:0;padding-top:0;border-top:0}
     .material-title{font-size:14px;font-weight:900}
     .block-note{font-size:11px;color:var(--muted);margin-top:2px}
@@ -1565,6 +1566,9 @@
     let nextId = 1;
     let lastCalculation = null;
     let renderQueued = false;
+    let numericRenderTimer = null;
+    let numericRenderInput = null;
+    let pendingBlockScrollId = '';
     let allowAllBlocksCollapsed = false;
     let selectedSheetPart = null;
     let undoStack = [];
@@ -3461,7 +3465,19 @@
       const bidingText = blockUsesBiding(block) ? ' • Beading' : '';
       return [block.material, block.thickness, block.size].filter(Boolean).join(' ') + ' • ' + validParts.length + ' part' + (validParts.length===1?'':'s') + sheetText + pocketText + reededText + bidingText;
     }
-    function requestRender(){
+    function requestRender(options={}){
+      if(options.focusBlockId !== undefined && options.focusBlockId !== null) pendingBlockScrollId = String(options.focusBlockId);
+      const active = document.activeElement;
+      if(!options.immediate && options.focusBlockId === undefined && active instanceof HTMLInputElement && active.type === 'number'){
+        clearTimeout(numericRenderTimer);
+        numericRenderInput = active;
+        numericRenderTimer = setTimeout(()=>{
+          numericRenderTimer = null;
+          numericRenderInput = null;
+          requestRender({...options, immediate:true});
+        }, 350);
+        return;
+      }
       if(renderQueued) return;
       const keepScrollX = window.scrollX;
       const keepScrollY = window.scrollY;
@@ -3470,6 +3486,14 @@
         renderQueued = false;
         render();
         window.scrollTo(keepScrollX, keepScrollY);
+        const focusBlockId = pendingBlockScrollId;
+        pendingBlockScrollId = '';
+        if(focusBlockId){
+          requestAnimationFrame(()=>{
+            const target = Array.from(document.querySelectorAll('.material-block')).find(node=>String(node.dataset.blockId) === focusBlockId);
+            target?.scrollIntoView({block:'start', behavior:'smooth'});
+          });
+        }
       });
     }
     function captureFocusState(){
@@ -3479,6 +3503,7 @@
       if(!blockNode) return null;
       const fieldClass = [...active.classList].find(cls=>FOCUSABLE_FIELD_CLASSES.has(cls));
       if(!fieldClass) return null;
+      const sameFieldClass = Array.from(blockNode.querySelectorAll('.' + fieldClass));
       const partRow = active.closest('.dimension-item');
       const wallRow = active.closest('.wall-config-row');
       const openingRow = active.closest('.wall-opening-row');
@@ -3490,6 +3515,7 @@
         wallIndex:wallRow ? wallRow.dataset.wallIndex || '' : '',
         openingIndex:openingRow ? openingRow.dataset.openingIndex || '' : '',
         fieldClass,
+        fieldIndex:sameFieldClass.indexOf(active),
         scrollX:window.scrollX,
         scrollY:window.scrollY
       };
@@ -3517,7 +3543,8 @@
         target = openingSelector ? blockNode.querySelector(openingSelector) : null;
         if(!target) target = blockNode.querySelector(wallSelector + ' .' + state.fieldClass);
       } else {
-        target = blockNode.querySelector('.' + state.fieldClass);
+        const candidates = Array.from(blockNode.querySelectorAll('.' + state.fieldClass));
+        target = candidates[state.fieldIndex] || candidates[0] || null;
       }
       if(!target) return;
       target.focus({preventScroll:true});
@@ -4980,10 +5007,20 @@
       const root = scope || document;
       root.querySelectorAll('input[type="number"]').forEach(input=>{
         if(input.classList.contains('integer-only') || input.dataset.integerOnly === 'true') return;
-        if(!input.hasAttribute('step')) input.setAttribute('step', '1');
+        input.setAttribute('step', 'any');
         input.setAttribute('inputmode', 'decimal');
       });
     }
+    document.addEventListener('input', event=>{
+      const input = event.target;
+      if(!(input instanceof HTMLInputElement) || input.type !== 'number' || !input.validity.badInput) return;
+      if(numericRenderInput === input){
+        clearTimeout(numericRenderTimer);
+        numericRenderTimer = null;
+        numericRenderInput = null;
+      }
+      event.stopImmediatePropagation();
+    }, true);
     function parseThicknessMm(value){
       const n = Number.parseFloat(String(value || '').replace(',', '.'));
       return Number.isFinite(n) && n > 0 ? n : 18;
@@ -10066,7 +10103,7 @@
               const target = blocks.find(item=>String(item.id) === String(button.dataset.roomBlockId || ''));
               if(!target) return;
               setOpenMaterialBlock(target);
-              render();
+              requestRender({focusBlockId:target.id});
             });
           });
         }
@@ -11437,7 +11474,7 @@
           } else {
             setOpenMaterialBlock(block);
           }
-          requestRender();
+          requestRender({focusBlockId:block.id});
         });
         node.querySelector('.remove-btn').addEventListener('click', ()=>{
           if(isPanelBlock(block)){
@@ -14039,14 +14076,29 @@
       if(!container) return;
       const scheduleEditorRender = (activeInput, delay=700)=>{
         const selector = activeInput && activeInput.classList.length ? '.' + Array.from(activeInput.classList).join('.') : '';
+        const editor = activeInput?.closest('.sheet-part-editor');
+        const editorState = editor ? {
+          blockId:String(editor.dataset.editorBlockId || ''),
+          partIndex:String(editor.dataset.editorPartIndex || ''),
+          sectionIndex:String(editor.dataset.editorSectionIndex || ''),
+          sectionSubIndex:String(editor.dataset.editorSectionSubIndex || '')
+        } : null;
+        const fieldIndex = editor && selector ? Array.from(editor.querySelectorAll(selector)).indexOf(activeInput) : -1;
         const start = activeInput && typeof activeInput.selectionStart === 'number' ? activeInput.selectionStart : null;
         const end = activeInput && typeof activeInput.selectionEnd === 'number' ? activeInput.selectionEnd : null;
         clearTimeout(selectedPartRenderTimer);
         selectedPartRenderTimer = setTimeout(()=>{
           requestRender();
           requestAnimationFrame(()=>{
-            if(!selector) return;
-            const next = document.querySelector('.sheet-part-editor '+selector);
+            if(!selector || !editorState) return;
+            const nextEditor = Array.from(document.querySelectorAll('.sheet-part-editor')).find(candidate=>
+              String(candidate.dataset.editorBlockId || '') === editorState.blockId &&
+              String(candidate.dataset.editorPartIndex || '') === editorState.partIndex &&
+              String(candidate.dataset.editorSectionIndex || '') === editorState.sectionIndex &&
+              String(candidate.dataset.editorSectionSubIndex || '') === editorState.sectionSubIndex
+            );
+            const candidates = nextEditor ? Array.from(nextEditor.querySelectorAll(selector)) : [];
+            const next = candidates[fieldIndex] || candidates[0] || null;
             if(!next) return;
             next.focus({preventScroll:true});
             if(start != null && typeof next.setSelectionRange === 'function'){
