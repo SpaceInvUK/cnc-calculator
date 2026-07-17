@@ -2,7 +2,7 @@
 /**
  * Plugin Name: FAST CNC — Custom Size & Door Preparation
  * Description: Type-your-size ordering (height x width + thickness) with band pricing for doors and wall panels, plus CNC door-preparation options (hinges, finish). Prices resolve server-side from the product's _fcnc_size_data meta.
- * Version: 2.0.0
+ * Version: 2.1.0
  * Author: FAST CNC
  */
 
@@ -323,6 +323,33 @@ class FastCNC_Custom_Size {
 			if ( $p['extra_cost'] > 0 ) {
 				$order_item->add_meta_data( '_fcnc_prep_cost', $p['extra_cost'] );
 			}
+		}
+
+		// Machine-readable snapshot consumed by fastcnc-order-bridge (kabacal-order/v1).
+		$fcnc = array();
+		if ( ! empty( $values['fcnc_size'] ) ) {
+			$s    = $values['fcnc_size'];
+			$fcnc = array(
+				'h'          => (int) $s['h'],
+				'w'          => (int) $s['w'],
+				't'          => (int) $s['t'],
+				'unit_price' => isset( $s['price'] ) ? (float) $s['price'] : null,
+			);
+		}
+		if ( ! empty( $values['fcnc_prep'] ) ) {
+			$p    = $values['fcnc_prep'];
+			$fcnc += array(
+				'finish'    => $p['finish'],
+				'holes'     => $p['holes'],
+				'positions' => $p['positions'],
+				'side'      => $p['side'],
+				'hinges'    => (int) $p['hinges'],
+				'notes'     => $p['notes'],
+				'prep_cost' => (float) $p['extra_cost'],
+			);
+		}
+		if ( $fcnc ) {
+			$order_item->add_meta_data( '_fcnc_data', wp_json_encode( $fcnc ) );
 		}
 	}
 
