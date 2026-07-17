@@ -108,6 +108,14 @@ A ponte lê `_fcnc_data`; a meta de exibição continua igual (e-mails/admin nã
 3. **Ponte + Edge Function** — mu-plugin `fastcnc-order-bridge.php` (repo: `site/mu-plugins/`, deploy = cópia) + `order-intake` no Supabase + e-mail services@ com anexos.
 4. **Depois da v1**: aba Online Orders no Kabacal, status de produção sincronizado, conta cliente, mais tipos de porta.
 
+## Levantamento Etapa 2 — engine headless (2026-07-17, leitura no repo Kabacal)
+
+- `index.html` = 770 KB, script inline ~5.7k linhas. Repo limpo, sem `.session.lock` no momento do levantamento.
+- **Precedente provado no próprio repo**: `tools/check.mjs` extrai blocos por comment-markers e os **executa em Node**: `PN_ENGINE` (panels), nesting (`packInto`), offcuts (`offcutUsable/Edges/Cross`) e o **CAM completo** — `ringPts`, `tpPartMoves`, `tpOrientDims`, `tpDatumOff`, `tpXform`, **`ncPegasus`** — além de um sandbox E2E com `window/document/localStorage` mockados.
+- Consequência: **o gerador de NC já roda headless hoje**. A extração para a Edge Function segue o mesmo padrão marker-block (build step fatia `index.html` → `kabacal-engine.mjs`), sem reescrever o engine.
+- Falta mapear/marcar: geometria de porta (`mkItem` l.761, `resolveFrame` l.772, `hingePositions` l.903) e writers DXF (`DXF_LAYERS` l.1368, `dxfForThickness` l.1475, `buildDxfByThickness` l.1600) — validados por goldens, mas ainda não executáveis isolados. Adicionar novos markers é mudança **aditiva** (regra 5 do AGENTS.md: nunca mover/renomear os existentes).
+- Próximo passo concreto (sessão no repo Kabacal, com session lock + protocolo): markers `DOORS_GEOM`/`DXF` + `tools/build-engine.mjs` gerando o módulo consumível em Deno; goldens byte-exatos continuam sendo o critério.
+
 ## Riscos / pendências
 
 - **VAT**: pedido #4004 saiu com tax £0 — Woo sem imposto configurado. Confirmar com Ednei antes do site oficial (UK VAT 20%).
