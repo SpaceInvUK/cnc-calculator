@@ -1,5 +1,14 @@
 # Codex Working Notes
 
+> **Também neste repo: Doors Online / ponte com o Kabacal (Claude).** Se a tarefa envolver
+> pedidos online, mu-plugins do site WordPress, a Edge Function `order-intake` ou o WorkPlanner,
+> leia primeiro `docs/FASTCNC_DOORS_ONLINE_V1.md` (spec + contrato `kabacal-order/v1`),
+> `docs/CHECKLIST_LAPTOP_SITE_OFICIAL.md` e `docs/WORKPLANNER_KABACAL_CONTRATO_v1.md`.
+> Código do site: `site/mu-plugins/` (fonte da verdade; deploy = cópia para o wp-content).
+> Branch desse trabalho: `doors-online-v1-spec`. Regra dura: os campos do payload
+> `kabacal-order/v1` são ADITIVOS — nunca renomear. O motor CNC vive no repo irmão
+> `SpaceInvUK/kabacal` (com protocolo próprio no AGENTS.md de lá).
+
 ## Current Branch And Target
 
 - Latest/default branch for Codex Cloud: `main`.
